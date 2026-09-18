@@ -10,7 +10,6 @@ spring:
             client-id: test-client
             client-secret: test-secret
             authorization-grant-type: authorization_code
-            # issuer-uri 없이 엔드포인트를 직접 지정하면 기본 redirect-uri가 채워지지 않는다.
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
         provider:

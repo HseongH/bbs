@@ -2,7 +2,6 @@ spring:
   application:
     name: bbs
   profiles:
-    # 프로파일을 지정하지 않고 실행하면 로컬 개발 환경으로 동작한다.
     default: local
   threads:
     virtual:

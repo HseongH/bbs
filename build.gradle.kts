@@ -167,7 +167,6 @@ tasks.register<Copy>("installGitHooks") {
     filePermissions { unix("0755") }
 }
 
-// 클론 직후 빌드만 해도 훅이 설치되도록 한다.
 tasks.build {
     dependsOn("installGitHooks")
 }
