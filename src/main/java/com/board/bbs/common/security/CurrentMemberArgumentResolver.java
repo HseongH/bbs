@@ -5,6 +5,7 @@ import com.board.bbs.common.error.ErrorCode;
 import com.board.bbs.member.application.port.out.LoadMemberPort;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.MethodParameter;
@@ -44,8 +45,9 @@ public class CurrentMemberArgumentResolver implements HandlerMethodArgumentResol
     Object principal = authentication == null ? null : authentication.getPrincipal();
 
     if (principal instanceof OidcUser oidcUser) {
+      String subject = Objects.requireNonNull(oidcUser.getSubject(), "OIDC 토큰에는 sub가 반드시 있다.");
       return loadMemberPort
-          .findBySubject(oidcUser.getSubject())
+          .findBySubject(subject)
           .map(Member::getId)
           .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
     }

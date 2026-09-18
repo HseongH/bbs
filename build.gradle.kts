@@ -1,8 +1,11 @@
+import net.ltgt.gradle.errorprone.errorprone
+
 plugins {
     java
     checkstyle
     jacoco
     id("com.diffplug.spotless") version "8.10.2"
+    id("net.ltgt.errorprone") version "5.1.1"
     id("org.springframework.boot") version "4.1.1"
     id("io.spring.dependency-management") version "1.1.7"
 }
@@ -43,6 +46,9 @@ dependencies {
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 
     implementation("org.jspecify:jspecify")
+
+    errorprone("com.google.errorprone:error_prone_core:2.50.0")
+    errorprone("com.uber.nullaway:nullaway:0.14.1")
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
 
@@ -90,6 +96,17 @@ spotless {
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
+
+    options.errorprone {
+        disableAllChecks = true
+        check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+        option("NullAway:OnlyNullMarked", "true")
+        option("NullAway:JSpecifyMode", "true")
+    }
+}
+
+tasks.compileTestJava {
+    options.errorprone.enabled = false
 }
 
 tasks.withType<Checkstyle>().configureEach {

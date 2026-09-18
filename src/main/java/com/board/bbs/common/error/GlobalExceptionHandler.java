@@ -3,6 +3,7 @@ package com.board.bbs.common.error;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
@@ -34,7 +35,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   @ExceptionHandler(BusinessException.class)
   ProblemDetail handleBusiness(BusinessException e, HttpServletRequest request) {
-    return toProblemDetail(e.getErrorCode(), e.getMessage(), request.getRequestURI());
+    String detail =
+        Objects.requireNonNullElse(e.getMessage(), e.getErrorCode().getDefaultMessage());
+    return toProblemDetail(e.getErrorCode(), detail, request.getRequestURI());
   }
 
   @ExceptionHandler(AccessDeniedException.class)
@@ -56,7 +59,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
   @Override
-  protected ResponseEntity<Object> handleMethodArgumentNotValid(
+  @Nullable protected ResponseEntity<Object> handleMethodArgumentNotValid(
       MethodArgumentNotValidException ex,
       HttpHeaders headers,
       HttpStatusCode status,
@@ -83,7 +86,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   /** 프레임워크가 만든 응답 본문에도 동일한 확장 필드를 채워 응답 형태를 일관되게 유지한다. */
   @Override
-  protected ResponseEntity<Object> handleExceptionInternal(
+  @Nullable protected ResponseEntity<Object> handleExceptionInternal(
       Exception ex,
       @Nullable Object body,
       HttpHeaders headers,

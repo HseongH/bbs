@@ -1,6 +1,8 @@
 package com.board.bbs.member.adapter.in.web.dto;
 
 import com.board.bbs.member.domain.Member;
+import com.board.bbs.member.domain.MemberId;
+import java.util.Objects;
 
 /**
  * 회원 응답.
@@ -18,7 +20,7 @@ public record MemberResponse(Long id, String nickname, String email) {
    * @return 회원 응답
    */
   public static MemberResponse from(Member member) {
-    return new MemberResponse(
-        member.getId().value(), member.getNickname().value(), member.getEmail());
+    MemberId id = Objects.requireNonNull(member.getId(), "저장된 회원은 식별자를 가진다.");
+    return new MemberResponse(id.value(), member.getNickname().value(), member.getEmail());
   }
 }
