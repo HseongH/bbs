@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+  <suppress checks="GoogleMethodName|MethodName" files="[\\/]src[\\/]test[\\/]"/>
+  <suppress checks="AbbreviationAsWordInName" files="[\\/]src[\\/]test[\\/]"/>
+  <suppress checks="MissingJavadocType|MissingJavadocMethod|JavadocParagraph|SummaryJavadoc"
+            files="[\\/]src[\\/]test[\\/]"/>
+</suppressions>

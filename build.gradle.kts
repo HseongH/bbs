@@ -66,6 +66,8 @@ dependencies {
 
 checkstyle {
     toolVersion = "14.1.0"
+    configProperties["org.checkstyle.google.suppressionfilter.config"] =
+        file("config/checkstyle/checkstyle-suppressions.xml").absolutePath
 }
 
 spotless {
