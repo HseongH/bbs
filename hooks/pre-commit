@@ -1,0 +1,12 @@
+#!/bin/sh
+
+./gradlew spotlessCheck checkstyleMain -q
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ Code quality check failed."
+    echo "Run './gradlew spotlessApply' to format the code."
+    exit 1
+fi
+
+exit 0
