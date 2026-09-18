@@ -1,0 +1,40 @@
+package com.board.bbs.common.error;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@WebMvcTest(controllers = GlobalExceptionHandlerTest.TestController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@Import({GlobalExceptionHandler.class, GlobalExceptionHandlerTest.TestController.class})
+class GlobalExceptionHandlerTest {
+
+  @Autowired private MockMvc mockMvc;
+
+  @RestController
+  static class TestController {
+    @GetMapping("/test/business-error")
+    String businessError() {
+      throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+    }
+  }
+
+  @Test
+  void 비즈니스_예외는_ProblemDetail_형식으로_변환된다() throws Exception {
+    mockMvc
+        .perform(get("/test/business-error"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.status").value(404))
+        .andExpect(jsonPath("$.code").value("POST_NOT_FOUND"))
+        .andExpect(jsonPath("$.detail").exists());
+  }
+}

@@ -20,8 +20,6 @@ repositories {
     mavenCentral()
 }
 
-// com.querydsl:querydsl-jpa 5.1.0은 Hibernate 6 기준이라 Spring Boot 4.1에서 동작하지 않는다.
-// Hibernate 7을 대상으로 빌드된 openfeign 포크를 사용한다.
 val querydslVersion = "7.0"
 
 dependencies {
@@ -35,8 +33,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.session:spring-session-data-redis")
 
-    // Spring Boot 4는 자동 구성을 모듈별로 분리했다. flyway-core만 올려서는
-    // 마이그레이션이 조용히 실행되지 않으므로 자동 구성 모듈을 명시한다.
     implementation("org.springframework.boot:spring-boot-flyway")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
@@ -56,8 +52,9 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.springframework.security:spring-security-test")
-    // Testcontainers 2.x부터 모든 모듈 아티팩트에 testcontainers- 접두사가 붙는다.
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("com.redis:testcontainers-redis")
@@ -103,7 +100,6 @@ tasks.withType<Test>().configureEach {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-// 커버리지 집계에서 제외한다: QueryDSL 생성 클래스, 설정 클래스, 부트 진입점.
 val coverageExclusions =
     listOf(
         "**/Q*.class",
@@ -144,7 +140,6 @@ tasks.jacocoTestCoverageVerification {
                 minimum = "0.80".toBigDecimal()
             }
         }
-        // 도메인과 애플리케이션 계층은 이 프로젝트의 핵심이므로 더 높은 기준을 적용한다.
         rule {
             element = "PACKAGE"
             includes = listOf("com.board.bbs.*.domain", "com.board.bbs.*.application.*")

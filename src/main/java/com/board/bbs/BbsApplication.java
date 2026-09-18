@@ -12,7 +12,7 @@ public class BbsApplication {
    *
    * @param args 명령행 인자
    */
-  public static void main(String[] args) {
+  static void main(String[] args) {
     SpringApplication.run(BbsApplication.class, args);
   }
 }
