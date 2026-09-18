@@ -1,11 +1,19 @@
 package com.board.bbs.common.security;
 
 import com.board.bbs.member.application.port.in.ProvisionMemberUseCase;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +21,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class BbsOidcUserService extends OidcUserService {
+
+  private static final String REALM_ACCESS_CLAIM = "realm_access";
+  private static final String ROLE_PREFIX = "ROLE_";
+  private static final String USER_NAME_ATTRIBUTE = "preferred_username";
 
   private final ProvisionMemberUseCase provisionMemberUseCase;
 
@@ -26,6 +38,25 @@ public class BbsOidcUserService extends OidcUserService {
 
     provisionMemberUseCase.provision(subject, nickname, email);
 
-    return oidcUser;
+    Set<GrantedAuthority> authorities = new LinkedHashSet<>(oidcUser.getAuthorities());
+    authorities.addAll(realmRoles(oidcUser));
+
+    return new DefaultOidcUser(
+        authorities, oidcUser.getIdToken(), oidcUser.getUserInfo(), USER_NAME_ATTRIBUTE);
+  }
+
+  /** Keycloak의 realm_access.roles를 스프링 시큐리티의 역할 권한으로 옮긴다. */
+  private Collection<GrantedAuthority> realmRoles(OidcUser oidcUser) {
+    Object realmAccess = oidcUser.getClaims().get(REALM_ACCESS_CLAIM);
+    if (!(realmAccess instanceof Map<?, ?> claims)) {
+      return List.of();
+    }
+    if (!(claims.get("roles") instanceof Collection<?> roles)) {
+      return List.of();
+    }
+    return roles.stream()
+        .map(String::valueOf)
+        .map(role -> (GrantedAuthority) new SimpleGrantedAuthority(ROLE_PREFIX + role))
+        .toList();
   }
 }

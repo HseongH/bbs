@@ -7,8 +7,14 @@
   "sslRequired": "none",
   "roles": {
     "realm": [
-      { "name": "USER", "description": "일반 사용자" },
-      { "name": "ADMIN", "description": "관리자" }
+      {
+        "name": "USER",
+        "description": "일반 사용자"
+      },
+      {
+        "name": "ADMIN",
+        "description": "관리자"
+      }
     ]
   },
   "clients": [
@@ -22,11 +28,31 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["http://localhost:8080/*"],
-      "webOrigins": ["http://localhost:8080"],
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
       "attributes": {
         "post.logout.redirect.uris": "http://localhost:8080/*"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "users": [
@@ -37,8 +63,16 @@
       "email": "tester@example.com",
       "firstName": "테스트",
       "lastName": "사용자",
-      "credentials": [{ "type": "password", "value": "tester", "temporary": false }],
-      "realmRoles": ["USER"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "tester",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "USER"
+      ]
     },
     {
       "username": "admin-user",
@@ -47,8 +81,17 @@
       "email": "admin@example.com",
       "firstName": "관리",
       "lastName": "사용자",
-      "credentials": [{ "type": "password", "value": "admin", "temporary": false }],
-      "realmRoles": ["USER", "ADMIN"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "USER",
+        "ADMIN"
+      ]
     }
   ]
 }

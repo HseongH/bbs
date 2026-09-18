@@ -3,7 +3,10 @@ package com.board.bbs.post.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.board.bbs.common.error.BusinessException;
+import com.board.bbs.common.error.ErrorCode;
 import com.board.bbs.member.domain.MemberId;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 class PostTest {
@@ -52,5 +55,79 @@ class PostTest {
   @Test
   void 본문은_비어있을_수_없다() {
     assertThatThrownBy(() -> new Content(" ")).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void 작성자는_게시글을_수정할_수_있다() {
+    Post post = 저장된_게시글(AUTHOR);
+
+    post.updateBy(AUTHOR, new Title("바뀐 제목"), new Content("바뀐 본문"));
+
+    assertThat(post.getTitle().value()).isEqualTo("바뀐 제목");
+    assertThat(post.getContent().value()).isEqualTo("바뀐 본문");
+  }
+
+  @Test
+  void 작성자가_아니면_수정할_수_없다() {
+    Post post = 저장된_게시글(AUTHOR);
+    MemberId 다른사람 = new MemberId(2L);
+
+    assertThatThrownBy(() -> post.updateBy(다른사람, new Title("제목"), new Content("본문")))
+        .isInstanceOf(BusinessException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.ACCESS_DENIED);
+  }
+
+  @Test
+  void 작성자는_게시글을_삭제할_수_있다() {
+    Post post = 저장된_게시글(AUTHOR);
+
+    post.deleteBy(AUTHOR, false, Instant.now());
+
+    assertThat(post.isDeleted()).isTrue();
+  }
+
+  @Test
+  void 작성자가_아니면_삭제할_수_없다() {
+    Post post = 저장된_게시글(AUTHOR);
+
+    assertThatThrownBy(() -> post.deleteBy(new MemberId(2L), false, Instant.now()))
+        .isInstanceOf(BusinessException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.ACCESS_DENIED);
+  }
+
+  @Test
+  void 관리자는_다른_사람의_글을_삭제할_수_있다() {
+    Post post = 저장된_게시글(AUTHOR);
+
+    post.deleteBy(new MemberId(99L), true, Instant.now());
+
+    assertThat(post.isDeleted()).isTrue();
+  }
+
+  @Test
+  void 이미_삭제된_게시글은_수정할_수_없다() {
+    Post post = 저장된_게시글(AUTHOR);
+    post.deleteBy(AUTHOR, false, Instant.now());
+
+    assertThatThrownBy(() -> post.updateBy(AUTHOR, new Title("제목"), new Content("본문")))
+        .isInstanceOf(BusinessException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.POST_NOT_FOUND);
+  }
+
+  @Test
+  void 이미_삭제된_게시글은_다시_삭제할_수_없다() {
+    Post post = 저장된_게시글(AUTHOR);
+    post.deleteBy(AUTHOR, false, Instant.now());
+
+    assertThatThrownBy(() -> post.deleteBy(AUTHOR, false, Instant.now()))
+        .isInstanceOf(BusinessException.class);
+  }
+
+  private Post 저장된_게시글(MemberId author) {
+    return Post.restore(
+        new PostId(1L), new Title("제목"), new Content("본문"), author, Instant.now(), null, 0L, 0L);
   }
 }

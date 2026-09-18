@@ -1,5 +1,7 @@
 package com.board.bbs.post.domain;
 
+import com.board.bbs.common.error.BusinessException;
+import com.board.bbs.common.error.ErrorCode;
 import com.board.bbs.member.domain.MemberId;
 import java.time.Instant;
 import java.util.Objects;
@@ -81,6 +83,49 @@ public class Post {
         deletedAt,
         viewCount,
         likeCount);
+  }
+
+  /**
+   * 제목과 본문을 수정한다. 작성자만 수정할 수 있다.
+   *
+   * @param requester 요청한 회원 식별자
+   * @param newTitle 새 제목
+   * @param newContent 새 본문
+   * @throws BusinessException 작성자가 아니거나 이미 삭제된 경우
+   */
+  public void updateBy(MemberId requester, Title newTitle, Content newContent) {
+    requireNotDeleted();
+    requireAuthor(requester);
+    this.title = Objects.requireNonNull(newTitle);
+    this.content = Objects.requireNonNull(newContent);
+  }
+
+  /**
+   * 게시글을 삭제한다. 작성자 또는 관리자만 삭제할 수 있으며, 물리 삭제 대신 시각을 기록한다.
+   *
+   * @param requester 요청한 회원 식별자
+   * @param admin 관리자 여부
+   * @param now 삭제 시각
+   * @throws BusinessException 권한이 없거나 이미 삭제된 경우
+   */
+  public void deleteBy(MemberId requester, boolean admin, Instant now) {
+    requireNotDeleted();
+    if (!admin) {
+      requireAuthor(requester);
+    }
+    this.deletedAt = Objects.requireNonNull(now);
+  }
+
+  private void requireAuthor(MemberId requester) {
+    if (!authorId.equals(requester)) {
+      throw new BusinessException(ErrorCode.ACCESS_DENIED);
+    }
+  }
+
+  private void requireNotDeleted() {
+    if (isDeleted()) {
+      throw new BusinessException(ErrorCode.POST_NOT_FOUND, "삭제된 게시글입니다.");
+    }
   }
 
   /**
