@@ -42,6 +42,8 @@ dependencies {
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 
+    implementation("org.jspecify:jspecify")
+
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
 
     compileOnly("org.projectlombok:lombok")

@@ -1,16 +1,17 @@
 package com.board.bbs.member.domain;
 
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /** Keycloak 사용자에 대응하는 로컬 회원. */
 public class Member {
 
-  private final MemberId id;
+  @Nullable private final MemberId id;
   private final String subject;
   private Nickname nickname;
   private final String email;
 
-  private Member(MemberId id, String subject, Nickname nickname, String email) {
+  private Member(@Nullable MemberId id, String subject, Nickname nickname, String email) {
     this.id = id;
     this.subject = Objects.requireNonNull(subject, "subject는 필수입니다.");
     this.nickname = Objects.requireNonNull(nickname, "nickname은 필수입니다.");
@@ -51,7 +52,7 @@ public class Member {
     this.nickname = Objects.requireNonNull(newNickname);
   }
 
-  public MemberId getId() {
+  @Nullable public MemberId getId() {
     return id;
   }
 

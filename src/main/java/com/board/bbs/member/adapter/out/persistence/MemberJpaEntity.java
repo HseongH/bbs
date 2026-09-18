@@ -11,6 +11,7 @@ import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -25,7 +26,7 @@ public class MemberJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Nullable private Long id;
 
   @Column(nullable = false, unique = true)
   private String subject;
@@ -38,13 +39,13 @@ public class MemberJpaEntity {
 
   @CreatedDate
   @Column(nullable = false, updatable = false)
-  private Instant createdAt;
+  @Nullable private Instant createdAt;
 
   @LastModifiedDate
   @Column(nullable = false)
-  private Instant updatedAt;
+  @Nullable private Instant updatedAt;
 
-  MemberJpaEntity(Long id, String subject, String nickname, String email) {
+  MemberJpaEntity(@Nullable Long id, String subject, String nickname, String email) {
     this.id = id;
     this.subject = subject;
     this.nickname = nickname;

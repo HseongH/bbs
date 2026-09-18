@@ -3,6 +3,7 @@ package com.board.bbs.member.adapter.out.persistence;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.member.domain.Nickname;
+import java.util.Objects;
 
 /** 도메인과 영속성 모델 사이의 유일한 변환 지점. */
 final class MemberMapper {
@@ -11,7 +12,7 @@ final class MemberMapper {
 
   static Member toDomain(MemberJpaEntity entity) {
     return Member.restore(
-        new MemberId(entity.getId()),
+        new MemberId(Objects.requireNonNull(entity.getId(), "저장된 회원은 식별자를 가진다.")),
         entity.getSubject(),
         new Nickname(entity.getNickname()),
         entity.getEmail());

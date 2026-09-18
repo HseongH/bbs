@@ -6,6 +6,7 @@ import com.board.bbs.member.application.port.out.LoadMemberPort;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,11 +31,11 @@ public class CurrentMemberArgumentResolver implements HandlerMethodArgumentResol
   }
 
   @Override
-  public Object resolveArgument(
+  @Nullable public Object resolveArgument(
       MethodParameter parameter,
-      ModelAndViewContainer mavContainer,
+      @Nullable ModelAndViewContainer mavContainer,
       NativeWebRequest webRequest,
-      WebDataBinderFactory binderFactory) {
+      @Nullable WebDataBinderFactory binderFactory) {
 
     CurrentMember annotation = parameter.getParameterAnnotation(CurrentMember.class);
     boolean required = annotation == null || annotation.required();
