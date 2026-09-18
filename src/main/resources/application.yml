@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: bbs
+  profiles:
+    # 프로파일을 지정하지 않고 실행하면 로컬 개발 환경으로 동작한다.
+    default: local
+  threads:
+    virtual:
+      enabled: true
+  docker:
+    compose:
+      lifecycle-management: start_only
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 50
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  session:
+    store-type: redis
+    timeout: 30m
+server:
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name},%X{traceId:-},%X{spanId:-}] "

@@ -1,0 +1,15 @@
+# 로컬 개발 환경 설정. compose.yaml이 띄우는 Keycloak을 가리킨다.
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: bbs-app
+            client-secret: bbs-app-secret
+            authorization-grant-type: authorization_code
+            scope: openid,profile,email
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8081/realms/bbs
+            user-name-attribute: preferred_username

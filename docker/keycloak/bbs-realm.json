@@ -1,0 +1,54 @@
+{
+  "realm": "bbs",
+  "enabled": true,
+  "displayName": "BBS",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      { "name": "USER", "description": "일반 사용자" },
+      { "name": "ADMIN", "description": "관리자" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "bbs-app",
+      "name": "게시판 애플리케이션",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "bbs-app-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:8080/*"],
+      "webOrigins": ["http://localhost:8080"],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8080/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "tester",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "tester@example.com",
+      "firstName": "테스트",
+      "lastName": "사용자",
+      "credentials": [{ "type": "password", "value": "tester", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "username": "admin-user",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@example.com",
+      "firstName": "관리",
+      "lastName": "사용자",
+      "credentials": [{ "type": "password", "value": "admin", "temporary": false }],
+      "realmRoles": ["USER", "ADMIN"]
+    }
+  ]
+}

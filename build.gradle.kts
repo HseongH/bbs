@@ -35,7 +35,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.session:spring-session-data-redis")
 
-    implementation("org.flywaydb:flyway-core")
+    // Spring Boot 4는 자동 구성을 모듈별로 분리했다. flyway-core만 올려서는
+    // 마이그레이션이 조용히 실행되지 않으므로 자동 구성 모듈을 명시한다.
+    implementation("org.springframework.boot:spring-boot-flyway")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
 

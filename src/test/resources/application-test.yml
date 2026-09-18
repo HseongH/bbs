@@ -1,0 +1,22 @@
+spring:
+  docker:
+    compose:
+      enabled: false
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: test-client
+            client-secret: test-secret
+            authorization-grant-type: authorization_code
+            # issuer-uri 없이 엔드포인트를 직접 지정하면 기본 redirect-uri가 채워지지 않는다.
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid,profile,email
+        provider:
+          keycloak:
+            authorization-uri: http://localhost:0/realms/test/protocol/openid-connect/auth
+            token-uri: http://localhost:0/realms/test/protocol/openid-connect/token
+            jwk-set-uri: http://localhost:0/realms/test/protocol/openid-connect/certs
+            user-info-uri: http://localhost:0/realms/test/protocol/openid-connect/userinfo
+            user-name-attribute: preferred_username
