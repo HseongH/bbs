@@ -37,6 +37,16 @@ class MemberServiceTest {
   }
 
   @Test
+  void 식별자로_회원을_조회할_수_있다() {
+    MemberId id = service.provision("sub-1", "테스터", "tester@example.com");
+
+    Member found = service.getById(id);
+
+    assertThat(found.getSubject()).isEqualTo("sub-1");
+    assertThat(found.getNickname().value()).isEqualTo("테스터");
+  }
+
+  @Test
   void 존재하지_않는_회원을_조회하면_예외가_발생한다() {
     assertThatThrownBy(() -> service.getById(new MemberId(999L)))
         .isInstanceOf(BusinessException.class);
