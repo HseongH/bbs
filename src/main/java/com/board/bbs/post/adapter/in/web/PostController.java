@@ -10,12 +10,14 @@ import com.board.bbs.post.adapter.in.web.dto.UpdatePostRequest;
 import com.board.bbs.post.application.PostSearchCondition;
 import com.board.bbs.post.application.port.in.CreatePostUseCase;
 import com.board.bbs.post.application.port.in.DeletePostUseCase;
-import com.board.bbs.post.application.port.in.GetPostUseCase;
+import com.board.bbs.post.application.port.in.LikePostUseCase;
 import com.board.bbs.post.application.port.in.SearchPostsUseCase;
 import com.board.bbs.post.application.port.in.UpdatePostUseCase;
+import com.board.bbs.post.application.port.in.ViewPostUseCase;
 import com.board.bbs.post.domain.PostId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +48,8 @@ public class PostController {
   private static final String ADMIN_ROLE = "ROLE_ADMIN";
 
   private final CreatePostUseCase createPostUseCase;
-  private final GetPostUseCase getPostUseCase;
+  private final ViewPostUseCase viewPostUseCase;
+  private final LikePostUseCase likePostUseCase;
   private final SearchPostsUseCase searchPostsUseCase;
   private final UpdatePostUseCase updatePostUseCase;
   private final DeletePostUseCase deletePostUseCase;
@@ -68,15 +71,22 @@ public class PostController {
   }
 
   /**
-   * 게시글을 조회한다.
+   * 게시글을 조회하고 최초 조회인 경우 조회수를 올린다.
    *
    * @param id 게시글 식별자
+   * @param viewer 현재 로그인 회원 식별자. 비로그인이면 null
+   * @param request 세션 식별을 위한 요청
    * @return 게시글 상세
    */
   @Operation(summary = "게시글 단건 조회")
   @GetMapping("/{id}")
-  public PostResponse get(@PathVariable Long id) {
-    return PostResponse.from(getPostUseCase.getById(new PostId(id)));
+  public PostResponse get(
+      @PathVariable Long id,
+      @CurrentMember(required = false) @Nullable MemberId viewer,
+      HttpServletRequest request) {
+
+    String viewerKey = viewer != null ? "m" + viewer.value() : "s" + request.getSession().getId();
+    return PostResponse.from(viewPostUseCase.getAndCountView(new PostId(id), viewerKey));
   }
 
   /**
@@ -136,5 +146,31 @@ public class PostController {
         searchPostsUseCase
             .search(new PostSearchCondition(keyword, authorId), pageable)
             .map(PostSummaryResponse::from));
+  }
+
+  /**
+   * 게시글에 좋아요를 누른다.
+   *
+   * @param id 게시글 식별자
+   * @param memberId 현재 로그인 회원 식별자
+   */
+  @Operation(summary = "좋아요")
+  @PostMapping("/{id}/likes")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void like(@PathVariable Long id, @CurrentMember MemberId memberId) {
+    likePostUseCase.like(new PostId(id), memberId);
+  }
+
+  /**
+   * 좋아요를 취소한다.
+   *
+   * @param id 게시글 식별자
+   * @param memberId 현재 로그인 회원 식별자
+   */
+  @Operation(summary = "좋아요 취소")
+  @DeleteMapping("/{id}/likes")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void unlike(@PathVariable Long id, @CurrentMember MemberId memberId) {
+    likePostUseCase.unlike(new PostId(id), memberId);
   }
 }
