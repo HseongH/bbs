@@ -12,6 +12,7 @@ import { ButtonComponent } from "@/shared/ui/button";
           <app-button
             size="sm"
             [variant]="index === page() ? 'default' : 'ghost'"
+            [ariaCurrent]="index === page() ? 'page' : null"
             (click)="changed.emit(index)"
           >
             {{ index + 1 }}

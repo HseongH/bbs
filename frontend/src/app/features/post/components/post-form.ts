@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+} from "@angular/core";
 import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
 import { ButtonComponent } from "@/shared/ui/button";
 
@@ -33,8 +41,8 @@ import { ButtonComponent } from "@/shared/ui/button";
         }
       </div>
 
-      @if (message()) {
-        <p class="text-sm text-red-600">{{ message() }}</p>
+      @if (generalMessage(); as text) {
+        <p class="text-sm text-red-600">{{ text }}</p>
       }
 
       <app-button type="submit" [disabled]="submitting()">저장</app-button>
@@ -47,6 +55,11 @@ export class PostFormComponent {
   readonly fieldErrors = input<Record<string, string>>({});
   readonly message = input<string | null>(null);
   readonly saved = output<{ title: string; content: string }>();
+
+  /** 필드별 오류가 이미 붙어 있으면 같은 내용을 한 번 더 보여줄 이유가 없다. */
+  protected readonly generalMessage = computed(() =>
+    Object.keys(this.fieldErrors()).length === 0 ? this.message() : null,
+  );
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     title: "",

@@ -30,6 +30,33 @@ describe("PostFormComponent", () => {
     expect(screen.getByText("제목은 필수입니다.")).toBeInTheDocument();
   });
 
+  it("필드 오류가 있으면 전체 메시지는 겹쳐 보여주지 않는다", async () => {
+    await render(PostFormComponent, {
+      inputs: {
+        initial: { title: "", content: "" },
+        submitting: false,
+        fieldErrors: { title: "제목은 필수입니다." },
+        message: "저장하지 못했습니다.",
+      },
+    });
+
+    expect(screen.getByText("제목은 필수입니다.")).toBeInTheDocument();
+    expect(screen.queryByText("저장하지 못했습니다.")).not.toBeInTheDocument();
+  });
+
+  it("필드 오류가 없으면 전체 메시지를 보여준다", async () => {
+    await render(PostFormComponent, {
+      inputs: {
+        initial: { title: "", content: "" },
+        submitting: false,
+        fieldErrors: {},
+        message: "저장하지 못했습니다.",
+      },
+    });
+
+    expect(screen.getByText("저장하지 못했습니다.")).toBeInTheDocument();
+  });
+
   it("수정 모드에서는 기존 값이 채워진다", async () => {
     await render(PostFormComponent, {
       inputs: {

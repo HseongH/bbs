@@ -19,7 +19,12 @@ const SIZE: Record<Size, string> = {
   selector: "app-button",
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button [type]="type()" [disabled]="disabled()" [class]="classes()">
+    <button
+      [type]="type()"
+      [disabled]="disabled()"
+      [class]="classes()"
+      [attr.aria-current]="ariaCurrent()"
+    >
       <ng-content />
     </button>
   `,
@@ -29,6 +34,7 @@ export class ButtonComponent {
   readonly variant = input<Variant>("default");
   readonly size = input<Size>("default");
   readonly disabled = input(false);
+  readonly ariaCurrent = input<string | null>(null);
 
   protected readonly classes = computed(
     () => `rounded disabled:opacity-50 ${VARIANT[this.variant()]} ${SIZE[this.size()]}`,

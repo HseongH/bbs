@@ -29,6 +29,20 @@ describe("PostListPage", () => {
     expect(screen.getByText("둘째 글")).toBeInTheDocument();
   });
 
+  it("현재 페이지 버튼을 보조기술에 알린다", async () => {
+    server.use(
+      http.get("/api/posts", () =>
+        HttpResponse.json({ ...게시글페이지([게시글요약({ id: 1 })]), totalPages: 3 }),
+      ),
+    );
+
+    await 화면을_그린다();
+
+    const 첫페이지 = await screen.findByRole("button", { name: "1" });
+    expect(첫페이지).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "2" })).not.toHaveAttribute("aria-current");
+  });
+
   it("결과가 없으면 안내를 보여준다", async () => {
     server.use(http.get("/api/posts", () => HttpResponse.json(게시글페이지([]))));
 

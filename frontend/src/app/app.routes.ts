@@ -22,4 +22,8 @@ export const routes: Routes = [
     loadComponent: () =>
       import("@/features/post/pages/post-detail-page").then((m) => m.PostDetailPage),
   },
+  {
+    path: "**",
+    loadComponent: () => import("@/shared/ui/not-found-page").then((m) => m.NotFoundPage),
+  },
 ];

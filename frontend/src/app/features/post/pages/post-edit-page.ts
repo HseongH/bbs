@@ -9,7 +9,10 @@ import { PostStore } from "../post.store";
   imports: [PostFormComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (store.detail.value(); as post) {
+    <!-- 오류 상태에서 value()를 읽으면 예외가 나므로 먼저 걸러낸다. -->
+    @if (store.detail.error()) {
+      <p class="py-8 text-center text-slate-600">게시글을 불러오지 못했습니다.</p>
+    } @else if (store.detail.value(); as post) {
       <app-post-form
         [initial]="{ title: post.title, content: post.content }"
         [submitting]="submitting()"
