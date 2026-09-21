@@ -4,6 +4,8 @@ import type { components } from "@/core/api/schema";
 type MemberResponse = components["schemas"]["MemberResponse"];
 type PostSummaryResponse = components["schemas"]["PostSummaryResponse"];
 type PageResponsePostSummaryResponse = components["schemas"]["PageResponsePostSummaryResponse"];
+type CommentResponse = components["schemas"]["CommentResponse"];
+type PageResponseCommentResponse = components["schemas"]["PageResponseCommentResponse"];
 
 export const 로그인회원: MemberResponse = {
   id: 1,
@@ -35,7 +37,19 @@ export function 게시글페이지(content: PostSummaryResponse[]): PageResponse
   };
 }
 
+export function 댓글페이지(content: CommentResponse[]): PageResponseCommentResponse {
+  return {
+    content,
+    page: 0,
+    size: 20,
+    totalElements: content.length,
+    totalPages: 1,
+    last: true,
+  };
+}
+
 export const handlers = [
   http.get("/api/members/me", () => HttpResponse.json(로그인회원)),
   http.get("/api/posts", () => HttpResponse.json(게시글페이지([게시글요약()]))),
+  http.get("/api/posts/:postId/comments", () => HttpResponse.json(댓글페이지([]))),
 ];

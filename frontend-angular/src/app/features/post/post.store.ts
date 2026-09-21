@@ -43,9 +43,16 @@ export class PostStore {
     this.selectedId.set(id);
   }
 
-  async create(input: { title: string; content: string }): Promise<void> {
-    await firstValueFrom(this.api.create(input));
+  /** 생성된 글의 식별자를 돌려준다. 서버가 Location 헤더로 알려 준다. */
+  async create(input: { title: string; content: string }): Promise<number> {
+    const response = await firstValueFrom(this.api.create(input));
     this.list.reload();
+    const location = response.headers.get("Location") ?? "";
+    const id = Number(location.replace(/.*\//, ""));
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error("생성된 게시글의 위치를 확인하지 못했습니다.");
+    }
+    return id;
   }
 
   async update(id: number, input: { title: string; content: string }): Promise<void> {

@@ -17,7 +17,18 @@ import { PostStore } from "../post.store";
     } @else if (store.detail.isLoading()) {
       <p class="py-8 text-center text-slate-500">불러오는 중입니다.</p>
     } @else {
-      <app-post-detail [post]="store.detail.value()" [canEdit]="canEdit()" (removed)="remove()" />
+      <app-post-detail [post]="store.detail.value()" [canEdit]="canEdit()" (removed)="remove()">
+        @if (memberStore.member()) {
+          <app-like-button
+            like
+            [postId]="+postId()"
+            [likeCount]="store.detail.value()?.likeCount ?? 0"
+          />
+        } @else {
+          <span like>좋아요 {{ store.detail.value()?.likeCount ?? 0 }}</span>
+        }
+      </app-post-detail>
+      <app-comment-section [postId]="+postId()" />
     }
   `,
 })

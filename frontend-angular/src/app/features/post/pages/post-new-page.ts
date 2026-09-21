@@ -31,8 +31,8 @@ export class PostNewPage {
     this.errors.set({});
     this.message.set(null);
     try {
-      await this.store.create(input);
-      await this.router.navigate(["/"]);
+      const id = await this.store.create(input);
+      await this.router.navigate(["/posts", id]);
     } catch (error) {
       const body = (error as { error?: unknown }).error ?? error;
       this.errors.set(fieldErrors(body));

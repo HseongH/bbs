@@ -1,6 +1,7 @@
 import { HttpClient, HttpContext, httpResource } from "@angular/common/http";
 import { computed, inject, Injectable } from "@angular/core";
-import { firstValueFrom } from "rxjs";
+import { toObservable } from "@angular/core/rxjs-interop";
+import { filter, firstValueFrom } from "rxjs";
 import type { components } from "@/core/api/schema";
 import { SKIP_LOGIN_REDIRECT } from "./auth.interceptor";
 
@@ -20,6 +21,24 @@ export class CurrentMemberStore {
     this.resource.error() ? null : (this.resource.value() ?? null),
   );
   readonly isLoading = this.resource.isLoading;
+
+  /** 첫 응답 전에는 값이 없다. 아직 모르는 상태와 비로그인을 구분하려면 결론이 날 때까지 기다려야 한다. */
+  private readonly settled$ = toObservable(
+    computed(() => {
+      const status = this.resource.status();
+      return status === "resolved" || status === "error" || status === "local";
+    }),
+  ).pipe(filter(Boolean));
+
+  /**
+   * 회원 조회가 끝난 뒤의 결과를 돌려준다.
+   *
+   * @return 로그인한 회원, 비로그인이면 null
+   */
+  async whenSettled(): Promise<Member | null> {
+    await firstValueFrom(this.settled$);
+    return this.member();
+  }
 
   reload(): void {
     this.resource.reload();

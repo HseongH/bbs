@@ -1,4 +1,4 @@
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, type HttpResponse } from "@angular/common/http";
 import { inject, Injectable } from "@angular/core";
 import type { Observable } from "rxjs";
 import type { components } from "@/core/api/schema";
@@ -11,8 +11,8 @@ export type PostPage = components["schemas"]["PageResponsePostSummaryResponse"];
 export class PostApiService {
   private readonly http = inject(HttpClient);
 
-  create(input: { title: string; content: string }): Observable<void> {
-    return this.http.post<void>("/api/posts", input);
+  create(input: { title: string; content: string }): Observable<HttpResponse<void>> {
+    return this.http.post<void>("/api/posts", input, { observe: "response" });
   }
 
   update(id: number, input: { title: string; content: string }): Observable<void> {
