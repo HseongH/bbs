@@ -9,4 +9,15 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+if git diff --cached --name-only | grep -q '^frontend/'; then
+    (cd frontend && pnpm lint && pnpm typecheck)
+
+    if [ $? -ne 0 ]; then
+        echo ""
+        echo "❌ Frontend check failed."
+        echo "Run 'cd frontend && pnpm lint:fix' to format the code."
+        exit 1
+    fi
+fi
+
 exit 0
