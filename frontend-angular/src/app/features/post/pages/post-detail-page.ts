@@ -3,12 +3,13 @@ import { Router } from "@angular/router";
 import { isProblemCode, toProblem } from "@/core/api/problem";
 import { CurrentMemberStore } from "@/core/auth/current-member.store";
 import { CommentSectionComponent } from "@/features/comment/components/comment-section";
+import { LikeButtonComponent } from "../components/like-button";
 import { PostDetailComponent } from "../components/post-detail";
 import { PostStore } from "../post.store";
 
 @Component({
   selector: "app-post-detail-page",
-  imports: [PostDetailComponent, CommentSectionComponent],
+  imports: [PostDetailComponent, CommentSectionComponent, LikeButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (errorMessage(); as message) {

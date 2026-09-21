@@ -58,4 +58,21 @@ export class PostStore {
     await firstValueFrom(this.api.remove(id));
     this.list.reload();
   }
+
+  /** 실패해도 서버 값으로 맞춰야 하므로 finally에서 다시 불러온다. */
+  async like(id: number): Promise<void> {
+    try {
+      await firstValueFrom(this.api.like(id));
+    } finally {
+      this.detail.reload();
+    }
+  }
+
+  async unlike(id: number): Promise<void> {
+    try {
+      await firstValueFrom(this.api.unlike(id));
+    } finally {
+      this.detail.reload();
+    }
+  }
 }
