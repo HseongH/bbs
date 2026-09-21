@@ -42,4 +42,22 @@ describe("PostStore", () => {
 
     await vi.waitFor(() => expect(받은키워드).toBeNull());
   });
+
+  it("검색 조건이 정해지기 전에는 요청하지 않는다", async () => {
+    let 요청수 = 0;
+    server.use(
+      http.get("/api/posts", () => {
+        요청수 += 1;
+        return HttpResponse.json(게시글페이지([]));
+      }),
+    );
+
+    const store = 스토어를_만든다();
+    // 스토어를 만들기만 하고 조건을 주지 않았다.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(요청수).toBe(0);
+
+    store.setSearch({ page: 0, size: 20 });
+    await vi.waitFor(() => expect(요청수).toBe(1));
+  });
 });

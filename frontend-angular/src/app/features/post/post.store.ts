@@ -14,15 +14,19 @@ export interface PostListSearch {
 export class PostStore {
   private readonly api = inject(PostApiService);
 
-  private readonly search = signal<PostListSearch>({ page: 0, size: 20 });
+  private readonly search = signal<PostListSearch | null>(null);
   private readonly selectedId = signal<number | null>(null);
 
+  /** 검색 조건이 정해지기 전에는 요청하지 않는다. URL을 읽기도 전에 기본 조건으로 한 번 더 부르는 낭비를 막는다. */
   readonly list = httpResource<PostPage>(() => {
-    const { page, size, keyword } = this.search();
-    const 정리된키워드 = keyword?.trim();
+    const search = this.search();
+    if (search === null) {
+      return undefined;
+    }
+    const keyword = search.keyword?.trim();
     return {
       url: "/api/posts",
-      params: { page, size, ...(정리된키워드 ? { keyword: 정리된키워드 } : {}) },
+      params: { page: search.page, size: search.size, ...(keyword ? { keyword } : {}) },
     };
   });
 
