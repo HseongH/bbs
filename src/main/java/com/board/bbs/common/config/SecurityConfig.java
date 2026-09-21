@@ -2,11 +2,8 @@ package com.board.bbs.common.config;
 
 import com.board.bbs.common.error.ErrorCode;
 import com.board.bbs.common.security.BbsOidcUserService;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,9 +13,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.web.filter.OncePerRequestFilter;
 
 /** 인증·인가 규칙. */
 @Configuration
@@ -67,22 +62,6 @@ public class SecurityConfig {
         .build();
   }
 
-  /** 토큰은 실제로 읽힐 때 응답 쿠키로 나간다. 화면이 첫 변경 요청에 쓸 수 있도록 매 요청에서 읽어 둔다. */
-  private static final class CsrfCookieFilter extends OncePerRequestFilter {
-
-    @Override
-    protected void doFilterInternal(
-        HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-        throws ServletException, IOException {
-
-      Object token = request.getAttribute(CsrfToken.class.getName());
-      if (token instanceof CsrfToken csrfToken) {
-        csrfToken.getToken();
-      }
-      chain.doFilter(request, response);
-    }
-  }
-
   /** 브라우저가 읽을 수 있어야 요청 헤더에 실어 보낼 수 있으므로 HttpOnly를 끈다. */
   private static CookieCsrfTokenRepository cookieCsrfTokenRepository() {
     return CookieCsrfTokenRepository.withHttpOnlyFalse();
@@ -91,7 +70,8 @@ public class SecurityConfig {
   /**
    * 토큰을 지연 로딩하지 않고 바로 발급한다.
    *
-   * <p>기본 동작은 토큰이 실제로 조회될 때까지 쿠키를 내려주지 않아, 화면이 첫 변경 요청에 쓸 토큰을 갖지 못한다.
+   * <p>기본 동작은 토큰이 실제로 조회될 때까지 쿠키를 내려주지 않아, 화면이 첫 변경 요청에 쓸 토큰을 갖지 못한다. 요청 속성 이름을 비우면 지연 로딩을 끄게 되어 모든
+   * 응답에 쿠키가 실린다.
    */
   private static CsrfTokenRequestAttributeHandler eagerCsrfTokenHandler() {
     CsrfTokenRequestAttributeHandler handler = new CsrfTokenRequestAttributeHandler();
