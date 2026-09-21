@@ -133,77 +133,77 @@ export interface components {
             body: string;
         };
         PageResponsePostSummaryResponse: {
-            content?: components["schemas"]["PostSummaryResponse"][];
+            content: components["schemas"]["PostSummaryResponse"][];
             /** Format: int32 */
-            page?: number;
+            page: number;
             /** Format: int32 */
-            size?: number;
+            size: number;
             /** Format: int64 */
-            totalElements?: number;
+            totalElements: number;
             /** Format: int32 */
-            totalPages?: number;
-            last?: boolean;
+            totalPages: number;
+            last: boolean;
         };
         PostSummaryResponse: {
             /** Format: int64 */
-            id?: number;
-            title?: string;
+            id: number;
+            title: string;
             /** Format: int64 */
-            authorId?: number;
-            authorNickname?: string;
+            authorId: number;
+            authorNickname: string;
             /** Format: int64 */
-            viewCount?: number;
+            viewCount: number;
             /** Format: int64 */
-            likeCount?: number;
+            likeCount: number;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         CommentResponse: {
             /** Format: int64 */
-            id?: number;
+            id: number;
             /** Format: int64 */
-            postId?: number;
+            postId: number;
             /** Format: int64 */
-            authorId?: number;
-            body?: string;
+            authorId: number;
+            body: string;
             /** Format: int64 */
             parentCommentId?: number;
             /** Format: int32 */
-            depth?: number;
+            depth: number;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         PageResponseCommentResponse: {
-            content?: components["schemas"]["CommentResponse"][];
+            content: components["schemas"]["CommentResponse"][];
             /** Format: int32 */
-            page?: number;
+            page: number;
             /** Format: int32 */
-            size?: number;
+            size: number;
             /** Format: int64 */
-            totalElements?: number;
+            totalElements: number;
             /** Format: int32 */
-            totalPages?: number;
-            last?: boolean;
+            totalPages: number;
+            last: boolean;
         };
         PostResponse: {
             /** Format: int64 */
-            id?: number;
-            title?: string;
-            content?: string;
+            id: number;
+            title: string;
+            content: string;
             /** Format: int64 */
-            authorId?: number;
+            authorId: number;
             /** Format: int64 */
-            viewCount?: number;
+            viewCount: number;
             /** Format: int64 */
-            likeCount?: number;
+            likeCount: number;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         MemberResponse: {
             /** Format: int64 */
-            id?: number;
-            nickname?: string;
-            email?: string;
+            id: number;
+            nickname: string;
+            email: string;
         };
     };
     responses: never;

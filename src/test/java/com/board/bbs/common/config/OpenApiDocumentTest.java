@@ -41,4 +41,35 @@ class OpenApiDocumentTest extends IntegrationTestBase {
     assertThat(names).doesNotContain("pageable");
     assertThat(names).contains("page", "size");
   }
+
+  @Test
+  void 응답_필드는_필수로_표시된다() throws Exception {
+    String body =
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/v3/api-docs"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    List<String> postResponse = JsonPath.read(body, "$.components.schemas.PostResponse.required");
+    assertThat(postResponse)
+        .contains("id", "title", "content", "authorId", "viewCount", "likeCount", "createdAt");
+
+    List<String> page =
+        JsonPath.read(body, "$.components.schemas.PageResponsePostSummaryResponse.required");
+    assertThat(page).contains("content", "page", "size", "totalElements", "totalPages", "last");
+  }
+
+  @Test
+  void null이_될_수_있는_필드는_필수가_아니다() throws Exception {
+    String body =
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/v3/api-docs"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    List<String> comment = JsonPath.read(body, "$.components.schemas.CommentResponse.required");
+    assertThat(comment).doesNotContain("parentCommentId");
+  }
 }
