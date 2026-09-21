@@ -1,5 +1,6 @@
 package com.board.bbs.comment.adapter.in.web;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -76,6 +77,7 @@ class CommentControllerTest extends IntegrationTestBase {
             .perform(
                 post("/api/posts/{postId}/comments", postId)
                     .with(로그인(AUTHOR_SUBJECT))
+                    .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(json))
             .andExpect(status().isCreated())
@@ -119,6 +121,7 @@ class CommentControllerTest extends IntegrationTestBase {
         .perform(
             post("/api/posts/{postId}/comments", postId)
                 .with(로그인(AUTHOR_SUBJECT))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"body\":\"답답글\",\"parentCommentId\":%d}".formatted(replyId)))
         .andExpect(status().isBadRequest())
@@ -131,6 +134,7 @@ class CommentControllerTest extends IntegrationTestBase {
         .perform(
             post("/api/posts/{postId}/comments", 999_999L)
                 .with(로그인(AUTHOR_SUBJECT))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"body\":\"댓글\"}"))
         .andExpect(status().isNotFound())
@@ -143,6 +147,7 @@ class CommentControllerTest extends IntegrationTestBase {
         .perform(
             post("/api/posts/{postId}/comments", postId)
                 .with(로그인(AUTHOR_SUBJECT))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"body\":\"\"}"))
         .andExpect(status().isBadRequest())
@@ -157,6 +162,7 @@ class CommentControllerTest extends IntegrationTestBase {
         .perform(
             patch("/api/comments/{id}", id)
                 .with(로그인(OTHER_SUBJECT))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"body\":\"탈취\"}"))
         .andExpect(status().isForbidden());
@@ -165,12 +171,13 @@ class CommentControllerTest extends IntegrationTestBase {
         .perform(
             patch("/api/comments/{id}", id)
                 .with(로그인(AUTHOR_SUBJECT))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"body\":\"수정됨\"}"))
         .andExpect(status().isNoContent());
 
     mockMvc
-        .perform(delete("/api/comments/{id}", id).with(로그인(AUTHOR_SUBJECT)))
+        .perform(delete("/api/comments/{id}", id).with(로그인(AUTHOR_SUBJECT)).with(csrf()))
         .andExpect(status().isNoContent());
 
     mockMvc

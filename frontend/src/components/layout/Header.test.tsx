@@ -10,7 +10,7 @@ describe("Header", () => {
     renderWithProviders(<Header />);
 
     await waitFor(() => expect(screen.getByText("테스터")).toBeInTheDocument());
-    expect(screen.getByRole("link", { name: "로그아웃" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "로그아웃" })).toBeInTheDocument();
   });
 
   it("비로그인이면 로그인 버튼을 보여준다", async () => {

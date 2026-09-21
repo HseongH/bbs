@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { LOGIN_URL } from "@/api/client";
+import { LOGIN_URL, logout } from "@/api/client";
 import { useCurrentMember } from "@/features/member/queries";
 
 export function Header() {
@@ -15,9 +15,13 @@ export function Header() {
           {isPending ? null : member ? (
             <>
               <span className="text-slate-700">{member.nickname}</span>
-              <a href="/logout" className="text-slate-500 hover:text-slate-900">
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="text-slate-500 hover:text-slate-900"
+              >
                 로그아웃
-              </a>
+              </button>
             </>
           ) : (
             <a href={LOGIN_URL} className="text-slate-500 hover:text-slate-900">

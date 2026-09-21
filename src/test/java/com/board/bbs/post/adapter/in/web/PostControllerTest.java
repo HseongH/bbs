@@ -1,6 +1,7 @@
 package com.board.bbs.post.adapter.in.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -71,6 +72,7 @@ class PostControllerTest extends IntegrationTestBase {
             .perform(
                 post("/api/posts")
                     .with(로그인(AUTHOR_SUBJECT))
+                    .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{\"title\":\"%s\",\"content\":\"본문입니다.\"}".formatted(title)))
             .andExpect(status().isCreated())
@@ -87,6 +89,7 @@ class PostControllerTest extends IntegrationTestBase {
         .perform(
             post("/api/posts")
                 .with(로그인(AUTHOR_SUBJECT))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"제목\",\"content\":\"본문\"}"))
         .andExpect(status().isCreated())
@@ -98,6 +101,7 @@ class PostControllerTest extends IntegrationTestBase {
     mockMvc
         .perform(
             post("/api/posts")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"제목\",\"content\":\"본문\"}"))
         .andExpect(status().isUnauthorized())
@@ -110,6 +114,7 @@ class PostControllerTest extends IntegrationTestBase {
         .perform(
             post("/api/posts")
                 .with(로그인(AUTHOR_SUBJECT))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"\",\"content\":\"본문\"}"))
         .andExpect(status().isBadRequest())
@@ -122,7 +127,7 @@ class PostControllerTest extends IntegrationTestBase {
     Long id = 게시글을_만든다("조회수 확인");
 
     mockMvc
-        .perform(get("/api/posts/{id}", id).with(로그인(OTHER_SUBJECT)))
+        .perform(get("/api/posts/{id}", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("조회수 확인"))
         .andExpect(jsonPath("$.authorId").value(authorId));
@@ -160,6 +165,7 @@ class PostControllerTest extends IntegrationTestBase {
         .perform(
             patch("/api/posts/{id}", id)
                 .with(로그인(AUTHOR_SUBJECT))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"바뀐 제목\",\"content\":\"바뀐 본문\"}"))
         .andExpect(status().isNoContent());
@@ -168,6 +174,7 @@ class PostControllerTest extends IntegrationTestBase {
         .perform(
             patch("/api/posts/{id}", id)
                 .with(로그인(OTHER_SUBJECT))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"탈취\",\"content\":\"탈취\"}"))
         .andExpect(status().isForbidden())
@@ -179,7 +186,7 @@ class PostControllerTest extends IntegrationTestBase {
     Long id = 게시글을_만든다("관리자 삭제 대상");
 
     mockMvc
-        .perform(delete("/api/posts/{id}", id).with(로그인(OTHER_SUBJECT, "ROLE_ADMIN")))
+        .perform(delete("/api/posts/{id}", id).with(로그인(OTHER_SUBJECT, "ROLE_ADMIN")).with(csrf()))
         .andExpect(status().isNoContent());
 
     mockMvc.perform(get("/api/posts/{id}", id)).andExpect(status().isNotFound());
@@ -190,17 +197,17 @@ class PostControllerTest extends IntegrationTestBase {
     Long id = 게시글을_만든다("좋아요 대상");
 
     mockMvc
-        .perform(post("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)))
+        .perform(post("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
         .andExpect(status().isNoContent());
     mockMvc
-        .perform(post("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)))
+        .perform(post("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("ALREADY_LIKED"));
     mockMvc
-        .perform(delete("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)))
+        .perform(delete("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
         .andExpect(status().isNoContent());
     mockMvc
-        .perform(delete("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)))
+        .perform(delete("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("NOT_LIKED"));
   }
