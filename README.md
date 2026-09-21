@@ -1,6 +1,6 @@
 # 게시판 (bbs)
 
-Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 REST 게시판 API와, React 19로 만든 화면.
+Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 REST 게시판 API와, Angular 22로 만든 화면.
 
 기능을 채우는 것보다 **설계 의도가 코드와 빌드로 강제되는지**에 무게를 둔 참고 구현이다.
 
@@ -10,6 +10,7 @@ Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 RE
 - **규칙이 도메인 안에 있다.** 제목 길이, 답글 깊이, 수정·삭제 권한 같은 규칙은 모두 도메인 객체 안에 있다. 서비스는 조율만 하므로 규칙을 우회하는 경로가 없다.
 - **null 계약이 컴파일러에게 검사된다.** 모든 패키지가 JSpecify `@NullMarked`이고 NullAway가 위반 시 컴파일을 실패시킨다.
 - **API 계약이 프론트엔드 컴파일로 강제된다.** OpenAPI 스키마에서 타입을 생성하므로 백엔드가 바뀌면 프론트엔드 타입 검사가 깨진다. 테스트의 API 목도 같은 타입을 쓴다.
+- **앞뒤가 같은 방식으로 읽힌다.** 백엔드는 헥사고날, 프론트엔드는 Angular의 의존성 주입과 서비스 계층으로 같은 종류의 경계를 만든다.
 - **동시성이 데이터베이스 수준에서 처리된다.** 카운터는 원자적 `UPDATE`, 중복 좋아요는 유니크 제약과 `ON CONFLICT`, 조회수 중복은 Redis `SETNX`로 판정한다. 가상 스레드로 동시 요청을 보내 검증한다.
 
 ## 요구 환경
@@ -60,7 +61,7 @@ export BBS_HOST=<서버 주소>
 
 docker compose up -d
 ./gradlew bootRun
-cd frontend && pnpm dev --host
+cd frontend && pnpm dev
 ```
 
 `BBS_HOST`는 Keycloak의 공개 주소와 허용 리다이렉트 URI, 그리고 백엔드가 참조하는 issuer를 한꺼번에 결정한다. 지정하지 않으면 `localhost`로 동작한다.
@@ -90,7 +91,7 @@ docker compose rm -sf keycloak && docker compose up -d keycloak
 
 통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다.
 
-프론트엔드는 `cd frontend && pnpm verify`가 Biome, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다.
+프론트엔드는 `cd frontend && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다.
 
 `installGitHooks` 태스크가 `build` 시 자동으로 실행되어, 커밋 전에 포맷과 정적 분석을 검사하는 훅을 설치한다. `frontend/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
 
@@ -133,12 +134,16 @@ post/
 프론트엔드는 `frontend/`에 있으며 백엔드와 같은 기능별 분리를 따른다.
 
 ```
-frontend/src/
-├── api/          생성된 타입, 클라이언트, ProblemDetail 파싱
-├── features/     post, comment, member — 각각 queries·mutations·components
-├── routes/       파일 기반 라우트
-└── components/   레이아웃과 공용 UI
+frontend/src/app/
+├── core/
+│   ├── api/      생성된 타입과 ProblemDetail 파싱
+│   └── auth/     인증 인터셉터, 라우트 가드, 현재 회원 스토어
+├── features/     post, comment — 각각 api.service·store·components
+├── shared/ui/    공용 UI
+└── app.routes.ts
 ```
+
+기능마다 HTTP 호출만 담당하는 `*-api.service.ts`와, 자원과 무효화를 소유하는 `*.store.ts`로 나뉜다. 컴포넌트는 스토어만 주입받는다.
 
 ## API
 
@@ -206,4 +211,5 @@ frontend/src/
 
 - [백엔드 설계 문서](docs/superpowers/specs/2026-09-18-bbs-design.md) · [구현 계획](docs/superpowers/plans/2026-09-18-bbs.md)
 - [프론트엔드 설계 문서](docs/superpowers/specs/2026-09-21-bbs-frontend-design.md) · [구현 계획](docs/superpowers/plans/2026-09-21-bbs-frontend.md)
+- [Angular 전환 설계 문서](docs/superpowers/specs/2026-09-21-angular-migration-design.md) · [구현 계획](docs/superpowers/plans/2026-09-21-angular-migration.md)
 - [프론트엔드 안내](frontend/README.md)

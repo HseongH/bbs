@@ -10,6 +10,25 @@
 
 설계 문서: `docs/superpowers/specs/2026-09-21-angular-migration-design.md`
 
+## 실행 결과 (2026-09-21)
+
+Task 1~11 모두 완료. 최종 상태에서 `./gradlew build`, `cd frontend && pnpm verify`, `pnpm e2e`가 모두 통과한다. E2E 4건은 React 버전의 시나리오 파일을 한 줄도 고치지 않고 그대로 통과한다.
+
+### 계획과 달라진 결정
+
+**Signal Forms 대신 Reactive Forms를 썼다 (Task 6).** Signal Forms는 Angular 22에서 아직 실험 기능이고, 검증 오류 표시와 제출 비활성화처럼 이 화면이 실제로 필요로 하는 부분의 API가 정착하지 않았다. 폼이 두 개(작성·수정)뿐이고 둘 다 필드가 세 개 이하라 실험 기능을 쓸 이유가 없다. `FormBuilder.nonNullable.group`으로 충분했고, 나중에 옮기더라도 `post-form.ts` 한 파일만 고치면 된다.
+
+**회원은 `features/member`가 아니라 `core/auth`에 뒀다.** 현재 회원 조회는 인증 인터셉터·라우트 가드와 같은 상태를 공유한다. 기능 디렉터리로 떼어 놓으면 `core`가 `features`를 참조하게 되어 의존 방향이 뒤집힌다.
+
+**단위 테스트를 `isolate: true`로 돌린다 (Task 1).** Angular CLI `unit-test` 빌더의 기본값은 `false`인데, 그 상태에서는 테스트 파일 사이로 `TestBed` 상태가 새어 실패가 원인과 다른 파일에서 나타났다.
+
+### 전환 중 발견해 고친 것
+
+- **`authGuard`가 회원 조회를 기다리지 않았다.** 주소로 직접 들어오면 첫 판정이 항상 비로그인이라 로그인 상태에서도 Keycloak으로 튕겼다. 목록에서 링크를 눌러 들어갈 때는 이미 조회가 끝나 있어 드러나지 않았고, E2E 시나리오 2번에서만 재현됐다. 가드가 자원이 결론 날 때까지 기다리도록 고쳤다.
+- **게시글 생성 후 상세로 가지 못했다.** 응답 본문이 비어 있고 식별자는 `Location` 헤더에만 있다. 스토어가 헤더에서 식별자를 뽑아 돌려주도록 했다.
+- **CSRF 쿠키 테스트가 전체 실행에서만 깨졌다.** `SecurityMockMvcRequestPostProcessors.csrf()`는 공유 컨텍스트의 필터 체인에 든 CSRF 저장소를 세션 기반 저장소로 바꿔치고 되돌리지 않는다. 먼저 도는 컨트롤러 테스트가 그것을 호출하면 이후 어떤 테스트도 토큰 쿠키를 볼 수 없다. 쿠키 발급 검증만 오염되지 않은 컨텍스트에서 돌도록 분리했다. 이 과정에서 `CsrfCookieFilter`가 만들어졌을 뿐 체인에 등록된 적이 없는 죽은 코드임이 드러나 지웠다. 쿠키는 `setCsrfRequestAttributeName(null)`이 지연 로딩을 끄는 것만으로 나간다.
+- **템플릿이 한글 식별자를 읽지 못한다.** Angular 템플릿 파서가 `Unexpected character`로 실패하므로, 템플릿에서 참조하는 멤버 이름만 ASCII로 뒀다. 그 밖의 TypeScript 코드와 테스트 이름은 한국어 그대로다.
+
 ## Global Constraints
 
 - 전환 기간에는 `frontend-angular/`에서 개발하고, 마지막 태스크에서 `frontend/`를 지운 뒤 그 자리로 옮긴다
