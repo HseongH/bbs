@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PostDetail } from "@/features/post/components/PostDetail";
 
 export const Route = createFileRoute("/posts/$postId")({
-  component: () => <p>상세 준비 중</p>,
+  component: PostDetailPage,
 });
+
+function PostDetailPage() {
+  const { postId } = Route.useParams();
+  return <PostDetail postId={Number(postId)} />;
+}
