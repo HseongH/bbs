@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  viewChild,
+} from "@angular/core";
 import { CurrentMemberStore } from "@/core/auth/current-member.store";
 import { CommentStore } from "../comment.store";
 import { CommentFormComponent } from "./comment-form";
@@ -44,7 +51,10 @@ export class CommentSectionComponent {
     });
   }
 
-  protected write(body: string): void {
-    void this.store.write({ body });
+  private readonly form = viewChild(CommentFormComponent);
+
+  protected async write(body: string): Promise<void> {
+    await this.store.write({ body });
+    this.form()?.reset();
   }
 }

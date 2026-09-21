@@ -69,6 +69,21 @@ describe("CommentSectionComponent", () => {
     await vi.waitFor(() => expect(받은본문).toEqual({ body: "새 댓글" }));
   });
 
+  it("댓글을 등록하면 입력란을 비운다", async () => {
+    server.use(
+      http.get("/api/posts/:postId/comments", () => HttpResponse.json(댓글페이지([]))),
+      http.post("/api/posts/:postId/comments", () => new HttpResponse(null, { status: 201 })),
+    );
+
+    await 화면을_그린다();
+
+    const 입력란 = await screen.findByLabelText("댓글");
+    await userEvent.type(입력란, "새 댓글");
+    await userEvent.click(screen.getByRole("button", { name: "등록" }));
+
+    await vi.waitFor(() => expect(입력란).toHaveValue(""));
+  });
+
   it("대댓글에는 답글 버튼을 보여주지 않는다", async () => {
     server.use(
       http.get("/api/posts/:postId/comments", () =>

@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, output } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  input,
+  output,
+  viewChild,
+} from "@angular/core";
 import { ButtonComponent } from "@/shared/ui/button";
 
 @Component({
@@ -6,7 +13,7 @@ import { ButtonComponent } from "@/shared/ui/button";
   imports: [ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <form class="space-y-1" (submit)="submit($event)">
+    <form #element class="space-y-1" (submit)="submit($event)">
       <textarea
         name="body"
         rows="3"
@@ -28,6 +35,13 @@ export class CommentFormComponent {
   readonly error = input<string | null>(null);
   readonly submitting = input(false);
   readonly saved = output<string>();
+
+  private readonly element = viewChild.required<ElementRef<HTMLFormElement>>("element");
+
+  /** 등록에 성공했을 때 부모가 호출한다. 실패하면 사용자가 쓴 내용을 잃지 않도록 그대로 둔다. */
+  reset(): void {
+    this.element().nativeElement.reset();
+  }
 
   protected submit(event: Event): void {
     event.preventDefault();
