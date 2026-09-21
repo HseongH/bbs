@@ -1,13 +1,19 @@
 package com.board.bbs.common.config;
 
+import com.board.bbs.common.security.CurrentMember;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /** API 문서 메타 정보. */
 @Configuration
 public class OpenApiConfig {
+
+  static {
+    SpringDocUtils.getConfig().addAnnotationsToIgnore(CurrentMember.class);
+  }
 
   /**
    * OpenAPI 문서 정보를 구성한다.

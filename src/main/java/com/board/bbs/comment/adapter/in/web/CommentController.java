@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -77,7 +78,7 @@ public class CommentController {
   @Operation(summary = "댓글 목록 조회")
   @GetMapping("/posts/{postId}/comments")
   public PageResponse<CommentResponse> list(
-      @PathVariable Long postId, @PageableDefault(size = 20) Pageable pageable) {
+      @PathVariable Long postId, @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 
     return PageResponse.from(
         listCommentsUseCase.list(new PostId(postId), pageable).map(CommentResponse::from));

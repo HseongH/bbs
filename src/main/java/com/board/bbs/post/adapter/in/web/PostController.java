@@ -22,6 +22,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -140,7 +141,7 @@ public class PostController {
   public PageResponse<PostSummaryResponse> search(
       @RequestParam(required = false) @Nullable String keyword,
       @RequestParam(required = false) @Nullable Long authorId,
-      @PageableDefault(size = 20) Pageable pageable) {
+      @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 
     return PageResponse.from(
         searchPostsUseCase
