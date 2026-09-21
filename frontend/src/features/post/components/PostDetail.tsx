@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useCurrentMember } from "@/features/member/queries";
 import { useDeletePost } from "../mutations";
 import { usePostDetail } from "../queries";
+import { LikeButton } from "./LikeButton";
 
 export function PostDetail({ postId }: { postId: number }) {
   const { data: post, isPending, error } = usePostDetail(postId);
@@ -29,7 +30,11 @@ export function PostDetail({ postId }: { postId: number }) {
         <h1 className="text-2xl font-semibold">{post.title}</h1>
         <div className="flex items-center gap-3 text-sm text-slate-500">
           <span>조회 {post.viewCount}</span>
-          <span>좋아요 {post.likeCount}</span>
+          {member ? (
+            <LikeButton postId={post.id} likeCount={post.likeCount} />
+          ) : (
+            <span>좋아요 {post.likeCount}</span>
+          )}
         </div>
       </header>
 

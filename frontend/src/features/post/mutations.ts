@@ -54,3 +54,40 @@ export function useDeletePost() {
     },
   });
 }
+
+/** 실패했을 때도 서버의 실제 값으로 되돌려야 하므로 onSuccess가 아니라 onSettled에서 무효화한다. */
+export function useLikePost(postId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<void> => {
+      const { error } = await client.POST("/api/posts/{id}/likes", {
+        params: { path: { id: postId } },
+      });
+      if (error) {
+        throw error;
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: postKeys.detail(postId) });
+    },
+  });
+}
+
+export function useUnlikePost(postId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<void> => {
+      const { error } = await client.DELETE("/api/posts/{id}/likes", {
+        params: { path: { id: postId } },
+      });
+      if (error) {
+        throw error;
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: postKeys.detail(postId) });
+    },
+  });
+}
