@@ -1,6 +1,6 @@
 # 게시판 (bbs)
 
-Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 REST 게시판 API.
+Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 REST 게시판 API와, React 19로 만든 화면.
 
 기능을 채우는 것보다 **설계 의도가 코드와 빌드로 강제되는지**에 무게를 둔 참고 구현이다.
 
@@ -9,11 +9,13 @@ Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 RE
 - **구조가 테스트로 강제된다.** 의존 방향, 트랜잭션 경계, 엔티티와 컨트롤러의 위치를 ArchUnit이 검증한다. 문서는 낡지만 테스트는 낡지 않는다.
 - **규칙이 도메인 안에 있다.** 제목 길이, 답글 깊이, 수정·삭제 권한 같은 규칙은 모두 도메인 객체 안에 있다. 서비스는 조율만 하므로 규칙을 우회하는 경로가 없다.
 - **null 계약이 컴파일러에게 검사된다.** 모든 패키지가 JSpecify `@NullMarked`이고 NullAway가 위반 시 컴파일을 실패시킨다.
+- **API 계약이 프론트엔드 컴파일로 강제된다.** OpenAPI 스키마에서 타입을 생성하므로 백엔드가 바뀌면 프론트엔드 타입 검사가 깨진다. 테스트의 API 목도 같은 타입을 쓴다.
 - **동시성이 데이터베이스 수준에서 처리된다.** 카운터는 원자적 `UPDATE`, 중복 좋아요는 유니크 제약과 `ON CONFLICT`, 조회수 중복은 Redis `SETNX`로 판정한다. 가상 스레드로 동시 요청을 보내 검증한다.
 
 ## 요구 환경
 
 - JDK 25 (Temurin 25.0.4 LTS 기준, `.sdkmanrc` 참고)
+- Node.js 24 이상, pnpm 11 (화면을 함께 띄울 때)
 - Docker
 
 ## 실행
@@ -32,6 +34,22 @@ docker compose up -d
 | http://localhost:8081 | Keycloak 관리 콘솔 (`admin` / `admin`) |
 
 테스트 계정은 `tester` / `tester` (일반), `admin-user` / `admin` (관리자)이다.
+
+### 프론트엔드
+
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+`http://localhost:5173`에서 화면을 연다. 개발 서버가 `/api`, `/oauth2`, `/login`, `/logout`을 백엔드로 프록시하므로 브라우저 입장에서는 동일 오리진이며 세션 쿠키가 그대로 동작한다.
+
+백엔드 API가 바뀌면 타입을 다시 생성한다.
+
+```bash
+cd frontend && pnpm gen:api
+```
 
 ## 빌드와 검증
 
@@ -52,7 +70,9 @@ docker compose up -d
 
 통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다.
 
-`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, 커밋 전에 포맷과 정적 분석을 검사하는 훅을 설치한다.
+프론트엔드는 `cd frontend && pnpm verify`가 Biome, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다.
+
+`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, 커밋 전에 포맷과 정적 분석을 검사하는 훅을 설치한다. `frontend/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
 
 ## 구조
 
@@ -89,6 +109,16 @@ post/
 - `@Transactional`은 `application.service`에만 존재한다
 - JPA 엔티티는 `adapter.out.persistence`에만, 컨트롤러는 `adapter.in.web`에만 존재한다
 - 모든 패키지에 `@NullMarked` 선언이 있어야 한다
+
+프론트엔드는 `frontend/`에 있으며 백엔드와 같은 기능별 분리를 따른다.
+
+```
+frontend/src/
+├── api/          생성된 타입, 클라이언트, ProblemDetail 파싱
+├── features/     post, comment, member — 각각 queries·mutations·components
+├── routes/       파일 기반 라우트
+└── components/   레이아웃과 공용 UI
+```
 
 ## API
 
@@ -154,5 +184,6 @@ post/
 
 ## 문서
 
-- [설계 문서](docs/superpowers/specs/2026-09-18-bbs-design.md)
-- [구현 계획](docs/superpowers/plans/2026-09-18-bbs.md)
+- [백엔드 설계 문서](docs/superpowers/specs/2026-09-18-bbs-design.md) · [구현 계획](docs/superpowers/plans/2026-09-18-bbs.md)
+- [프론트엔드 설계 문서](docs/superpowers/specs/2026-09-21-bbs-frontend-design.md) · [구현 계획](docs/superpowers/plans/2026-09-21-bbs-frontend.md)
+- [프론트엔드 안내](frontend/README.md)
