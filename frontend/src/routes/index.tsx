@@ -1,4 +1,4 @@
-import { createFileRoute, type SearchSchemaInput, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, type SearchSchemaInput, useNavigate } from "@tanstack/react-router";
 import { Pagination } from "@/features/post/components/Pagination";
 import { PostList } from "@/features/post/components/PostList";
 import { SearchForm } from "@/features/post/components/SearchForm";
@@ -32,6 +32,11 @@ function PostListPage() {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Link to="/posts/new" className="rounded bg-slate-900 px-4 py-2 text-sm text-white">
+          글쓰기
+        </Link>
+      </div>
       <SearchForm
         defaultKeyword={search.keyword ?? ""}
         onSearch={(keyword) =>
