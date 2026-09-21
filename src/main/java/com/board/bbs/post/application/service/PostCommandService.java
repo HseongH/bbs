@@ -1,5 +1,6 @@
 package com.board.bbs.post.application.service;
 
+import com.board.bbs.comment.application.port.out.DeleteCommentsByPostPort;
 import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.post.application.port.in.CreatePostUseCase;
 import com.board.bbs.post.application.port.in.DeletePostUseCase;
@@ -23,6 +24,7 @@ public class PostCommandService implements CreatePostUseCase, UpdatePostUseCase,
 
   private final SavePostPort savePostPort;
   private final LoadPostPort loadPostPort;
+  private final DeleteCommentsByPostPort deleteCommentsByPostPort;
 
   @Override
   @Transactional
@@ -43,7 +45,9 @@ public class PostCommandService implements CreatePostUseCase, UpdatePostUseCase,
   @Transactional
   public void delete(PostId id, MemberId requester, boolean admin) {
     Post post = loadPostPort.load(id);
-    post.deleteBy(requester, admin, Instant.now());
+    Instant now = Instant.now();
+    post.deleteBy(requester, admin, now);
     savePostPort.save(post);
+    deleteCommentsByPostPort.softDeleteAllByPost(id, now);
   }
 }
