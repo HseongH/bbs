@@ -51,6 +51,26 @@ pnpm dev
 cd frontend && pnpm gen:api
 ```
 
+### 다른 기기에서 접속할 때
+
+인증은 브라우저가 실제로 닿을 수 있는 주소로만 동작한다. `localhost`가 아닌 주소로 접속한다면 서버와 Keycloak에 같은 주소를 알려 줘야 한다.
+
+```bash
+export BBS_HOST=<서버 주소>
+
+docker compose up -d
+./gradlew bootRun
+cd frontend && pnpm dev --host
+```
+
+`BBS_HOST`는 Keycloak의 공개 주소와 허용 리다이렉트 URI, 그리고 백엔드가 참조하는 issuer를 한꺼번에 결정한다. 지정하지 않으면 `localhost`로 동작한다.
+
+한 번에 하나의 주소만 쓸 수 있다. `BBS_HOST`를 바꾸면 Keycloak을 다시 만들어야 realm의 리다이렉트 URI가 갱신된다.
+
+```bash
+docker compose rm -sf keycloak && docker compose up -d keycloak
+```
+
 ## 빌드와 검증
 
 ```bash

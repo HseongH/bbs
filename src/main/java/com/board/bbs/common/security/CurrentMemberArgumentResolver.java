@@ -32,7 +32,8 @@ public class CurrentMemberArgumentResolver implements HandlerMethodArgumentResol
   }
 
   @Override
-  @Nullable public Object resolveArgument(
+  @Nullable
+  public Object resolveArgument(
       MethodParameter parameter,
       @Nullable ModelAndViewContainer mavContainer,
       NativeWebRequest webRequest,

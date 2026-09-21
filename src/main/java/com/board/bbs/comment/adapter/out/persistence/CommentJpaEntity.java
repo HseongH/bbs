@@ -26,7 +26,8 @@ public class CommentJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Nullable private Long id;
+  @Nullable
+  private Long id;
 
   @Column(name = "post_id", nullable = false, updatable = false)
   private Long postId;
@@ -38,18 +39,21 @@ public class CommentJpaEntity {
   private String body;
 
   @Column(name = "parent_comment_id", updatable = false)
-  @Nullable private Long parentCommentId;
+  @Nullable
+  private Long parentCommentId;
 
   @Column(nullable = false, updatable = false)
   private short depth;
 
   @CreatedDate
   @Column(nullable = false, updatable = false)
-  @Nullable private Instant createdAt;
+  @Nullable
+  private Instant createdAt;
 
   @LastModifiedDate
   @Column(nullable = false)
-  @Nullable private Instant updatedAt;
+  @Nullable
+  private Instant updatedAt;
 
   @Nullable private Instant deletedAt;
 

@@ -10,5 +10,7 @@ import jakarta.validation.constraints.Size;
  * @param content 본문
  */
 public record UpdatePostRequest(
-    @NotBlank(message = "제목은 필수입니다.") @Size(max = 100, message = "제목은 100자를 넘을 수 없습니다.") String title,
-    @NotBlank(message = "본문은 필수입니다.") @Size(max = 10000, message = "본문은 10000자를 넘을 수 없습니다.") String content) {}
+    @NotBlank(message = "제목은 필수입니다.") @Size(max = 100, message = "제목은 100자를 넘을 수 없습니다.")
+        String title,
+    @NotBlank(message = "본문은 필수입니다.") @Size(max = 10000, message = "본문은 10000자를 넘을 수 없습니다.")
+        String content) {}

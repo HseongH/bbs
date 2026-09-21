@@ -137,7 +137,8 @@ public class Post {
     return deletedAt != null;
   }
 
-  @Nullable public PostId getId() {
+  @Nullable
+  public PostId getId() {
     return id;
   }
 
@@ -153,11 +154,13 @@ public class Post {
     return authorId;
   }
 
-  @Nullable public Instant getCreatedAt() {
+  @Nullable
+  public Instant getCreatedAt() {
     return createdAt;
   }
 
-  @Nullable public Instant getDeletedAt() {
+  @Nullable
+  public Instant getDeletedAt() {
     return deletedAt;
   }
 

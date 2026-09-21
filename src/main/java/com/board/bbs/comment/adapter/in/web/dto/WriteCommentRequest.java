@@ -11,5 +11,6 @@ import org.jspecify.annotations.Nullable;
  * @param parentCommentId 부모 댓글 식별자. 원댓글이면 생략한다
  */
 public record WriteCommentRequest(
-    @NotBlank(message = "댓글 본문은 필수입니다.") @Size(max = 1000, message = "댓글 본문은 1000자를 넘을 수 없습니다.") String body,
+    @NotBlank(message = "댓글 본문은 필수입니다.") @Size(max = 1000, message = "댓글 본문은 1000자를 넘을 수 없습니다.")
+        String body,
     @Nullable Long parentCommentId) {}

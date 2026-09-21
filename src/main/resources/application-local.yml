@@ -10,5 +10,5 @@ spring:
             scope: openid,profile,email
         provider:
           keycloak:
-            issuer-uri: http://localhost:8081/realms/bbs
+            issuer-uri: http://${BBS_HOST:localhost}:8081/realms/bbs
             user-name-attribute: preferred_username

@@ -26,7 +26,8 @@ public class MemberJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Nullable private Long id;
+  @Nullable
+  private Long id;
 
   @Column(nullable = false, unique = true)
   private String subject;
@@ -39,11 +40,13 @@ public class MemberJpaEntity {
 
   @CreatedDate
   @Column(nullable = false, updatable = false)
-  @Nullable private Instant createdAt;
+  @Nullable
+  private Instant createdAt;
 
   @LastModifiedDate
   @Column(nullable = false)
-  @Nullable private Instant updatedAt;
+  @Nullable
+  private Instant updatedAt;
 
   MemberJpaEntity(@Nullable Long id, String subject, String nickname, String email) {
     this.id = id;

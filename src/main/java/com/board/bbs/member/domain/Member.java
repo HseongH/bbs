@@ -52,7 +52,8 @@ public class Member {
     this.nickname = Objects.requireNonNull(newNickname);
   }
 
-  @Nullable public MemberId getId() {
+  @Nullable
+  public MemberId getId() {
     return id;
   }
 

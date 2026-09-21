@@ -6,10 +6,10 @@ Vite + React 19 기반 SPA. 백엔드 API는 저장소 루트의 Spring 애플�
 
 | 명령 | 용도 |
 |---|---|
-| `pnpm dev` | 개발 서버 (5173). 백엔드로 프록시한다 |
+| `pnpm dev` | 개발 서버 (5173). 백엔드로 프록시한다. 외부 접속은 `pnpm dev --host` |
 | `pnpm verify` | 린트 → 타입 검사 → 테스트 |
 | `pnpm gen:api` | 실행 중인 백엔드에서 API 타입 재생성 |
-| `pnpm e2e` | Playwright E2E (백엔드와 컨테이너 필요) |
+| `pnpm e2e` | Playwright E2E (백엔드와 컨테이너 필요). `BBS_HOST`를 따른다 |
 | `pnpm build` | 타입 검사 후 프로덕션 빌드 |
 
 ## 원칙

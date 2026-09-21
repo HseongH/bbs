@@ -59,7 +59,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
   @Override
-  @Nullable protected ResponseEntity<Object> handleMethodArgumentNotValid(
+  @Nullable
+  protected ResponseEntity<Object> handleMethodArgumentNotValid(
       MethodArgumentNotValidException ex,
       HttpHeaders headers,
       HttpStatusCode status,
@@ -86,7 +87,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   /** 프레임워크가 만든 응답 본문에도 동일한 확장 필드를 채워 응답 형태를 일관되게 유지한다. */
   @Override
-  @Nullable protected ResponseEntity<Object> handleExceptionInternal(
+  @Nullable
+  protected ResponseEntity<Object> handleExceptionInternal(
       Exception ex,
       @Nullable Object body,
       HttpHeaders headers,

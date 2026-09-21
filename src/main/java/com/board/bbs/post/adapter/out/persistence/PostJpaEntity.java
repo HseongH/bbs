@@ -26,7 +26,8 @@ public class PostJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Nullable private Long id;
+  @Nullable
+  private Long id;
 
   @Column(nullable = false, length = 100)
   private String title;
@@ -45,11 +46,13 @@ public class PostJpaEntity {
 
   @CreatedDate
   @Column(nullable = false, updatable = false)
-  @Nullable private Instant createdAt;
+  @Nullable
+  private Instant createdAt;
 
   @LastModifiedDate
   @Column(nullable = false)
-  @Nullable private Instant updatedAt;
+  @Nullable
+  private Instant updatedAt;
 
   @Nullable private Instant deletedAt;
 

@@ -25,7 +25,8 @@ public class PostLikeJpaEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Nullable private Long id;
+  @Nullable
+  private Long id;
 
   @Column(name = "post_id", nullable = false, updatable = false)
   private Long postId;
@@ -35,7 +36,8 @@ public class PostLikeJpaEntity {
 
   @CreatedDate
   @Column(nullable = false, updatable = false)
-  @Nullable private Instant createdAt;
+  @Nullable
+  private Instant createdAt;
 
   PostLikeJpaEntity(Long postId, Long memberId) {
     this.postId = postId;

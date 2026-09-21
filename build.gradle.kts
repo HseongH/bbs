@@ -84,8 +84,6 @@ spotless {
         targetExclude("**/generated/**")
 
         googleJavaFormat("1.30.0")
-
-        formatAnnotations()
     }
     kotlinGradle {
         target("**/*.gradle.kts")

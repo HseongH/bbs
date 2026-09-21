@@ -144,7 +144,8 @@ public class Comment {
     return deletedAt != null;
   }
 
-  @Nullable public CommentId getId() {
+  @Nullable
+  public CommentId getId() {
     return id;
   }
 
@@ -160,7 +161,8 @@ public class Comment {
     return body;
   }
 
-  @Nullable public CommentId getParentId() {
+  @Nullable
+  public CommentId getParentId() {
     return parentId;
   }
 
@@ -168,11 +170,13 @@ public class Comment {
     return depth;
   }
 
-  @Nullable public Instant getCreatedAt() {
+  @Nullable
+  public Instant getCreatedAt() {
     return createdAt;
   }
 
-  @Nullable public Instant getDeletedAt() {
+  @Nullable
+  public Instant getDeletedAt() {
     return deletedAt;
   }
 }
