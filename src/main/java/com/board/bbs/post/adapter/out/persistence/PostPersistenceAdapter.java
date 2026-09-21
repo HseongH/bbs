@@ -2,19 +2,25 @@ package com.board.bbs.post.adapter.out.persistence;
 
 import com.board.bbs.common.error.BusinessException;
 import com.board.bbs.common.error.ErrorCode;
+import com.board.bbs.post.application.PostSearchCondition;
+import com.board.bbs.post.application.PostSummary;
 import com.board.bbs.post.application.port.out.LoadPostPort;
 import com.board.bbs.post.application.port.out.SavePostPort;
+import com.board.bbs.post.application.port.out.SearchPostPort;
 import com.board.bbs.post.domain.Post;
 import com.board.bbs.post.domain.PostId;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 /** 게시글 영속성 어댑터. */
 @Component
 @RequiredArgsConstructor
-public class PostPersistenceAdapter implements SavePostPort, LoadPostPort {
+public class PostPersistenceAdapter implements SavePostPort, LoadPostPort, SearchPostPort {
 
   private final PostJpaRepository repository;
+  private final PostQueryRepository queryRepository;
 
   @Override
   public Post save(Post post) {
@@ -27,5 +33,10 @@ public class PostPersistenceAdapter implements SavePostPort, LoadPostPort {
         .findByIdAndDeletedAtIsNull(id.value())
         .map(PostMapper::toDomain)
         .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
+  }
+
+  @Override
+  public Page<PostSummary> search(PostSearchCondition condition, Pageable pageable) {
+    return queryRepository.search(condition, pageable);
   }
 }
