@@ -40,6 +40,9 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/actuator/health", "/actuator/info")
                     .permitAll()
+                    // 나머지 액추에이터는 내부 운영 정보다. 아래의 화면용 GET 허용 규칙보다 먼저 막는다.
+                    .requestMatchers("/actuator/**")
+                    .hasRole("ADMIN")
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/comments/**")

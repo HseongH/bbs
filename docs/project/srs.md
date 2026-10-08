@@ -1,7 +1,7 @@
 ---
 doc_id: PRJ-SRS
 title: 게시판(bbs) 프로젝트 요구사항 명세서
-version: 1.0.0
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
@@ -125,7 +125,7 @@ PostgreSQL            Redis (세션, 조회수 중복 판정)
 | ID | 요구사항 | 검증 |
 |---|---|---|
 | COM-NFR-020 | 애플리케이션 인스턴스는 상태를 갖지 않는다. 세션은 Redis에 저장하며 30분 동안 요청이 없으면 만료된다. | 설정 검토 (`application.yml`의 `spring.session`) |
-| COM-NFR-021 | 상태 확인(`/actuator/health`), 정보(`/actuator/info`), 지표(`/actuator/metrics`)를 노출한다. health와 info는 인증 없이 접근할 수 있다. 지표의 접근 제한은 OPEN-04를 참고한다. | `SpaForwardingTest#액추에이터_경로는_포워딩되지_않는다`, 설정 검토 |
+| COM-NFR-021 | 상태 확인(`/actuator/health`), 정보(`/actuator/info`), 지표(`/actuator/metrics`)를 노출한다. health와 info는 인증 없이 접근할 수 있고, 지표를 비롯한 나머지 액추에이터 경로는 관리자만 접근할 수 있다. | `ActuatorAccessTest`, `SpaForwardingTest#액추에이터_경로는_포워딩되지_않는다` |
 | COM-NFR-022 | 종료 신호를 받으면 처리 중인 요청을 끝낸 뒤 종료한다 (graceful shutdown). | 설정 검토 |
 | COM-NFR-023 | 로그에 trace ID와 span ID를 포함해서 요청 단위로 추적할 수 있어야 한다. | 설정 검토 (`logging.pattern.correlation`) |
 
@@ -191,10 +191,11 @@ PostgreSQL            Redis (세션, 조회수 중복 판정)
 | OPEN-01 | 응답 시간, 동시 사용자 수 같은 성능 목표가 없다. | 성능 회귀를 판단할 기준이 없다. | 부하 테스트를 도입할 때 |
 | OPEN-02 | 지원 브라우저 범위가 정의되지 않았다. | 화면 QA의 대상 환경이 모호하다. | 화면 QA 체계를 만들 때 |
 | OPEN-03 | 역할 수준 인가를 하지 않는다. Keycloak에 로그인한 사용자는 `USER` 역할이 없어도 회원 기능을 사용할 수 있다. | 역할 없는 계정이 생기면 의도하지 않은 접근이 가능하다. | 계정 종류가 늘어날 때 |
-| OPEN-04 | `/actuator/metrics`가 인증 없이 열려 있다. 보안 설정의 `GET /**` 허용 규칙(SPA 화면 경로용)이 액추에이터 경로에도 적용되기 때문이다. | 운영 환경이라면 내부 지표가 외부에 노출된다. | 운영 배포를 범위에 넣을 때 |
+| OPEN-04 | **해결됨 (1.1.0).** `/actuator/metrics`가 인증 없이 열려 있었다. 보안 설정의 `GET /**` 허용 규칙(SPA 화면 경로용)이 액추에이터 경로에도 적용되었기 때문이다. 나머지 액추에이터 경로를 관리자 전용으로 막고 COM-NFR-021에 반영했다. | - | - |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (구현 완료 시점 기준으로 역작성) | HseongH |
+| 1.1.0 | 2026-10-09 | OPEN-04 해결: 지표를 비롯한 나머지 액추에이터 경로를 관리자 전용으로 제한하고 COM-NFR-021 갱신 | HseongH |
