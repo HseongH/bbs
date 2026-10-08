@@ -83,17 +83,23 @@ docker compose rm -sf keycloak && docker compose up -d keycloak
 | 검사 | 도구 |
 |---|---|
 | 포맷 | Spotless (google-java-format) |
-| 정적 분석 | Checkstyle (Google Style) |
+| 정적 분석 | Checkstyle (서식을 뺀 이름·구조 규칙), Error Prone (경고도 실패로 처리) |
 | null 안정성 | NullAway (JSpecify 모드) |
 | 테스트 | JUnit 5 · Testcontainers |
 | 아키텍처 규칙 | ArchUnit |
 | 커버리지 | JaCoCo (전체 80%, 도메인·애플리케이션 90%) |
 
-통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다.
+통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다. 이미지는 `compose.yaml`에서 읽으므로 개발 환경과 테스트가 같은 버전을 쓴다.
+
+GitHub Actions(`.github/workflows/backend.yml`)가 push와 PR마다 같은 `./gradlew check`를 실행한다.
 
 프론트엔드는 `cd frontend && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다.
 
-`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, 커밋 전에 포맷과 정적 분석을 검사하는 훅과, 커밋 메시지가 Angular 형식(`type(scope): subject`)을 따르는지 검사하는 훅을 설치한다. `frontend/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
+`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, Git이 저장소의 `hooks/`를 훅 경로(`core.hooksPath`)로 쓰게 한다. 커밋 전에는 포맷과 정적 분석을 검사하고, 커밋 메시지가 Angular 형식(`type(scope): subject`)을 따르는지 검사한다. 훅을 복사하지 않으므로 고친 내용이 바로 반영되고 워크트리에서도 동작한다. `frontend/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
+
+### 의존성 버전
+
+버전은 `gradle/libs.versions.toml` 한 곳에서 관리한다. 스프링 부트 BOM이 관리하는 의존성은 버전 없이 등록하고, 직접 정하는 버전과 도구(Checkstyle, google-java-format) 버전만 적는다. Dependabot(`.github/dependabot.yml`)이 매주 Gradle 의존성, GitHub Actions, compose 이미지의 업데이트 PR을 올리고, CI가 이를 검증한다.
 
 ## 구조
 

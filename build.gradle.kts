@@ -4,10 +4,10 @@ plugins {
     java
     checkstyle
     jacoco
-    id("com.diffplug.spotless") version "8.10.2"
-    id("net.ltgt.errorprone") version "5.1.1"
-    id("org.springframework.boot") version "4.1.1"
-    id("io.spring.dependency-management") version "1.1.7"
+    alias(libs.plugins.spotless)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 group = "com.board"
@@ -23,62 +23,64 @@ repositories {
     mavenCentral()
 }
 
-val querydslVersion = "7.0"
-
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.boot.starter.actuator)
 
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
-    implementation("org.springframework.boot:spring-boot-starter-session-data-redis")
+    implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.boot.starter.oauth2.client)
+    implementation(libs.spring.boot.starter.data.redis)
+    implementation(libs.spring.boot.starter.session.data.redis)
 
-    implementation("org.springframework.boot:spring-boot-flyway")
-    runtimeOnly("org.flywaydb:flyway-database-postgresql")
-    runtimeOnly("org.postgresql:postgresql")
+    implementation(libs.spring.boot.flyway)
+    runtimeOnly(libs.flyway.database.postgresql)
+    runtimeOnly(libs.postgresql)
 
-    implementation("io.github.openfeign.querydsl:querydsl-jpa:$querydslVersion")
-    annotationProcessor("io.github.openfeign.querydsl:querydsl-apt:$querydslVersion:jakarta")
-    annotationProcessor("jakarta.annotation:jakarta.annotation-api")
-    annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+    implementation(libs.querydsl.jpa)
+    annotationProcessor(variantOf(libs.querydsl.apt) { classifier("jakarta") })
+    annotationProcessor(libs.jakarta.annotation.api)
+    annotationProcessor(libs.jakarta.persistence.api)
 
-    implementation("org.jspecify:jspecify")
+    implementation(libs.jspecify)
 
-    errorprone("com.google.errorprone:error_prone_core:2.50.0")
-    errorprone("com.uber.nullaway:nullaway:0.14.1")
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nullaway)
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
+    implementation(libs.springdoc.openapi.webmvc.ui)
 
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
-    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
+    developmentOnly(libs.spring.boot.devtools)
+    developmentOnly(libs.spring.boot.docker.compose)
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
-    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
-    testImplementation("org.testcontainers:testcontainers-postgresql")
-    testImplementation("com.redis:testcontainers-redis")
-    testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.testcontainers)
+    testImplementation(libs.spring.boot.starter.webmvc.test)
+    testImplementation(libs.spring.boot.starter.data.jpa.test)
+    testImplementation(libs.spring.boot.starter.security.test)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.redis)
+    testImplementation(libs.archunit.junit5)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 checkstyle {
-    toolVersion = "14.1.0"
+    toolVersion = libs.versions.checkstyle.get()
     configProperties["org.checkstyle.google.suppressionfilter.config"] =
         file("config/checkstyle/checkstyle-suppressions.xml").absolutePath
 }
+
+val googleJavaFormatVersion: String =
+    libs.versions.google.java.format
+        .get()
 
 spotless {
     java {
         target("src/**/*.java")
         targetExclude("**/generated/**")
 
-        googleJavaFormat("1.30.0")
+        googleJavaFormat(googleJavaFormatVersion)
     }
     kotlinGradle {
         target("**/*.gradle.kts")
@@ -175,15 +177,15 @@ tasks.check {
     dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
-tasks.register<Copy>("installGitHooks") {
-    description = "Git 훅을 .git/hooks에 설치한다"
+// 훅을 복사하지 않고 저장소의 hooks/를 그대로 쓰게 한다. 훅을 고치면 바로 반영되고 워크트리에서도 동작한다.
+val gitMetadata: File = layout.projectDirectory.file(".git").asFile
 
-    onlyIf { file("${rootProject.projectDir}/.git/hooks").isDirectory }
+tasks.register<Exec>("installGitHooks") {
+    description = "Git이 저장소의 hooks/ 디렉터리를 훅 경로로 쓰게 한다"
 
-    from(layout.projectDirectory.dir("hooks"))
-    into(layout.projectDirectory.dir(".git/hooks"))
+    onlyIf { gitMetadata.exists() }
 
-    filePermissions { unix("0755") }
+    commandLine("git", "config", "core.hooksPath", "hooks")
 }
 
 tasks.build {

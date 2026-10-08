@@ -1,0 +1,26 @@
+version: 2
+
+# 업데이트 PR은 CI(backend 워크플로)가 검증한다.
+# minor·patch는 한 PR로 묶어 소음을 줄이고, major는 따로 올려 변경 내역을 확인하게 한다.
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      gradle-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # 개발용 컨테이너 이미지. 통합 테스트도 compose.yaml에서 이미지를 읽으므로 함께 올라간다.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
