@@ -1,7 +1,6 @@
 package com.board.bbs.comment.application.service;
 
-import com.board.bbs.comment.application.port.in.ListCommentsUseCase;
-import com.board.bbs.comment.application.port.out.ListCommentPort;
+import com.board.bbs.comment.application.port.out.CommentRepository;
 import com.board.bbs.comment.domain.Comment;
 import com.board.bbs.post.domain.PostId;
 import lombok.RequiredArgsConstructor;
@@ -13,13 +12,19 @@ import org.springframework.transaction.annotation.Transactional;
 /** 댓글 읽기 유스케이스 구현. */
 @Service
 @RequiredArgsConstructor
-public class CommentQueryService implements ListCommentsUseCase {
+public class CommentQueryService {
 
-  private final ListCommentPort listCommentPort;
+  private final CommentRepository commentRepository;
 
-  @Override
+  /**
+   * 게시글의 댓글 목록을 조회한다.
+   *
+   * @param postId 게시글 식별자
+   * @param pageable 페이지 정보
+   * @return 댓글 페이지
+   */
   @Transactional(readOnly = true)
   public Page<Comment> list(PostId postId, Pageable pageable) {
-    return listCommentPort.listByPost(postId, pageable);
+    return commentRepository.listByPost(postId, pageable);
   }
 }

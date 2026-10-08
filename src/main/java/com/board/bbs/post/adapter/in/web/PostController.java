@@ -8,12 +8,9 @@ import com.board.bbs.post.adapter.in.web.dto.PostResponse;
 import com.board.bbs.post.adapter.in.web.dto.PostSummaryResponse;
 import com.board.bbs.post.adapter.in.web.dto.UpdatePostRequest;
 import com.board.bbs.post.application.PostSearchCondition;
-import com.board.bbs.post.application.port.in.CreatePostUseCase;
-import com.board.bbs.post.application.port.in.DeletePostUseCase;
-import com.board.bbs.post.application.port.in.LikePostUseCase;
-import com.board.bbs.post.application.port.in.SearchPostsUseCase;
-import com.board.bbs.post.application.port.in.UpdatePostUseCase;
-import com.board.bbs.post.application.port.in.ViewPostUseCase;
+import com.board.bbs.post.application.service.PostCommandService;
+import com.board.bbs.post.application.service.PostLikeService;
+import com.board.bbs.post.application.service.PostQueryService;
 import com.board.bbs.post.domain.PostId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,12 +45,9 @@ public class PostController {
 
   private static final String ADMIN_ROLE = "ROLE_ADMIN";
 
-  private final CreatePostUseCase createPostUseCase;
-  private final ViewPostUseCase viewPostUseCase;
-  private final LikePostUseCase likePostUseCase;
-  private final SearchPostsUseCase searchPostsUseCase;
-  private final UpdatePostUseCase updatePostUseCase;
-  private final DeletePostUseCase deletePostUseCase;
+  private final PostCommandService postCommandService;
+  private final PostQueryService postQueryService;
+  private final PostLikeService postLikeService;
 
   /**
    * 게시글을 작성한다.
@@ -67,7 +61,7 @@ public class PostController {
   public ResponseEntity<Void> create(
       @CurrentMember MemberId author, @Valid @RequestBody CreatePostRequest request) {
 
-    PostId postId = createPostUseCase.create(author, request.title(), request.content());
+    PostId postId = postCommandService.create(author, request.title(), request.content());
     return ResponseEntity.created(URI.create("/api/posts/" + postId.value())).build();
   }
 
@@ -87,7 +81,7 @@ public class PostController {
       HttpServletRequest request) {
 
     String viewerKey = viewer != null ? "m" + viewer.value() : "s" + request.getSession().getId();
-    return PostResponse.from(viewPostUseCase.getAndCountView(new PostId(id), viewerKey));
+    return PostResponse.from(postQueryService.getAndCountView(new PostId(id), viewerKey));
   }
 
   /**
@@ -105,7 +99,7 @@ public class PostController {
       @CurrentMember MemberId requester,
       @Valid @RequestBody UpdatePostRequest request) {
 
-    updatePostUseCase.update(new PostId(id), requester, request.title(), request.content());
+    postCommandService.update(new PostId(id), requester, request.title(), request.content());
   }
 
   /**
@@ -125,7 +119,7 @@ public class PostController {
         authentication.getAuthorities().stream()
             .anyMatch(authority -> ADMIN_ROLE.equals(authority.getAuthority()));
 
-    deletePostUseCase.delete(new PostId(id), requester, admin);
+    postCommandService.delete(new PostId(id), requester, admin);
   }
 
   /**
@@ -144,7 +138,7 @@ public class PostController {
       @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 
     return PageResponse.from(
-        searchPostsUseCase
+        postQueryService
             .search(new PostSearchCondition(keyword, authorId), pageable)
             .map(PostSummaryResponse::from));
   }
@@ -159,7 +153,7 @@ public class PostController {
   @PostMapping("/{id}/likes")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void like(@PathVariable Long id, @CurrentMember MemberId memberId) {
-    likePostUseCase.like(new PostId(id), memberId);
+    postLikeService.like(new PostId(id), memberId);
   }
 
   /**
@@ -172,6 +166,6 @@ public class PostController {
   @DeleteMapping("/{id}/likes")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void unlike(@PathVariable Long id, @CurrentMember MemberId memberId) {
-    likePostUseCase.unlike(new PostId(id), memberId);
+    postLikeService.unlike(new PostId(id), memberId);
   }
 }

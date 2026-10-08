@@ -1,9 +1,6 @@
 package com.board.bbs.comment.adapter.out.persistence;
 
-import com.board.bbs.comment.application.port.out.DeleteCommentsByPostPort;
-import com.board.bbs.comment.application.port.out.ListCommentPort;
-import com.board.bbs.comment.application.port.out.LoadCommentPort;
-import com.board.bbs.comment.application.port.out.SaveCommentPort;
+import com.board.bbs.comment.application.port.out.CommentRepository;
 import com.board.bbs.comment.domain.Comment;
 import com.board.bbs.comment.domain.CommentId;
 import com.board.bbs.common.error.BusinessException;
@@ -18,8 +15,7 @@ import org.springframework.stereotype.Component;
 /** 댓글 영속성 어댑터. */
 @Component
 @RequiredArgsConstructor
-public class CommentPersistenceAdapter
-    implements SaveCommentPort, LoadCommentPort, ListCommentPort, DeleteCommentsByPostPort {
+public class CommentPersistenceAdapter implements CommentRepository {
 
   private final CommentJpaRepository repository;
 

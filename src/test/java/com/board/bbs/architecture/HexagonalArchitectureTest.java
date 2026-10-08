@@ -58,6 +58,16 @@ class HexagonalArchitectureTest {
           .because("웹 계층이 영속성 계층을 직접 호출하면 유스케이스를 우회하게 된다");
 
   @ArchTest
+  static final ArchRule 인바운드_어댑터는_아웃바운드_포트를_모른다 =
+      noClasses()
+          .that()
+          .resideInAPackage("..adapter.in..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAPackage("..application.port.out..")
+          .because("인바운드 어댑터가 아웃바운드 포트를 직접 부르면 서비스의 트랜잭션과 규칙을 우회하게 된다");
+
+  @ArchTest
   static final ArchRule 트랜잭션은_애플리케이션_서비스에만_존재한다 =
       noMethods()
           .that()

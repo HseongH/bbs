@@ -1,6 +1,6 @@
 package com.board.bbs.comment.adapter.in.event;
 
-import com.board.bbs.comment.application.port.in.DeleteCommentsOfPostUseCase;
+import com.board.bbs.comment.application.service.CommentCommandService;
 import com.board.bbs.post.domain.PostDeleted;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PostDeletedListener {
 
-  private final DeleteCommentsOfPostUseCase deleteCommentsOfPostUseCase;
+  private final CommentCommandService commentCommandService;
 
   /**
    * 삭제된 게시글의 댓글을 삭제한다.
@@ -24,6 +24,6 @@ public class PostDeletedListener {
    */
   @EventListener
   public void on(PostDeleted event) {
-    deleteCommentsOfPostUseCase.deleteAllOfPost(event.postId(), event.deletedAt());
+    commentCommandService.deleteAllOfPost(event.postId(), event.deletedAt());
   }
 }

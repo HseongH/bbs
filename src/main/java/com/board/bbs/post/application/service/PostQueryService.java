@@ -2,12 +2,7 @@ package com.board.bbs.post.application.service;
 
 import com.board.bbs.post.application.PostSearchCondition;
 import com.board.bbs.post.application.PostSummary;
-import com.board.bbs.post.application.port.in.GetPostUseCase;
-import com.board.bbs.post.application.port.in.SearchPostsUseCase;
-import com.board.bbs.post.application.port.in.ViewPostUseCase;
-import com.board.bbs.post.application.port.out.LoadPostPort;
-import com.board.bbs.post.application.port.out.PostCounterPort;
-import com.board.bbs.post.application.port.out.SearchPostPort;
+import com.board.bbs.post.application.port.out.PostRepository;
 import com.board.bbs.post.application.port.out.ViewDeduplicationPort;
 import com.board.bbs.post.domain.Post;
 import com.board.bbs.post.domain.PostId;
@@ -20,31 +15,46 @@ import org.springframework.transaction.annotation.Transactional;
 /** 게시글 읽기 유스케이스 구현. */
 @Service
 @RequiredArgsConstructor
-public class PostQueryService implements GetPostUseCase, SearchPostsUseCase, ViewPostUseCase {
+public class PostQueryService {
 
-  private final LoadPostPort loadPostPort;
-  private final SearchPostPort searchPostPort;
-  private final PostCounterPort postCounterPort;
+  private final PostRepository postRepository;
   private final ViewDeduplicationPort viewDeduplicationPort;
 
-  @Override
+  /**
+   * 게시글을 조회한다.
+   *
+   * @param id 게시글 식별자
+   * @return 게시글
+   */
   @Transactional(readOnly = true)
   public Post getById(PostId id) {
-    return loadPostPort.load(id);
+    return postRepository.load(id);
   }
 
-  @Override
+  /**
+   * 조건에 맞는 게시글 목록을 조회한다.
+   *
+   * @param condition 검색 조건
+   * @param pageable 페이지 정보
+   * @return 게시글 요약 페이지
+   */
   @Transactional(readOnly = true)
   public Page<PostSummary> search(PostSearchCondition condition, Pageable pageable) {
-    return searchPostPort.search(condition, pageable);
+    return postRepository.search(condition, pageable);
   }
 
-  @Override
+  /**
+   * 게시글을 조회하고 최초 조회인 경우 조회수를 올린다.
+   *
+   * @param id 게시글 식별자
+   * @param viewerKey 조회자 식별 키
+   * @return 게시글
+   */
   @Transactional
   public Post getAndCountView(PostId id, String viewerKey) {
-    Post post = loadPostPort.load(id);
+    Post post = postRepository.load(id);
     if (viewDeduplicationPort.markViewed(id, viewerKey)) {
-      postCounterPort.increaseViewCount(id);
+      postRepository.increaseViewCount(id);
     }
     return post;
   }
