@@ -1,13 +1,13 @@
 ---
 doc_id: CMT-QA
 title: 댓글 QA 체크리스트
-version: 1.1.0
+version: 1.1.1
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.1.0, CMT-SRS 1.1.0, CMT-SDS 1.2.0]
+related: [PRJ-QA 1.2.0, CMT-SRS 1.1.0, CMT-SDS 1.2.0]
 ---
 
 # 댓글 QA 체크리스트
@@ -18,9 +18,9 @@ related: [PRJ-QA 1.1.0, CMT-SRS 1.1.0, CMT-SDS 1.2.0]
 
 | 항목 | 값 |
 |---|---|
-| 대상 커밋 | `main` f46a99c (최초 수행은 e96a878) |
+| 대상 커밋 | `main` 85cce67 (이전 수행: e96a878, f46a99c) |
 | 수행일 | 2026-10-09 |
-| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 103개, 실패 0, 오류 0, 건너뜀 0) |
+| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 115개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (테스트 39개 통과) |
 | E2E, 수동 검증 | 실행하지 않음 (N/T) |
 
@@ -101,3 +101,4 @@ related: [PRJ-QA 1.1.0, CMT-SRS 1.1.0, CMT-SDS 1.2.0]
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준 수행) | HseongH |
 | 1.0.1 | 2026-10-09 | `main` f46a99c(포트 정리, Lombok 제거 반영)에서 재수행. 판정 변화 없음. 참조 테스트 이름 전수 확인 | HseongH |
 | 1.1.0 | 2026-10-09 | TC-CMT-010 Fail → Pass (CMT-OPEN-01 해결). 회귀 항목 TC-CMT-014, 015 추가 (CMT-OPEN-05 해결) | HseongH |
+| 1.1.1 | 2026-10-09 | 수행 정보를 `main` 85cce67 재수행 결과로 정정. 1.1.0의 Pass 판정(TC-CMT-010, 014, 015)은 f46a99c에 없던 테스트에 근거하므로, 실제 근거가 된 실행을 기록 | HseongH |

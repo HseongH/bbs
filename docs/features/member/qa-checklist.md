@@ -1,13 +1,13 @@
 ---
 doc_id: MEM-QA
 title: 회원·인증 QA 체크리스트
-version: 1.1.0
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.1.0, MEM-SRS 1.1.0, MEM-SDS 1.2.0]
+related: [PRJ-QA 1.2.0, MEM-SRS 1.1.0, MEM-SDS 1.2.0]
 ---
 
 # 회원·인증 QA 체크리스트
@@ -18,9 +18,9 @@ related: [PRJ-QA 1.1.0, MEM-SRS 1.1.0, MEM-SDS 1.2.0]
 
 | 항목 | 값 |
 |---|---|
-| 대상 커밋 | `main` f46a99c (최초 수행은 e96a878) |
+| 대상 커밋 | `main` 85cce67 (이전 수행: e96a878, f46a99c) |
 | 수행일 | 2026-10-09 |
-| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 103개, 실패 0, 오류 0, 건너뜀 0) |
+| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 115개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (테스트 39개 통과) |
 | E2E, 수동 검증 | 실행하지 않음 (N/T) |
 
@@ -43,6 +43,10 @@ related: [PRJ-QA 1.1.0, MEM-SRS 1.1.0, MEM-SDS 1.2.0]
 | TC-MEM-011 | COM-NFR-003 | 조회 요청 | 토큰 없이 허용, 토큰 쿠키 발급 | `CsrfCookieIssuanceTest#조회_요청은_토큰이_필요없고_토큰_쿠키를_내려준다` | Pass |
 | TC-MEM-012 | MEM-FR-002 | 50자를 넘는 Keycloak 이름으로 처음 로그인 (회귀, MEM-OPEN-02) | 로그인 성공, 닉네임은 50자로 잘림. 두 개의 `char`로 된 문자는 가르지 않음 | `MemberServiceTest#닉네임이_50자를_넘어도_로그인할_수_있다`, `MemberTest#외부에서_받은_닉네임이_50자를_넘으면_50자로_자른다`, `#닉네임을_자를_때_두_단위로_된_문자를_가르지_않는다` | Pass |
 | TC-MEM-013 | MEM-NFR-001 | 같은 사용자가 동시에 16번 처음 로그인 (회귀, MEM-OPEN-03) | 모두 성공, 같은 식별자, 회원 1명 | `MemberProvisioningConcurrencyTest#같은_사용자가_동시에_처음_로그인해도_모두_성공하고_회원은_하나다` | Pass |
+| TC-MEM-014 | COM-NFR-021 | 비로그인으로 `/actuator/health`, `/actuator/info` 조회 | `200` | `ActuatorAccessTest#상태_확인과_정보는_인증_없이_볼_수_있다` | Pass |
+| TC-MEM-015 | COM-NFR-021 | 비로그인으로 `/actuator/metrics` 조회 (회귀, OPEN-04) | `401` | `ActuatorAccessTest#지표는_인증_없이_볼_수_없다` | Pass |
+| TC-MEM-016 | COM-NFR-021 | 일반 회원이 `/actuator/metrics` 조회 (회귀, OPEN-04) | `403` | `ActuatorAccessTest#지표는_일반_회원이_볼_수_없다` | Pass |
+| TC-MEM-017 | COM-NFR-021 | 관리자가 `/actuator/metrics` 조회 | `200` | `ActuatorAccessTest#지표는_관리자가_볼_수_있다` | Pass |
 
 ### 2.2 회원 정보와 현재 회원
 
@@ -81,10 +85,11 @@ related: [PRJ-QA 1.1.0, MEM-SRS 1.1.0, MEM-SDS 1.2.0]
 | MEM-FR-006 | 022, 023 | 부분 |
 | MEM-FR-020~023 | 030~039 | 화면 단위 테스트 대부분, 복귀 경로·로그아웃 흐름은 미실행 |
 | MEM-NFR-001 | 013 | 완전 |
+| COM-NFR-021 | 014~017 | 완전 |
 
 ## 4. 결과 요약과 후속 조치
 
-- 집계: 전체 28건 중 Pass 23, Fail 0, N/T 5 (자동 테스트 없음 3, E2E 미실행 2).
+- 집계: 전체 32건 중 Pass 27, Fail 0, N/T 5 (자동 테스트 없음 3, E2E 미실행 2).
 - **MEM-FR-003(역할 매핑)에 자동 테스트가 없다.** 관리자 기능 전체가 이 매핑에 의존하므로 우선순위가 가장 높은 테스트 추가 후보다. `BbsOidcUserService`의 `realmRoles`를 가짜 `OidcUser`로 검증하는 단위 테스트를 제안한다.
 - [SRS 미결 사항](srs.md#6-미결-사항) 중 MEM-OPEN-02, 03은 로그인 실패로 이어지는 결함으로 다시 분류해 1.1.0에서 고쳤고, 회귀 항목 TC-MEM-012, 013을 추가했다. MEM-OPEN-01, 04는 미정의 동작이므로 판정 대상에서 제외한다.
 
@@ -95,3 +100,4 @@ related: [PRJ-QA 1.1.0, MEM-SRS 1.1.0, MEM-SDS 1.2.0]
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준 수행) | HseongH |
 | 1.0.1 | 2026-10-09 | `main` f46a99c(포트 정리, Lombok 제거 반영)에서 재수행. 판정 변화 없음. 참조 테스트 이름 전수 확인 | HseongH |
 | 1.1.0 | 2026-10-09 | MEM-OPEN-02, 03 해결에 따라 회귀 항목 TC-MEM-012, 013 추가 | HseongH |
+| 1.2.0 | 2026-10-09 | 공통 보안 항목에 액추에이터 접근 회귀 항목 TC-MEM-014~017 추가 (OPEN-04 해결, PR #18). 수행 정보를 `main` 85cce67 재수행 결과로 정정 | HseongH |

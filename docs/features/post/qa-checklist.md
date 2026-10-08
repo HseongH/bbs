@@ -1,13 +1,13 @@
 ---
 doc_id: PST-QA
 title: 게시글 QA 체크리스트
-version: 1.0.1
+version: 1.0.2
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.1.0, PST-SRS 1.0.0, PST-SDS 1.1.0]
+related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.1.1]
 ---
 
 # 게시글 QA 체크리스트
@@ -18,9 +18,9 @@ related: [PRJ-QA 1.1.0, PST-SRS 1.0.0, PST-SDS 1.1.0]
 
 | 항목 | 값 |
 |---|---|
-| 대상 커밋 | `main` f46a99c (최초 수행은 e96a878) |
+| 대상 커밋 | `main` 85cce67 (이전 수행: e96a878, f46a99c) |
 | 수행일 | 2026-10-09 |
-| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 103개, 실패 0, 오류 0, 건너뜀 0) |
+| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 115개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (린트 통과, 타입 검사 통과, 테스트 파일 12개·테스트 39개 통과) |
 | E2E | 실행하지 않음 (N/T) |
 | 수동 검증 | 실행하지 않음 (N/T) |
@@ -121,7 +121,7 @@ related: [PRJ-QA 1.1.0, PST-SRS 1.0.0, PST-SDS 1.1.0]
 
 ## 4. 결과 요약과 후속 조치
 
-- 판정 근거: 2026-10-09에 `main` f46a99c에서 `./gradlew check`와 `pnpm verify`를 실행한 결과 (§1).
+- 판정 근거: 2026-10-09에 `main` 85cce67에서 `./gradlew check`와 `pnpm verify`를 실행한 결과 (§1).
 - 집계: 전체 48건 중 Pass 41, Fail 0, N/T 7 (자동 테스트 없음 5, E2E 미실행 2).
 - **자동 테스트가 없는 항목**(TC-PST-010, 019, 022, 035, 036)은 테스트를 추가할 후보다. 특히 TC-PST-022는 "관리자도 수정할 수 없다"는 규칙을 명시적으로 고정하는 회귀 테스트로 가치가 크다.
 - PST-NFR-002(목록 쿼리 횟수)는 쿼리 횟수를 세는 테스트를 추가하면 자동 검증으로 바꿀 수 있다.
@@ -132,3 +132,4 @@ related: [PRJ-QA 1.1.0, PST-SRS 1.0.0, PST-SDS 1.1.0]
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준 수행) | HseongH |
 | 1.0.1 | 2026-10-09 | `main` f46a99c(포트 정리, Lombok 제거 반영)에서 재수행. 판정 변화 없음. 참조 테스트 이름 전수 확인 | HseongH |
+| 1.0.2 | 2026-10-09 | `main` 85cce67(결함 수정 3건, Valkey 전환 반영)에서 재수행. 판정 변화 없음 | HseongH |

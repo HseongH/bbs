@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-SDS
 title: 게시판(bbs) 프로젝트 설계 명세서
-version: 1.1.0
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.0.0, PRJ-QA 1.1.0]
+related: [PRJ-SRS 1.2.0, PRJ-QA 1.2.0]
 ---
 
 # 게시판(bbs) 프로젝트 설계 명세서
@@ -24,7 +24,7 @@ related: [PRJ-SRS 1.0.0, PRJ-QA 1.1.0]
 |---|---|---|
 | 규칙에 우회 경로가 없다 | COM-NFR-005 | 규칙과 권한을 도메인 객체 안에 둔다 |
 | 구조가 시간이 지나도 무너지지 않는다 | COM-NFR-030, 031 | 헥사고날 아키텍처 + ArchUnit + 빌드 게이트 |
-| 동시 요청에서 데이터가 정확하다 | COM-NFR-010, 011 | 원자적 UPDATE, DB 제약, Redis `SETNX` |
+| 동시 요청에서 데이터가 정확하다 | COM-NFR-010, 011, MEM-NFR-001 | 원자적 UPDATE, DB 제약과 `ON CONFLICT`, Valkey `SETNX` |
 
 ### 1.2 관심사와 해당 절
 
@@ -47,8 +47,8 @@ related: [PRJ-SRS 1.0.0, PRJ-QA 1.1.0]
 | 영속성 | Spring Data JPA (Hibernate 7) | 엔티티는 어댑터 전용 ([ADR-0002](adr/0002-separate-domain-and-jpa-entity.md)) |
 | 동적 쿼리 | `io.github.openfeign.querydsl` 7.0 | [ADR-0006](adr/0006-querydsl-openfeign-fork.md) |
 | 스키마 관리 | Flyway | [ADR-0007](adr/0007-flyway-single-source-of-schema.md) |
-| DB | PostgreSQL 17 | |
-| 세션·캐시 | Redis 7, Spring Session | [ADR-0008](adr/0008-oidc-bff-and-redis-session.md) |
+| DB | PostgreSQL 18 | |
+| 세션·캐시 | Valkey 9 (Redis 호환), Spring Session Data Redis | [ADR-0008](adr/0008-oidc-bff-and-redis-session.md), [ADR-0013](adr/0013-valkey-instead-of-redis.md) |
 | 인증 | Spring Security OAuth2 Client + Keycloak 26 | |
 | API 문서 | springdoc-openapi | |
 | null 안정성 | JSpecify + NullAway (Error Prone) | |
@@ -60,7 +60,7 @@ related: [PRJ-SRS 1.0.0, PRJ-QA 1.1.0]
 
 ## 3. 컨텍스트 관점
 
-![컨텍스트 구성도: 동일 오리진 안의 Angular SPA와 bbs 애플리케이션, 그리고 Keycloak, PostgreSQL, Redis와의 연결](diagrams/context.drawio.svg)
+![컨텍스트 구성도: 동일 오리진 안의 Angular SPA와 bbs 애플리케이션, 그리고 Keycloak, PostgreSQL, Valkey와의 연결](diagrams/context.drawio.svg)
 
 > 원본: [diagrams/context.drawio.svg](diagrams/context.drawio.svg) (draw.io로 열어 편집할 수 있다)
 
@@ -68,7 +68,7 @@ related: [PRJ-SRS 1.0.0, PRJ-QA 1.1.0]
 |---|---|---|
 | Keycloak | 사용자 계정, 로그인, 역할(`USER`, `ADMIN`) | OIDC Authorization Code (BFF) |
 | PostgreSQL | 영속 데이터 | JDBC (JPA, QueryDSL, 네이티브 쿼리) |
-| Redis | HTTP 세션, 조회수 중복 판정 키 | Spring Session, `StringRedisTemplate` |
+| Valkey (Redis 호환) | HTTP 세션, 조회수 중복 판정 키 | Spring Session, `StringRedisTemplate` (Redis 프로토콜) |
 | 브라우저 | 화면 | 세션 쿠키 + CSRF 쿠키 (`XSRF-TOKEN`) |
 
 ## 4. 구성과 의존 관점
@@ -102,7 +102,7 @@ com.board.bbs
     ├── in/event/            다른 기능의 도메인 이벤트 수신 (필요한 기능만)
     ├── in/security/         인증 연동 (member만)
     ├── out/persistence/     JPA 엔티티, 리포지토리, 매퍼, 영속성 어댑터
-    └── out/redis/           Redis 어댑터 (필요한 기능만)
+    └── out/redis/           Redis 프로토콜 어댑터 (필요한 기능만, 실제 서버는 Valkey)
 ```
 
 ### 4.3 의존 규칙
@@ -153,7 +153,7 @@ com.board.bbs
 
 모든 테이블은 `created_at`을 가지며, `post_like`를 제외한 테이블은 `updated_at`도 가진다. 시각은 `TIMESTAMPTZ`로 저장한다.
 
-### 5.2 Redis 키
+### 5.2 Valkey(Redis 호환) 키
 
 | 키 | 값 | TTL | 용도 | 소유 기능 |
 |---|---|---|---|---|
@@ -183,7 +183,7 @@ sequenceDiagram
     participant A as bbs 애플리케이션
     participant K as Keycloak
     participant M as MemberService
-    participant R as Redis
+    participant R as Valkey
     B->>A: GET /oauth2/authorization/keycloak
     A-->>B: 302 Keycloak 로그인 화면으로
     B->>K: 아이디·비밀번호 입력
@@ -205,11 +205,25 @@ sequenceDiagram
 
 | 계층 | 담당 | 판단하는 것 |
 |---|---|---|
-| URL | `SecurityConfig` | 인증 여부 (`GET /api/posts/**`, `/api/comments/**`는 공개, 나머지 `/api/**`는 인증 필요) |
+| URL | `SecurityConfig` | 인증 여부와 역할. 규칙은 위에서부터 처음 일치하는 것이 적용된다 (아래 표) |
 | 파라미터 | `CurrentMemberArgumentResolver` | 현재 회원 식별자. 필수인데 미인증이면 `401` |
 | 도메인 | `Post`, `Comment` | 작성자 여부, 관리자 여부, 삭제 여부 |
 
 관리자 여부는 컨트롤러가 `Authentication`의 권한(`ROLE_ADMIN`)에서 읽어 도메인 메서드에 `boolean`으로 전달한다. 도메인은 스프링 보안 타입을 모른다.
+
+**URL 규칙 (순서가 의미를 가진다)**
+
+| 순서 | 경로 | 접근 | 이유 |
+|---|---|---|---|
+| 1 | `/actuator/health`, `/actuator/info` | 공개 | 상태 확인 |
+| 2 | `/actuator/**` | `ADMIN` 역할 | 내부 운영 정보. 5번의 화면용 허용 규칙보다 먼저 막아야 한다 (OPEN-04 해결) |
+| 3 | Swagger UI, `/v3/api-docs/**` | 공개 | API 문서 |
+| 4 | `GET /api/posts/**`, `GET /api/comments/**` | 공개 | 비회원 열람 |
+| 5 | 그 밖의 `/api/**` | 인증 | |
+| 6 | 그 밖의 `GET /**` | 공개 | SPA 화면 경로 |
+| 7 | 나머지 | 인증 | |
+
+순서를 바꾸면 의도와 다르게 열릴 수 있으므로 `ActuatorAccessTest`, `SpaForwardingTest`가 결과를 고정한다.
 
 ### 7.3 CSRF
 
@@ -263,7 +277,7 @@ frontend/src/app/
 
 | 구성 요소 | 실행 방법 | 주소 |
 |---|---|---|
-| PostgreSQL, Redis, Keycloak | `docker compose up -d` | Keycloak 콘솔 `localhost:8081` |
+| PostgreSQL, Valkey, Keycloak | `docker compose up -d` | Keycloak 콘솔 `localhost:8081` |
 | 백엔드 | `./gradlew bootRun` | `localhost:8080` |
 | 화면 | `cd frontend && pnpm dev` | `localhost:5173` |
 
@@ -299,6 +313,7 @@ Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. �
 | [0010](adr/0010-drop-inbound-ports.md) | 인바운드 포트를 두지 않고 아웃바운드 포트는 애그리게이트마다 하나로 한다 |
 | [0011](adr/0011-remove-lombok.md) | Lombok을 쓰지 않는다 |
 | [0012](adr/0012-version-catalog-and-dependabot.md) | 의존성 버전은 version catalog 한 곳에서 관리하고 Dependabot으로 갱신한다 |
+| [0013](adr/0013-valkey-instead-of-redis.md) | 세션과 조회수 키 저장소로 Redis 대신 Valkey를 쓴다 |
 
 ## 변경 이력
 
@@ -306,3 +321,4 @@ Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. �
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | `main` f46a99c 기준으로 갱신: 인바운드 포트 제거와 저장소 포트 통합(PR #5), Lombok 제거(PR #6), 의존성 관리(PR #8) 반영. 컨텍스트·계층·기능 의존·ERD 다이어그램과 로그인 시퀀스 추가 | HseongH |
+| 1.2.0 | 2026-10-09 | `main` 85cce67 기준으로 갱신: Valkey 전환(PR #15, ADR-0013), 액추에이터 접근 규칙(PR #18)과 URL 규칙 순서표, 회원 생성의 `ON CONFLICT` 사용(PR #20) 반영. 다이어그램을 라이트 테마로 다시 내보냄 | HseongH |
