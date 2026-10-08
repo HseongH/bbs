@@ -1,7 +1,8 @@
-package com.board.bbs.common.security;
+package com.board.bbs.member.adapter.in.web;
 
 import com.board.bbs.common.error.BusinessException;
 import com.board.bbs.common.error.ErrorCode;
+import com.board.bbs.common.security.CurrentMember;
 import com.board.bbs.member.application.port.out.LoadMemberPort;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;

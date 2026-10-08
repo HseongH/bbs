@@ -1,6 +1,5 @@
 package com.board.bbs.post.application.service;
 
-import com.board.bbs.comment.application.port.out.DeleteCommentsByPostPort;
 import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.post.application.port.in.CreatePostUseCase;
 import com.board.bbs.post.application.port.in.DeletePostUseCase;
@@ -9,11 +8,13 @@ import com.board.bbs.post.application.port.out.LoadPostPort;
 import com.board.bbs.post.application.port.out.SavePostPort;
 import com.board.bbs.post.domain.Content;
 import com.board.bbs.post.domain.Post;
+import com.board.bbs.post.domain.PostDeleted;
 import com.board.bbs.post.domain.PostId;
 import com.board.bbs.post.domain.Title;
 import java.time.Instant;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +25,7 @@ public class PostCommandService implements CreatePostUseCase, UpdatePostUseCase,
 
   private final SavePostPort savePostPort;
   private final LoadPostPort loadPostPort;
-  private final DeleteCommentsByPostPort deleteCommentsByPostPort;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
@@ -48,6 +49,6 @@ public class PostCommandService implements CreatePostUseCase, UpdatePostUseCase,
     Instant now = Instant.now();
     post.deleteBy(requester, admin, now);
     savePostPort.save(post);
-    deleteCommentsByPostPort.softDeleteAllByPost(id, now);
+    eventPublisher.publishEvent(new PostDeleted(id, now));
   }
 }

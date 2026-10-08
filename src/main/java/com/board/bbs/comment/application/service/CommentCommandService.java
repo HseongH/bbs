@@ -1,15 +1,17 @@
 package com.board.bbs.comment.application.service;
 
 import com.board.bbs.comment.application.port.in.DeleteCommentUseCase;
+import com.board.bbs.comment.application.port.in.DeleteCommentsOfPostUseCase;
 import com.board.bbs.comment.application.port.in.UpdateCommentUseCase;
 import com.board.bbs.comment.application.port.in.WriteCommentUseCase;
+import com.board.bbs.comment.application.port.out.DeleteCommentsByPostPort;
 import com.board.bbs.comment.application.port.out.LoadCommentPort;
 import com.board.bbs.comment.application.port.out.SaveCommentPort;
 import com.board.bbs.comment.domain.Comment;
 import com.board.bbs.comment.domain.CommentBody;
 import com.board.bbs.comment.domain.CommentId;
 import com.board.bbs.member.domain.MemberId;
-import com.board.bbs.post.application.port.out.LoadPostPort;
+import com.board.bbs.post.application.port.in.GetPostUseCase;
 import com.board.bbs.post.domain.PostId;
 import java.time.Instant;
 import java.util.Objects;
@@ -22,18 +24,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class CommentCommandService
-    implements WriteCommentUseCase, UpdateCommentUseCase, DeleteCommentUseCase {
+    implements WriteCommentUseCase,
+        UpdateCommentUseCase,
+        DeleteCommentUseCase,
+        DeleteCommentsOfPostUseCase {
 
   private final SaveCommentPort saveCommentPort;
   private final LoadCommentPort loadCommentPort;
-  private final LoadPostPort loadPostPort;
+  private final DeleteCommentsByPostPort deleteCommentsByPostPort;
+  private final GetPostUseCase getPostUseCase;
 
   @Override
   @Transactional
   public CommentId write(
       PostId postId, MemberId author, String body, @Nullable Long parentCommentId) {
 
-    loadPostPort.load(postId);
+    getPostUseCase.getById(postId);
 
     CommentId parentId = parentCommentId == null ? null : new CommentId(parentCommentId);
     int parentDepth = parentId == null ? 0 : loadCommentPort.load(parentId).getDepth();
@@ -58,5 +64,11 @@ public class CommentCommandService
     Comment comment = loadCommentPort.load(id);
     comment.deleteBy(requester, admin, Instant.now());
     saveCommentPort.save(comment);
+  }
+
+  @Override
+  @Transactional
+  public void deleteAllOfPost(PostId postId, Instant deletedAt) {
+    deleteCommentsByPostPort.softDeleteAllByPost(postId, deletedAt);
   }
 }

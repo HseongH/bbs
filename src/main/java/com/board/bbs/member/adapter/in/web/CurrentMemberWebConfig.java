@@ -1,16 +1,15 @@
-package com.board.bbs.common.config;
+package com.board.bbs.member.adapter.in.web;
 
-import com.board.bbs.common.security.CurrentMemberArgumentResolver;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** 웹 계층 확장 지점을 등록한다. */
+/** 컨트롤러가 {@code @CurrentMember}로 현재 회원을 받을 수 있게 인자 해석기를 등록한다. */
 @Configuration
 @RequiredArgsConstructor
-public class WebMvcConfig implements WebMvcConfigurer {
+public class CurrentMemberWebConfig implements WebMvcConfigurer {
 
   private final CurrentMemberArgumentResolver currentMemberArgumentResolver;
 
