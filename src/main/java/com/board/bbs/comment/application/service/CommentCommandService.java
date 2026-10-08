@@ -40,12 +40,11 @@ public class CommentCommandService {
 
     postQueryService.getById(postId);
 
-    CommentId parentId = parentCommentId == null ? null : new CommentId(parentCommentId);
-    int parentDepth = parentId == null ? 0 : commentRepository.load(parentId).getDepth();
+    Comment parent =
+        parentCommentId == null ? null : commentRepository.load(new CommentId(parentCommentId));
 
     Comment saved =
-        commentRepository.save(
-            Comment.write(postId, author, new CommentBody(body), parentId, parentDepth));
+        commentRepository.save(Comment.write(postId, author, new CommentBody(body), parent));
     return Objects.requireNonNull(saved.getId(), "저장된 댓글은 식별자를 가진다.");
   }
 
