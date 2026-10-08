@@ -96,11 +96,16 @@ tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-parameters")
 
     options.errorprone {
-        disableAllChecks = true
+        disableWarningsInGeneratedCode = true
+        excludedPaths = ".*/build/generated/.*"
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:OnlyNullMarked", "true")
         option("NullAway:JSpecifyMode", "true")
     }
+}
+
+tasks.compileJava {
+    options.compilerArgs.add("-Werror")
 }
 
 tasks.compileTestJava {

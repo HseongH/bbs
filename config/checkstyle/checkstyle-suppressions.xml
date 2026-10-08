@@ -4,8 +4,10 @@
     "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 
 <suppressions>
-  <suppress checks="GoogleMethodName|MethodName" files="[\\/]src[\\/]test[\\/]"/>
+  <!-- 테스트는 시나리오를 한글로 읽히게 쓰므로 식별자의 이름 규칙을 적용하지 않는다. -->
+  <suppress checks="GoogleMethodName|MethodName|LocalVariableName|ParameterName"
+            files="[\\/]src[\\/]test[\\/]"/>
   <suppress checks="AbbreviationAsWordInName" files="[\\/]src[\\/]test[\\/]"/>
-  <suppress checks="MissingJavadocType|MissingJavadocMethod|JavadocParagraph|SummaryJavadoc"
+  <suppress checks="MissingJavadocType|MissingJavadocMethod|SummaryJavadoc"
             files="[\\/]src[\\/]test[\\/]"/>
 </suppressions>

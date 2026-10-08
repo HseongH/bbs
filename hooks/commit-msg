@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# 첫 번째 주석이 아닌 줄을 제목으로 본다.
+subject=$(grep -v '^#' "$1" | head -n 1)
+
+# git이 만드는 병합·되돌리기 메시지와 fixup/squash 커밋은 그대로 통과시킨다.
+if echo "$subject" | grep -qE '^(Merge |Revert "|fixup! |squash! )'; then
+    exit 0
+fi
+
+if ! echo "$subject" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?!?: .+'; then
+    echo ""
+    echo "❌ Commit message does not follow the Angular convention."
+    echo "   <type>(<scope>): <subject>"
+    echo "   type: feat fix docs style refactor perf test build ci chore revert"
+    echo ""
+    echo "   got: $subject"
+    exit 1
+fi
+
+exit 0

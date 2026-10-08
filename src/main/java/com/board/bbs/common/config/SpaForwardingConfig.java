@@ -13,7 +13,7 @@ import org.springframework.web.servlet.resource.PathResourceResolver;
 @Configuration
 public class SpaForwardingConfig implements WebMvcConfigurer {
 
-  private static final List<String> 서버가_처리하는_접두사 =
+  private static final List<String> SERVER_HANDLED_PREFIXES =
       List.of("api/", "actuator/", "swagger-ui", "v3/api-docs", "oauth2/", "login", "logout");
 
   @Override
@@ -35,7 +35,7 @@ public class SpaForwardingConfig implements WebMvcConfigurer {
       if (requested.exists() && requested.isReadable()) {
         return requested;
       }
-      if (서버가_처리하는_접두사.stream().anyMatch(resourcePath::startsWith)) {
+      if (SERVER_HANDLED_PREFIXES.stream().anyMatch(resourcePath::startsWith)) {
         return null;
       }
       Resource index = location.createRelative("index.html");
