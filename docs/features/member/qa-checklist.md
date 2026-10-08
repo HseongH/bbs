@@ -1,13 +1,13 @@
 ---
 doc_id: MEM-QA
 title: 회원·인증 QA 체크리스트
-version: 1.0.1
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.1.0, MEM-SRS 1.0.0, MEM-SDS 1.1.0]
+related: [PRJ-QA 1.1.0, MEM-SRS 1.1.0, MEM-SDS 1.2.0]
 ---
 
 # 회원·인증 QA 체크리스트
@@ -41,6 +41,8 @@ related: [PRJ-QA 1.1.0, MEM-SRS 1.0.0, MEM-SDS 1.1.0]
 | TC-MEM-009 | MEM-FR-004, COM-NFR-003 | CSRF 토큰과 함께 `POST /logout` | `204` | `SecurityCsrfTest#로그아웃은_토큰과_함께_POST하면_성공한다` | Pass |
 | TC-MEM-010 | COM-NFR-003 | CSRF 토큰 없이 상태 변경 요청 | 거부 (`403`) | `SecurityCsrfTest#토큰_없는_변경_요청은_거부된다` | Pass |
 | TC-MEM-011 | COM-NFR-003 | 조회 요청 | 토큰 없이 허용, 토큰 쿠키 발급 | `CsrfCookieIssuanceTest#조회_요청은_토큰이_필요없고_토큰_쿠키를_내려준다` | Pass |
+| TC-MEM-012 | MEM-FR-002 | 50자를 넘는 Keycloak 이름으로 처음 로그인 (회귀, MEM-OPEN-02) | 로그인 성공, 닉네임은 50자로 잘림. 두 개의 `char`로 된 문자는 가르지 않음 | `MemberServiceTest#닉네임이_50자를_넘어도_로그인할_수_있다`, `MemberTest#외부에서_받은_닉네임이_50자를_넘으면_50자로_자른다`, `#닉네임을_자를_때_두_단위로_된_문자를_가르지_않는다` | Pass |
+| TC-MEM-013 | MEM-NFR-001 | 같은 사용자가 동시에 16번 처음 로그인 (회귀, MEM-OPEN-03) | 모두 성공, 같은 식별자, 회원 1명 | `MemberProvisioningConcurrencyTest#같은_사용자가_동시에_처음_로그인해도_모두_성공하고_회원은_하나다` | Pass |
 
 ### 2.2 회원 정보와 현재 회원
 
@@ -72,19 +74,19 @@ related: [PRJ-QA 1.1.0, MEM-SRS 1.0.0, MEM-SDS 1.1.0]
 | 요구사항 | TC | 자동화 |
 |---|---|---|
 | MEM-FR-001 | 001 | E2E만 (이번 수행 미실행) |
-| MEM-FR-002 | 002~007 | 완전 |
+| MEM-FR-002 | 002~007, 012 | 완전 |
 | MEM-FR-003 | 008 | **없음** |
 | MEM-FR-004 | 009 | 완전 |
 | MEM-FR-005 | 020, 021 | 완전 |
 | MEM-FR-006 | 022, 023 | 부분 |
 | MEM-FR-020~023 | 030~039 | 화면 단위 테스트 대부분, 복귀 경로·로그아웃 흐름은 미실행 |
-| MEM-NFR-001 | - | 동시성 테스트 없음 (DB 제약으로 보장) |
+| MEM-NFR-001 | 013 | 완전 |
 
 ## 4. 결과 요약과 후속 조치
 
-- 집계: 전체 26건 중 Pass 21, Fail 0, N/T 5 (자동 테스트 없음 3, E2E 미실행 2).
+- 집계: 전체 28건 중 Pass 23, Fail 0, N/T 5 (자동 테스트 없음 3, E2E 미실행 2).
 - **MEM-FR-003(역할 매핑)에 자동 테스트가 없다.** 관리자 기능 전체가 이 매핑에 의존하므로 우선순위가 가장 높은 테스트 추가 후보다. `BbsOidcUserService`의 `realmRoles`를 가짜 `OidcUser`로 검증하는 단위 테스트를 제안한다.
-- [SRS 미결 사항](srs.md#6-미결-사항) MEM-OPEN-01~03은 결함이 아니라 미정의 동작이므로 판정 대상에서 제외했다.
+- [SRS 미결 사항](srs.md#6-미결-사항) 중 MEM-OPEN-02, 03은 로그인 실패로 이어지는 결함으로 다시 분류해 1.1.0에서 고쳤고, 회귀 항목 TC-MEM-012, 013을 추가했다. MEM-OPEN-01, 04는 미정의 동작이므로 판정 대상에서 제외한다.
 
 ## 변경 이력
 
@@ -92,3 +94,4 @@ related: [PRJ-QA 1.1.0, MEM-SRS 1.0.0, MEM-SDS 1.1.0]
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준 수행) | HseongH |
 | 1.0.1 | 2026-10-09 | `main` f46a99c(포트 정리, Lombok 제거 반영)에서 재수행. 판정 변화 없음. 참조 테스트 이름 전수 확인 | HseongH |
+| 1.1.0 | 2026-10-09 | MEM-OPEN-02, 03 해결에 따라 회귀 항목 TC-MEM-012, 013 추가 | HseongH |

@@ -1,13 +1,13 @@
 ---
 doc_id: MEM-SRS
 title: 회원·인증 요구사항 명세서
-version: 1.0.0
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.0.0, MEM-SDS 1.1.0, MEM-QA 1.0.1]
+related: [PRJ-SRS 1.0.0, MEM-SDS 1.2.0, MEM-QA 1.1.0]
 ---
 
 # 회원·인증 요구사항 명세서
@@ -36,7 +36,7 @@ related: [PRJ-SRS 1.0.0, MEM-SDS 1.1.0, MEM-QA 1.0.1]
 | 항목 | 규칙 | 출처 |
 |---|---|---|
 | 사용자 식별자 (`subject`) | 필수, 회원마다 고유, 바뀌지 않음 | Keycloak `sub` |
-| 닉네임 | 필수. 앞뒤 공백을 제거한 뒤 1~50자 | Keycloak `preferred_username`. 없으면 `sub` |
+| 닉네임 | 필수. 앞뒤 공백을 제거한 뒤 1~50자 | Keycloak `preferred_username`. 없으면 `sub`. 50자를 넘으면 50자로 잘라 저장한다 (문자를 가운데에서 자르지 않는다) |
 | 이메일 | 필수 | Keycloak `email`. 없으면 `{sub}@unknown.local` |
 
 ## 3. 기능 요구사항
@@ -72,7 +72,7 @@ related: [PRJ-SRS 1.0.0, MEM-SDS 1.1.0, MEM-QA 1.0.1]
 
 | ID | 요구사항 | 검증 |
 |---|---|---|
-| MEM-NFR-001 | 로그인 직후 회원 생성은 같은 사용자의 동시 최초 로그인에서도 회원을 하나만 만든다. | `uk_member_subject` 제약 (설계 검토). 동시성 테스트 없음 |
+| MEM-NFR-001 | 로그인 직후 회원 생성은 같은 사용자의 동시 최초 로그인에서도 회원을 하나만 만들고, 모든 로그인이 성공한다. | `MemberProvisioningConcurrencyTest`, `uk_member_subject` 제약 |
 
 ## 5. 인터페이스
 
@@ -87,8 +87,8 @@ related: [PRJ-SRS 1.0.0, MEM-SDS 1.1.0, MEM-QA 1.0.1]
 | 번호 | 내용 | 영향 |
 |---|---|---|
 | MEM-OPEN-01 | 로그인할 때마다 Keycloak의 닉네임·이메일을 로컬 회원에 반영하지 않는다. 최초 로그인 때의 값이 유지된다. | Keycloak에서 사용자 이름을 바꿔도 게시판에는 반영되지 않는다. |
-| MEM-OPEN-02 | `preferred_username`이 50자를 넘으면 닉네임 규칙 위반으로 회원 생성이 실패하고, 그 사용자는 로그인할 수 없다. | Keycloak 쪽 사용자 이름 정책과 맞춰야 한다. 잘라서 저장할지 결정이 필요하다. |
-| MEM-OPEN-03 | 같은 사용자의 동시 최초 로그인에서 두 번째 요청은 유니크 제약 위반으로 실패할 수 있다 (MEM-NFR-001). | 회원은 하나만 생기지만 한쪽 로그인이 실패할 수 있다. 실제 발생 가능성은 낮다. |
+| MEM-OPEN-02 | **해결됨 (1.1.0).** `preferred_username`이 50자를 넘으면 회원 생성이 실패해 로그인할 수 없었다. 50자로 잘라 저장한다 (§3 닉네임 규칙). | - |
+| MEM-OPEN-03 | **해결됨 (1.1.0).** 같은 사용자의 동시 최초 로그인에서 일부 요청이 유니크 제약 위반으로 실패했다. `INSERT ... ON CONFLICT DO NOTHING`으로 데이터베이스가 중복을 판정한다 ([ADR-0005](../../project/adr/0005-database-decides-duplicates.md)와 같은 방식, MEM-NFR-001). | - |
 | MEM-OPEN-04 | 역할 수준 인가를 하지 않는다 ([프로젝트 SRS OPEN-03](../../project/srs.md#7-미결-사항)). | `USER` 역할이 없어도 회원 기능을 쓸 수 있다. |
 
 ## 변경 이력
@@ -96,3 +96,4 @@ related: [PRJ-SRS 1.0.0, MEM-SDS 1.1.0, MEM-QA 1.0.1]
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (구현 완료 시점 기준으로 역작성) | HseongH |
+| 1.1.0 | 2026-10-09 | MEM-OPEN-02, 03 해결: 긴 닉네임은 잘라서 저장, 동시 최초 로그인이 모두 성공하도록 MEM-NFR-001 강화 | HseongH |

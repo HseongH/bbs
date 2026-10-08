@@ -46,13 +46,6 @@ public class MemberJpaEntity {
   /** JPA 전용. */
   protected MemberJpaEntity() {}
 
-  MemberJpaEntity(@Nullable Long id, String subject, String nickname, String email) {
-    this.id = id;
-    this.subject = subject;
-    this.nickname = nickname;
-    this.email = email;
-  }
-
   void changeNickname(String newNickname) {
     this.nickname = newNickname;
   }

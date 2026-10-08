@@ -6,6 +6,7 @@ import com.board.bbs.member.application.port.out.MemberRepository;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.member.domain.Nickname;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,14 +30,14 @@ public class MemberService {
    */
   @Transactional
   public MemberId provision(String subject, String nickname, String email) {
-    return memberRepository
-        .findBySubject(subject)
-        .map(Member::getId)
-        .orElseGet(
-            () ->
-                memberRepository
-                    .save(Member.provision(subject, new Nickname(nickname), email))
-                    .getId());
+    Member member =
+        memberRepository
+            .findBySubject(subject)
+            .orElseGet(
+                () ->
+                    memberRepository.saveIfAbsent(
+                        Member.provision(subject, Nickname.truncating(nickname), email)));
+    return Objects.requireNonNull(member.getId(), "저장된 회원은 식별자를 가진다.");
   }
 
   /**

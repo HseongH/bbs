@@ -36,6 +36,13 @@ class MemberServiceTest {
   }
 
   @Test
+  void 닉네임이_50자를_넘어도_로그인할_수_있다() {
+    MemberId id = service.provision("sub-long", "가".repeat(60), "long@example.com");
+
+    assertThat(service.getById(id).getNickname().value()).hasSize(50);
+  }
+
+  @Test
   void 식별자로_회원을_조회할_수_있다() {
     MemberId id = service.provision("sub-1", "테스터", "tester@example.com");
 
@@ -71,7 +78,11 @@ class MemberServiceTest {
     }
 
     @Override
-    public Member save(Member member) {
+    public Member saveIfAbsent(Member member) {
+      Member existing = bySubject.get(member.getSubject());
+      if (existing != null) {
+        return existing;
+      }
       Member saved =
           Member.restore(
               member.getId() == null ? new MemberId(sequence.incrementAndGet()) : member.getId(),
