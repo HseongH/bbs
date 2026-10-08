@@ -7,7 +7,7 @@ owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.0.0]
+related: [PRJ-SRS 1.2.0]
 ---
 
 # 게시판(bbs) Project Charter

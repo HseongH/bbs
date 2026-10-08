@@ -1,6 +1,6 @@
 # ADR-0008. 인증은 OIDC BFF 방식, 세션은 Redis에 둔다
 
-- 상태: Accepted
+- 상태: Accepted (세션 저장소 제품은 [ADR-0013](0013-valkey-instead-of-redis.md)으로 대체)
 - 일자: 2026-09-18
 - 관련: COM-NFR-001, COM-NFR-002, COM-NFR-003, COM-NFR-020, MEM-FR-001
 

@@ -1,6 +1,6 @@
 # ADR-0005. 중복 판정은 저장소에 맡긴다
 
-- 상태: Accepted
+- 상태: Accepted (조회수 키 저장소 제품은 [ADR-0013](0013-valkey-instead-of-redis.md)으로 대체)
 - 일자: 2026-09-18
 - 관련: COM-NFR-011, PST-FR-007, PST-FR-003
 

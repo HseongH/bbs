@@ -60,7 +60,7 @@ Project Charter          왜, 어디까지
 | 시퀀스, 상태 전이, 흐름도 | Mermaid | 문서 본문의 ` ```mermaid ` 코드 블록 | 텍스트라서 PR에서 줄 단위로 리뷰할 수 있다 |
 
 - draw.io 라벨은 HTML 서식을 쓰지 않는다 (`html=1` 금지). 그래야 SVG 안에 `<text>`로 들어가 GitHub에서 글자가 보인다.
-- 배경은 흰색으로 둔다. GitHub 다크 모드에서도 읽혀야 한다.
+- `drawio --export --format svg --theme light --embed-diagram`으로 내보낸다. 기본값(`auto`)은 보는 사람의 운영체제 테마에 따라 색이 바뀌는 SVG를 만들어서, 같은 문서가 사람마다 다르게 보인다. 라이트 테마로 고정하면 GitHub 다크 모드에서도 흰 배경 위에 그대로 보인다.
 - 커밋 전에 렌더링 결과를 직접 확인한다: draw.io는 `drawio --export --format png`, Mermaid는 GitHub 미리 보기나 Mermaid 렌더러.
 - 다이어그램도 코드와 함께 낡는다. 구조가 바뀌는 PR에서 다이어그램을 함께 고친다.
 
@@ -105,7 +105,7 @@ owner: HseongH             # 문서 책임자
 reviewers: []              # 검토자
 approved_date:             # Approved가 되는 날 기록
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.0.0, PST-SDS 1.1.0, PST-QA 1.0.1]
+related: [PRJ-SRS 1.2.0, PST-SDS 1.1.1, PST-QA 1.0.2]
 ---
 ```
 
@@ -139,3 +139,4 @@ related: [PRJ-SRS 1.0.0, PST-SDS 1.1.0, PST-QA 1.0.1]
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 문서 체계 최초 작성 | HseongH |
 | 1.1.0 | 2026-10-09 | 다이어그램 규칙(§3) 추가 | HseongH |
+| 1.1.1 | 2026-10-09 | draw.io 내보내기 테마 규칙 정정 | HseongH |

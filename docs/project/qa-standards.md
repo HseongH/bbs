@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-QA
 title: 게시판(bbs) 공통 QA 기준
-version: 1.1.0
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.0.0, PRJ-SDS 1.1.0]
+related: [PRJ-SRS 1.2.0, PRJ-SDS 1.2.0]
 ---
 
 # 게시판(bbs) 공통 QA 기준
@@ -38,9 +38,9 @@ related: [PRJ-SRS 1.0.0, PRJ-SDS 1.1.0]
 | 도메인 단위 | JUnit 5, AssertJ | 불변식, 상태 전이, 권한 규칙 | 없음 | 없음 |
 | 서비스 단위 | JUnit 5, 직접 만든 인메모리 대역 | 유스케이스 조율 | 없음 | 없음 |
 | 웹 슬라이스 | `@WebMvcTest` | 오류 변환 규약 | 웹 계층만 | 없음 |
-| 영속성 | `IntegrationTestBase`(`@SpringBootTest`) + Testcontainers | 매핑, 쿼리, 제약 조건 | 전체 | PostgreSQL, Redis |
-| 웹·통합 | `IntegrationTestBase` + MockMvc + `oidcLogin()` | 요청 검증, 인증, 오류 변환, 전체 흐름 | 전체 | PostgreSQL, Redis |
-| 동시성 | 가상 스레드로 동시 요청 | 카운터, 중복 판정 | 전체 | PostgreSQL, Redis |
+| 영속성 | `IntegrationTestBase`(`@SpringBootTest`) + Testcontainers | 매핑, 쿼리, 제약 조건 | 전체 | PostgreSQL, Valkey |
+| 웹·통합 | `IntegrationTestBase` + MockMvc + `oidcLogin()` | 요청 검증, 인증, 오류 변환, 전체 흐름 | 전체 | PostgreSQL, Valkey |
+| 동시성 | 가상 스레드로 동시 요청 | 카운터, 중복 판정 | 전체 | PostgreSQL, Valkey |
 | 아키텍처 | ArchUnit | 계층·기능 의존 규칙 | 없음 | 없음 |
 | 화면 단위 | Vitest + 생성된 API 타입 기반 목 | 컴포넌트, 스토어, 가드, 인터셉터 | - | 없음 |
 | E2E | Playwright | 사용자 시나리오 | - | 전체 (백엔드, Keycloak 포함) |
@@ -92,7 +92,7 @@ related: [PRJ-SRS 1.0.0, PRJ-SDS 1.1.0]
 |---|---|
 | JDK | Temurin 25 |
 | 데이터베이스 | Testcontainers PostgreSQL (`application-test.yml`) |
-| Redis | Testcontainers Redis |
+| Valkey | Testcontainers `RedisContainer`에 Valkey 이미지 사용 |
 | 컨테이너 이미지 | 통합 테스트도 `compose.yaml`의 이미지 태그를 읽는다. 개발 환경과 테스트 환경의 버전이 같다 |
 | 인증 | 테스트에서는 `oidcLogin()` 등 스프링 보안 테스트 지원으로 대체한다. 실제 Keycloak은 E2E에서만 사용한다 |
 | E2E 계정 | `tester` / `tester` (USER), `admin-user` / `admin` (USER, ADMIN) |
@@ -103,3 +103,4 @@ related: [PRJ-SRS 1.0.0, PRJ-SDS 1.1.0]
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 | HseongH |
 | 1.1.0 | 2026-10-09 | 정적 분석 기준(Checkstyle 범위, Error Prone)과 테스트 이미지 출처 갱신 (PR #8) | HseongH |
+| 1.2.0 | 2026-10-09 | 테스트 환경을 Valkey로 갱신 (PR #15) | HseongH |

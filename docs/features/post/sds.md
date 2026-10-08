@@ -1,13 +1,13 @@
 ---
 doc_id: PST-SDS
 title: 게시글 설계 명세서
-version: 1.1.0
+version: 1.1.1
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.1.0, PST-SRS 1.0.0, PST-QA 1.0.1]
+related: [PRJ-SDS 1.2.0, PST-SRS 1.0.0, PST-QA 1.0.2]
 ---
 
 # 게시글 설계 명세서
@@ -110,7 +110,7 @@ PostController.get(id, viewer?)
   viewerKey = viewer ? "m{memberId}" : "s{sessionId}"
   └─ PostQueryService.getAndCountView(id, viewerKey)        [트랜잭션]
        ├─ PostRepository.load(id)                               없거나 삭제됨 → 404
-       ├─ ViewDeduplicationPort.markViewed(id, viewerKey)     Redis SET NX EX 86400
+       ├─ ViewDeduplicationPort.markViewed(id, viewerKey)     Valkey SET NX EX 86400
        │    └─ true (처음)  → PostRepository.increaseViewCount(id)
        │                       UPDATE post SET view_count = view_count + 1
        └─ 불러온 Post 반환 (조회수는 증가 전 값)
@@ -213,7 +213,7 @@ SELECT count(*) FROM post p WHERE <같은 조건>
 
 ## 5. 데이터 설계
 
-[프로젝트 SDS §5](../../project/sds.md#5-데이터-관점)의 `post`, `post_like` 테이블과 Redis 키 `post:view:{postId}:{viewerKey}`를 사용한다. 게시글 기능이 소유하는 마이그레이션은 `V2__create_post.sql`, `V4__create_post_like.sql`이다.
+[프로젝트 SDS §5](../../project/sds.md#5-데이터-관점)의 `post`, `post_like` 테이블과 Valkey(Redis 호환) 키 `post:view:{postId}:{viewerKey}`를 사용한다. 게시글 기능이 소유하는 마이그레이션은 `V2__create_post.sql`, `V4__create_post_like.sql`이다.
 
 ## 6. 화면 설계 (`frontend/src/app/features/post`)
 
@@ -265,3 +265,4 @@ SELECT count(*) FROM post p WHERE <같은 조건>
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | 인바운드 포트 제거와 저장소 포트 통합 반영 (ADR-0010). 상태 전이와 삭제 흐름을 Mermaid 다이어그램으로 교체 | HseongH |
+| 1.1.1 | 2026-10-09 | 조회수 키 저장소 표기를 Valkey로 정정 (ADR-0013) | HseongH |

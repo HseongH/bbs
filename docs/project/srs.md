@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-SRS
 title: 게시판(bbs) 프로젝트 요구사항 명세서
-version: 1.1.0
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.1.0, PRJ-QA 1.1.0]
+related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.2.0, PRJ-QA 1.2.0]
 ---
 
 # 게시판(bbs) 프로젝트 요구사항 명세서
@@ -54,7 +54,7 @@ related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.1.0, PRJ-QA 1.1.0]
 bbs 애플리케이션 (Spring Boot)  ──OIDC──▶  Keycloak
    │                    │
    ▼                    ▼
-PostgreSQL            Redis (세션, 조회수 중복 판정)
+PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 ```
 
 ### 2.2 사용자 특성
@@ -124,7 +124,7 @@ PostgreSQL            Redis (세션, 조회수 중복 판정)
 
 | ID | 요구사항 | 검증 |
 |---|---|---|
-| COM-NFR-020 | 애플리케이션 인스턴스는 상태를 갖지 않는다. 세션은 Redis에 저장하며 30분 동안 요청이 없으면 만료된다. | 설정 검토 (`application.yml`의 `spring.session`) |
+| COM-NFR-020 | 애플리케이션 인스턴스는 상태를 갖지 않는다. 세션은 Valkey(Redis 호환)에 저장하며 30분 동안 요청이 없으면 만료된다. | 설정 검토 (`application.yml`의 `spring.session`) |
 | COM-NFR-021 | 상태 확인(`/actuator/health`), 정보(`/actuator/info`), 지표(`/actuator/metrics`)를 노출한다. health와 info는 인증 없이 접근할 수 있고, 지표를 비롯한 나머지 액추에이터 경로는 관리자만 접근할 수 있다. | `ActuatorAccessTest`, `SpaForwardingTest#액추에이터_경로는_포워딩되지_않는다` |
 | COM-NFR-022 | 종료 신호를 받으면 처리 중인 요청을 끝낸 뒤 종료한다 (graceful shutdown). | 설정 검토 |
 | COM-NFR-023 | 로그에 trace ID와 span ID를 포함해서 요청 단위로 추적할 수 있어야 한다. | 설정 검토 (`logging.pattern.correlation`) |
@@ -179,9 +179,9 @@ PostgreSQL            Redis (세션, 조회수 중복 판정)
 | ID | 제약 |
 |---|---|
 | COM-CON-001 | 백엔드는 Java 25, Spring Boot 4.1 계열을 사용한다. |
-| COM-CON-002 | 데이터 저장소는 PostgreSQL, 세션과 캐시성 데이터는 Redis를 사용한다. |
+| COM-CON-002 | 데이터 저장소는 PostgreSQL, 세션과 캐시성 데이터는 Redis 프로토콜 호환 저장소(Valkey)를 사용한다. 라이선스 검토가 필요 없는 구현을 쓴다 ([ADR-0013](adr/0013-valkey-instead-of-redis.md)). |
 | COM-CON-003 | 화면은 백엔드와 동일 오리진에서 제공한다. CORS를 허용하지 않는다. |
-| COM-CON-004 | 로컬 실행에 필요한 외부 시스템(PostgreSQL, Redis, Keycloak)은 `docker compose up -d` 한 번으로 준비되어야 한다. |
+| COM-CON-004 | 로컬 실행에 필요한 외부 시스템(PostgreSQL, Valkey, Keycloak)은 `docker compose up -d` 한 번으로 준비되어야 한다. |
 | COM-CON-005 | 데이터베이스 스키마는 Flyway 마이그레이션으로만 변경한다. |
 
 ## 7. 미결 사항
@@ -199,3 +199,4 @@ PostgreSQL            Redis (세션, 조회수 중복 판정)
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (구현 완료 시점 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | OPEN-04 해결: 지표를 비롯한 나머지 액추에이터 경로를 관리자 전용으로 제한하고 COM-NFR-021 갱신 | HseongH |
+| 1.2.0 | 2026-10-09 | Valkey 전환 반영 (COM-CON-002, COM-NFR-020, PR #15) | HseongH |
