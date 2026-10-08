@@ -1,6 +1,6 @@
 # ADR-0009. 기능 사이의 의존은 이벤트와 공개 유스케이스로 한정한다
 
-- 상태: Accepted
+- 상태: Accepted (공개 API를 "인바운드 포트"로 정한 부분은 [ADR-0010](0010-drop-inbound-ports.md)으로 대체)
 - 일자: 2026-10-08
 - 관련: COM-NFR-030, PST-FR-006, CMT-FR-001, PR #4
 

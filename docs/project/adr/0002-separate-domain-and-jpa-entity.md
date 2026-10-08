@@ -1,6 +1,6 @@
 # ADR-0002. 도메인 모델과 JPA 엔티티를 분리한다
 
-- 상태: Accepted
+- 상태: Accepted (Lombok 관련 문장은 [ADR-0011](0011-remove-lombok.md)으로 대체)
 - 일자: 2026-09-18
 - 관련: [ADR-0001](0001-hexagonal-architecture-enforced-by-tests.md), [프로젝트 SDS §5.3](../sds.md#53-도메인-모델과-영속성-모델의-분리)
 

@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-SDS
 title: 게시판(bbs) 프로젝트 설계 명세서
-version: 1.0.0
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.0.0, PRJ-QA 1.0.0]
+related: [PRJ-SRS 1.0.0, PRJ-QA 1.1.0]
 ---
 
 # 게시판(bbs) 프로젝트 설계 명세서
@@ -54,20 +54,15 @@ related: [PRJ-SRS 1.0.0, PRJ-QA 1.0.0]
 | null 안정성 | JSpecify + NullAway (Error Prone) | |
 | 화면 | Angular 22, TypeScript 6, Tailwind CSS 4 | |
 | API 타입 생성 | openapi-typescript | |
-| 테스트 | JUnit 5, AssertJ, Testcontainers, ArchUnit / Vitest, Playwright | |
+| 테스트 | JUnit 5, AssertJ, Testcontainers, ArchUnit / Vitest, Playwright | Testcontainers 이미지는 `compose.yaml`에서 읽는다 |
+| 보일러플레이트 | Lombok 사용 안 함 | 생성자·getter 직접 작성 ([ADR-0011](adr/0011-remove-lombok.md)) |
+| 의존성 관리 | Gradle version catalog (`gradle/libs.versions.toml`), Dependabot | [ADR-0012](adr/0012-version-catalog-and-dependabot.md) |
 
 ## 3. 컨텍스트 관점
 
-```
-             ┌──────────────────────── 동일 오리진 ────────────────────────┐
- 사용자 ──▶  │  Angular SPA  ──/api, /oauth2, /login, /logout──▶  bbs 앱    │
-             └─────────────────────────────────────────────────────────────┘
-                                                                  │
-                     ┌───────────────────────┬────────────────────┼──────────────────┐
-                     ▼                       ▼                    ▼                  ▼
-                PostgreSQL               Redis                Keycloak          Actuator
-              (게시글·댓글·회원)   (세션, 조회수 중복 키)   (OIDC 로그인, 역할)   (health, metrics)
-```
+![컨텍스트 구성도: 동일 오리진 안의 Angular SPA와 bbs 애플리케이션, 그리고 Keycloak, PostgreSQL, Redis와의 연결](diagrams/context.drawio.svg)
+
+> 원본: [diagrams/context.drawio.svg](diagrams/context.drawio.svg) (draw.io로 열어 편집할 수 있다)
 
 | 외부 요소 | 역할 | 연결 방식 |
 |---|---|---|
@@ -92,15 +87,16 @@ com.board.bbs
 
 ### 4.2 기능 내부 구성 (헥사고날)
 
-모든 기능은 같은 계층 구조를 따른다 ([ADR-0001](adr/0001-hexagonal-architecture-enforced-by-tests.md)).
+모든 기능은 같은 계층 구조를 따른다 ([ADR-0001](adr/0001-hexagonal-architecture-enforced-by-tests.md)). 인바운드 포트는 두지 않고, 아웃바운드 포트는 애그리게이트마다 하나만 둔다 ([ADR-0010](adr/0010-drop-inbound-ports.md)).
+
+![헥사고날 계층 구조: 인바운드 어댑터가 서비스를 호출하고, 서비스가 아웃바운드 포트를 호출하며, 아웃바운드 어댑터가 포트를 구현한다. 모든 계층이 도메인을 사용한다](diagrams/hexagonal-layers.drawio.svg)
 
 ```
 <feature>/
 ├── domain/                  순수 Java. 애그리게이트, 값 객체, 도메인 이벤트
 ├── application/
-│   ├── port/in/             유스케이스 인터페이스 (외부에 공개하는 API)
-│   ├── port/out/            영속성·부가 기능 포트 (기능 내부 구현)
-│   └── service/             유스케이스 구현, 트랜잭션 경계
+│   ├── port/out/            애그리게이트마다 저장소 포트 하나, 부가 기능 포트 (기능 내부 구현)
+│   └── service/             유스케이스, 트랜잭션 경계. 인바운드 어댑터와 다른 기능의 진입점
 └── adapter/
     ├── in/web/              REST 컨트롤러, 요청·응답 record
     ├── in/event/            다른 기능의 도메인 이벤트 수신 (필요한 기능만)
@@ -120,33 +116,25 @@ com.board.bbs
 | 도메인은 `org.springframework`, `jakarta`, `com.querydsl`을 참조하지 않는다 | 도메인 테스트가 스프링 없이 밀리초 단위로 돈다 |
 | 도메인과 애플리케이션은 어댑터를 참조하지 않는다 | 기술을 바꿔도 규칙이 영향을 받지 않는다 |
 | 인바운드 어댑터는 아웃바운드 어댑터를 참조하지 않는다 | 컨트롤러가 리포지토리를 직접 호출하는 지름길을 막는다 |
+| 인바운드 어댑터는 아웃바운드 포트를 참조하지 않는다 | 서비스의 트랜잭션과 규칙을 우회하지 못하게 한다. 인바운드 포트가 지켜 주던 경계를 이 규칙이 대신한다 |
 | `@Transactional`은 `application.service`에만 둔다 | 트랜잭션 경계를 한 곳에서만 찾으면 된다 |
 | JPA 엔티티는 `adapter.out.persistence`에만, 컨트롤러는 `adapter.in.web`에만 둔다 | 타입의 위치만 보고 역할을 알 수 있다 |
 | 아웃바운드 포트는 인터페이스다 | 애플리케이션이 구현이 아니라 계약에 의존한다 |
 | 모든 패키지는 `@NullMarked`다 | NullAway가 모든 코드의 null 계약을 검사한다 |
 
-**기능 경계 규칙** (`FeatureBoundaryTest`, [ADR-0009](adr/0009-feature-boundaries-via-events.md))
+**기능 경계 규칙** (`FeatureBoundaryTest`, [ADR-0009](adr/0009-feature-boundaries-via-events.md), [ADR-0010](adr/0010-drop-inbound-ports.md))
 
 | 규칙 | 이유 |
 |---|---|
 | 최상위 패키지(`common`, `member`, `post`, `comment`) 사이에 순환이 없다 | 서로를 아는 두 기능은 따로 떼어 내거나 따로 이해할 수 없다 |
-| 다른 기능의 아웃바운드 포트(`application.port.out`)와 어댑터(`adapter`)에 의존하지 않는다 | 다른 기능에는 도메인과 인바운드 포트(유스케이스)로만 접근한다 |
+| 다른 기능의 아웃바운드 포트(`application.port.out`)와 어댑터(`adapter`)에 의존하지 않는다 | 다른 기능에는 도메인과 애플리케이션 서비스로만 접근한다 |
 | 예외: 이름이 `*QueryRepository`인 읽기 전용 저장소는 다른 기능의 QueryDSL 메타모델(`Q*JpaEntity`)을 조인할 수 있다 | 목록에 작성자 닉네임을 붙이는 읽기 쿼리를 한 번에 실행하기 위해서다 |
 
 ### 4.4 현재 기능 사이의 의존
 
-```
-            ┌────────────── PostDeleted 이벤트 ──────────────┐
-            │                                                ▼
-   post ────┘                                             comment
-     ▲                                                       │
-     │  GetPostUseCase (게시글 존재 확인)                      │
-     └───────────────────────────────────────────────────────┘
+![기능 의존도: comment는 post의 도메인과 PostQueryService를 참조하고, post와 comment는 member의 MemberId를 참조한다. post는 PostDeleted 이벤트로 comment에 삭제를 알린다](diagrams/feature-dependencies.drawio.svg)
 
-   post, comment ──▶ member.domain.MemberId (작성자 식별자)
-   post (PostQueryRepository) ──▶ QMemberJpaEntity (닉네임 조인, 허용된 예외)
-   모든 기능 ──▶ common
-```
+컴파일 의존은 `comment → post`, `post → member`, `comment → member`, `모든 기능 → common` 방향으로만 존재한다. 게시글 삭제는 반대 방향(`post → comment`)으로 전달되어야 하므로 직접 호출하지 않고 `PostDeleted` 이벤트를 사용한다.
 
 ## 5. 데이터 관점
 
@@ -154,13 +142,7 @@ com.board.bbs
 
 스키마의 유일한 출처는 `src/main/resources/db/migration/`의 Flyway 스크립트다. JPA는 `ddl-auto: validate`로 검증만 한다.
 
-```
-member (1) ───< post (N)         post.author_id → member.id
-member (1) ───< comment (N)      comment.author_id → member.id
-post   (1) ───< comment (N)      comment.post_id → post.id
-comment(1) ───< comment (N)      comment.parent_comment_id → comment.id (깊이 1까지)
-post   (1) ───< post_like (N) >─── (1) member
-```
+![ERD: member, post, comment, post_like 테이블과 외래 키 관계](diagrams/erd.drawio.svg)
 
 | 테이블 | 주요 컬럼 | 제약·인덱스 | 마이그레이션 |
 |---|---|---|---|
@@ -187,19 +169,34 @@ post   (1) ───< post_like (N) >─── (1) member
 | 상호작용 | 방식 | 트랜잭션 | 근거 |
 |---|---|---|---|
 | 게시글 삭제 시 댓글 삭제 | `post`가 `PostDeleted` 이벤트 발행 → `comment`의 `PostDeletedListener`가 동기로 수신 | 같은 트랜잭션. 게시글 삭제가 롤백되면 댓글 삭제도 롤백된다 | [ADR-0009](adr/0009-feature-boundaries-via-events.md) |
-| 댓글 작성 시 게시글 존재 확인 | `comment`가 `post`의 공개 유스케이스 `GetPostUseCase` 호출 | 같은 트랜잭션 | [ADR-0009](adr/0009-feature-boundaries-via-events.md) |
-| 현재 회원 식별 | `member`의 `CurrentMemberArgumentResolver`가 `@CurrentMember MemberId` 파라미터를 채운다 | 해당 없음 | 기능 컨트롤러는 인증 방식을 알 필요가 없다 |
+| 댓글 작성 시 게시글 존재 확인 | `comment`가 `post`의 애플리케이션 서비스 `PostQueryService.getById` 호출 | 같은 트랜잭션 | [ADR-0009](adr/0009-feature-boundaries-via-events.md), [ADR-0010](adr/0010-drop-inbound-ports.md) |
+| 현재 회원 식별 | `member`의 `CurrentMemberArgumentResolver`가 `MemberService`를 거쳐 `@CurrentMember MemberId` 파라미터를 채운다 | 조회 전용 트랜잭션 | 기능 컨트롤러는 인증 방식을 알 필요가 없다 |
 
 ## 7. 보안 설계
 
 ### 7.1 인증 흐름 (BFF 패턴)
 
-```
-1. 브라우저 → /oauth2/authorization/keycloak
-2. bbs → Keycloak 로그인 화면으로 리다이렉트
-3. 로그인 성공 → bbs가 Authorization Code로 토큰 교환 (토큰은 서버에만 존재)
-4. BbsOidcUserService: 회원 자동 생성(최초 1회) + realm 역할을 ROLE_* 권한으로 매핑
-5. 세션 생성 → Redis 저장 → 브라우저에는 세션 쿠키만 전달
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as 브라우저
+    participant A as bbs 애플리케이션
+    participant K as Keycloak
+    participant M as MemberService
+    participant R as Redis
+    B->>A: GET /oauth2/authorization/keycloak
+    A-->>B: 302 Keycloak 로그인 화면으로
+    B->>K: 아이디·비밀번호 입력
+    K-->>B: 302 /login/oauth2/code/keycloak?code=...
+    B->>A: 인가 코드 전달
+    A->>K: 인가 코드를 토큰으로 교환 (서버 간 통신)
+    K-->>A: ID 토큰, 액세스 토큰
+    Note over A: BbsOidcUserService.loadUser
+    A->>M: provision(sub, nickname, email)
+    Note over M: 회원이 없을 때만 생성 (최초 1회)
+    A->>A: realm 역할을 ROLE_* 권한으로 매핑
+    A->>R: 세션 저장
+    A-->>B: 302 화면으로 복귀 + 세션 쿠키 (토큰은 전달하지 않음)
 ```
 
 브라우저는 액세스 토큰을 보관하지 않는다. 토큰 탈취 위험을 서버 쪽으로 옮기는 대신, CSRF 방어가 필요해진다.
@@ -276,12 +273,13 @@ Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. �
 
 | 단계 | 명령 | 포함 검사 |
 |---|---|---|
-| 커밋 전 | Git hook (`hooks/pre-commit`) | 포맷, Checkstyle, 프론트엔드 변경 시 프론트엔드 검사 |
+| 커밋 전 | Git hook (`hooks/pre-commit`, `core.hooksPath`로 연결) | 포맷, Checkstyle, 프론트엔드 변경 시 프론트엔드 검사 |
 | 커밋 메시지 | Git hook (`hooks/commit-msg`) | `type(scope): subject` 형식 |
-| 백엔드 빌드 | `./gradlew check` | Spotless, Checkstyle, Error Prone·NullAway, 단위·통합·아키텍처 테스트, JaCoCo |
+| 백엔드 빌드 | `./gradlew check` | Spotless, Checkstyle(이름·구조 규칙), Error Prone(경고도 실패)·NullAway, 단위·통합·아키텍처 테스트, JaCoCo |
 | 프론트엔드 | `pnpm verify` | ESLint, Prettier, 타입 검사, 단위 테스트 |
 | E2E | `pnpm e2e` | Playwright (백엔드와 컨테이너 필요) |
 | CI | `.github/workflows/backend.yml` | push(main), PR에서 `./gradlew check` |
+| 의존성 갱신 | `.github/dependabot.yml` | 매주 Gradle 의존성, GitHub Actions, compose 이미지 업데이트 PR 생성 |
 
 상세 기준은 [공통 QA 기준](qa-standards.md)에 있다.
 
@@ -297,10 +295,14 @@ Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. �
 | [0006](adr/0006-querydsl-openfeign-fork.md) | QueryDSL은 openfeign 포크를 쓴다 |
 | [0007](adr/0007-flyway-single-source-of-schema.md) | 스키마는 Flyway가 유일한 출처다 |
 | [0008](adr/0008-oidc-bff-and-redis-session.md) | 인증은 OIDC BFF 방식, 세션은 Redis에 둔다 |
-| [0009](adr/0009-feature-boundaries-via-events.md) | 기능 사이의 의존은 이벤트와 공개 유스케이스로 한정한다 |
+| [0009](adr/0009-feature-boundaries-via-events.md) | 기능 사이의 의존은 이벤트와 공개 유스케이스로 한정한다 (일부 0010으로 대체) |
+| [0010](adr/0010-drop-inbound-ports.md) | 인바운드 포트를 두지 않고 아웃바운드 포트는 애그리게이트마다 하나로 한다 |
+| [0011](adr/0011-remove-lombok.md) | Lombok을 쓰지 않는다 |
+| [0012](adr/0012-version-catalog-and-dependabot.md) | 의존성 버전은 version catalog 한 곳에서 관리하고 Dependabot으로 갱신한다 |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
+| 1.1.0 | 2026-10-09 | `main` f46a99c 기준으로 갱신: 인바운드 포트 제거와 저장소 포트 통합(PR #5), Lombok 제거(PR #6), 의존성 관리(PR #8) 반영. 컨텍스트·계층·기능 의존·ERD 다이어그램과 로그인 시퀀스 추가 | HseongH |

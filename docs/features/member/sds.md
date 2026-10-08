@@ -1,13 +1,13 @@
 ---
 doc_id: MEM-SDS
 title: 회원·인증 설계 명세서
-version: 1.0.0
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.0.0, MEM-SRS 1.0.0, MEM-QA 1.0.0]
+related: [PRJ-SDS 1.1.0, MEM-SRS 1.0.0, MEM-QA 1.0.1]
 ---
 
 # 회원·인증 설계 명세서
@@ -21,7 +21,7 @@ related: [PRJ-SDS 1.0.0, MEM-SRS 1.0.0, MEM-QA 1.0.0]
 | 시점 | 담당 | 하는 일 |
 |---|---|---|
 | 로그인할 때 | `BbsOidcUserService` | 회원이 없으면 만들고, realm 역할을 권한으로 매핑한다 |
-| API 요청마다 | `CurrentMemberArgumentResolver` | 세션의 `sub`로 회원을 찾아 `@CurrentMember MemberId`를 채운다 |
+| API 요청마다 | `CurrentMemberArgumentResolver` | 세션의 `sub`로 `MemberService`에서 회원을 찾아 `@CurrentMember MemberId`를 채운다 |
 
 `SecurityConfig`(`common`)는 `OAuth2UserService<OidcUserRequest, OidcUser>` 인터페이스 타입으로 `BbsOidcUserService`를 주입받는다. 그래서 `common`은 `member`에 의존하지 않는다 ([ADR-0009](../../project/adr/0009-feature-boundaries-via-events.md)).
 
@@ -39,10 +39,10 @@ related: [PRJ-SDS 1.0.0, MEM-SRS 1.0.0, MEM-QA 1.0.0]
 
 | 요소 | 종류 | 책임 |
 |---|---|---|
-| `ProvisionMemberUseCase` | 인바운드 포트 | `provision(subject, nickname, email) → MemberId`. 있으면 기존 식별자, 없으면 생성 |
-| `MemberService` | 서비스 | 위 유스케이스 구현, `getById(MemberId)` |
-| `LoadMemberPort` | 아웃바운드 포트 | `findBySubject`, `loadById` (없으면 `MEMBER_NOT_FOUND`) |
-| `SaveMemberPort` | 아웃바운드 포트 | 저장 |
+| `MemberService` | 서비스 | `provision(subject, nickname, email) → MemberId`: 있으면 기존 식별자, 없으면 생성. `getIdBySubject(subject) → MemberId`, `getById(MemberId) → Member`: 없으면 `MEMBER_NOT_FOUND` |
+| `MemberRepository` | 아웃바운드 포트 | `findBySubject`, `loadById` (없으면 `MEMBER_NOT_FOUND`), `save` |
+
+인바운드 포트는 두지 않는다. 인증 어댑터 두 개와 컨트롤러가 모두 `MemberService`를 직접 사용한다 ([ADR-0010](../../project/adr/0010-drop-inbound-ports.md)).
 
 ### 2.3 어댑터 (`member.adapter`)
 
@@ -67,7 +67,7 @@ Spring Security oauth2Login → BbsOidcUserService.loadUser(request)
   ├─ subject  = oidcUser.sub
   │  nickname = preferred_username ?: sub
   │  email    = email ?: "{sub}@unknown.local"
-  ├─ ProvisionMemberUseCase.provision(subject, nickname, email)   [트랜잭션]
+  ├─ MemberService.provision(subject, nickname, email)           [트랜잭션]
   │    findBySubject(subject) 있음 → 기존 MemberId (정보 갱신 안 함)
   │                         없음 → Member.provision(...) 저장
   └─ 권한 = 기존 권한 + realm_access.roles.map("ROLE_" + it)
@@ -78,7 +78,7 @@ Spring Security oauth2Login → BbsOidcUserService.loadUser(request)
 
 ```
 CurrentMemberArgumentResolver.resolveArgument(@CurrentMember(required) MemberId)
-  principal is OidcUser → LoadMemberPort.findBySubject(sub)
+  principal is OidcUser → MemberService.getIdBySubject(sub)       [읽기 전용 트랜잭션]
                             있음 → MemberId
                             없음 → MEMBER_NOT_FOUND (404)
   그 밖 (미인증)         → required ? UNAUTHENTICATED (401) : null
@@ -140,3 +140,4 @@ CurrentMemberArgumentResolver.resolveArgument(@CurrentMember(required) MemberId)
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
+| 1.1.0 | 2026-10-09 | 인바운드 포트 제거와 저장소 포트 통합 반영 (ADR-0010). 현재 회원 해석이 서비스를 거치도록 바뀐 점 반영 | HseongH |
