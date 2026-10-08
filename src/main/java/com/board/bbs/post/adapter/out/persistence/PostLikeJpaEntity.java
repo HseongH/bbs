@@ -8,9 +8,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -18,8 +15,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 /** 좋아요 기록. (post_id, member_id) 유니크 제약이 중복의 최종 방어선이다. */
 @Entity
 @Table(name = "post_like")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class PostLikeJpaEntity {
 
@@ -38,6 +33,9 @@ public class PostLikeJpaEntity {
   @Column(nullable = false, updatable = false)
   @Nullable
   private Instant createdAt;
+
+  /** JPA 전용. */
+  protected PostLikeJpaEntity() {}
 
   PostLikeJpaEntity(Long postId, Long memberId) {
     this.postId = postId;

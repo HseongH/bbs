@@ -6,7 +6,6 @@ import com.board.bbs.member.application.service.MemberService;
 import com.board.bbs.member.domain.MemberId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,10 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "회원")
 @RestController
 @RequestMapping("/api/members")
-@RequiredArgsConstructor
 public class MemberController {
 
   private final MemberService memberService;
+
+  MemberController(MemberService memberService) {
+    this.memberService = memberService;
+  }
 
   /**
    * 로그인한 회원의 정보를 반환한다.

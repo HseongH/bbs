@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
-import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -35,13 +34,18 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "댓글")
 @RestController
 @RequestMapping("/api")
-@RequiredArgsConstructor
 public class CommentController {
 
   private static final String ADMIN_ROLE = "ROLE_ADMIN";
 
   private final CommentCommandService commentCommandService;
   private final CommentQueryService commentQueryService;
+
+  CommentController(
+      CommentCommandService commentCommandService, CommentQueryService commentQueryService) {
+    this.commentCommandService = commentCommandService;
+    this.commentQueryService = commentQueryService;
+  }
 
   /**
    * 댓글 또는 답글을 작성한다.

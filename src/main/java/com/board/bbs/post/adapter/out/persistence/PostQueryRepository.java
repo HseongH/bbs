@@ -7,7 +7,6 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -15,13 +14,16 @@ import org.springframework.stereotype.Repository;
 
 /** 목록 조회 전용 질의. 도메인 객체를 거치지 않고 필요한 컬럼만 프로젝션한다. */
 @Repository
-@RequiredArgsConstructor
 public class PostQueryRepository {
 
   private static final QPostJpaEntity POST = QPostJpaEntity.postJpaEntity;
   private static final QMemberJpaEntity MEMBER = QMemberJpaEntity.memberJpaEntity;
 
   private final JPAQueryFactory queryFactory;
+
+  PostQueryRepository(JPAQueryFactory queryFactory) {
+    this.queryFactory = queryFactory;
+  }
 
   /**
    * 조건에 맞는 게시글 요약을 페이지 단위로 조회한다.

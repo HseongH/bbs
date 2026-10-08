@@ -6,17 +6,20 @@ import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.post.application.port.out.PostLikeRepository;
 import com.board.bbs.post.application.port.out.PostRepository;
 import com.board.bbs.post.domain.PostId;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** 좋아요 유스케이스 구현. 카운터는 기록이 실제로 바뀐 경우에만 움직인다. */
 @Service
-@RequiredArgsConstructor
 public class PostLikeService {
 
   private final PostRepository postRepository;
   private final PostLikeRepository postLikeRepository;
+
+  PostLikeService(PostRepository postRepository, PostLikeRepository postLikeRepository) {
+    this.postRepository = postRepository;
+    this.postLikeRepository = postLikeRepository;
+  }
 
   /**
    * 게시글에 좋아요를 누른다.

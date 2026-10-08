@@ -7,18 +7,21 @@ import com.board.bbs.post.application.PostSummary;
 import com.board.bbs.post.application.port.out.PostRepository;
 import com.board.bbs.post.domain.Post;
 import com.board.bbs.post.domain.PostId;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 /** 게시글 영속성 어댑터. */
 @Component
-@RequiredArgsConstructor
 public class PostPersistenceAdapter implements PostRepository {
 
   private final PostJpaRepository repository;
   private final PostQueryRepository queryRepository;
+
+  PostPersistenceAdapter(PostJpaRepository repository, PostQueryRepository queryRepository) {
+    this.repository = repository;
+    this.queryRepository = queryRepository;
+  }
 
   @Override
   public Post save(Post post) {

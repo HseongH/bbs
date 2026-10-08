@@ -8,9 +8,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -19,8 +16,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 /** 게시글 영속성 매핑. */
 @Entity
 @Table(name = "post")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class PostJpaEntity {
 
@@ -58,6 +53,9 @@ public class PostJpaEntity {
 
   @Nullable private Instant deletedAt;
 
+  /** JPA 전용. */
+  protected PostJpaEntity() {}
+
   PostJpaEntity(
       @Nullable Long id,
       String title,
@@ -76,5 +74,37 @@ public class PostJpaEntity {
     this.likeCount = likeCount;
     this.createdAt = createdAt;
     this.deletedAt = deletedAt;
+  }
+
+  @Nullable Long getId() {
+    return id;
+  }
+
+  String getTitle() {
+    return title;
+  }
+
+  String getContent() {
+    return content;
+  }
+
+  Long getAuthorId() {
+    return authorId;
+  }
+
+  long getViewCount() {
+    return viewCount;
+  }
+
+  long getLikeCount() {
+    return likeCount;
+  }
+
+  @Nullable Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  @Nullable Instant getDeletedAt() {
+    return deletedAt;
   }
 }

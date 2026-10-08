@@ -6,16 +6,18 @@ import com.board.bbs.member.application.port.out.MemberRepository;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.member.domain.Nickname;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** 회원 유스케이스 구현. */
 @Service
-@RequiredArgsConstructor
 public class MemberService {
 
   private final MemberRepository memberRepository;
+
+  MemberService(MemberRepository memberRepository) {
+    this.memberRepository = memberRepository;
+  }
 
   /**
    * 회원이 없으면 만들고, 있으면 기존 회원을 그대로 쓴다.

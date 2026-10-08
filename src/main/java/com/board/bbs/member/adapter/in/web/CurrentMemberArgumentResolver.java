@@ -6,7 +6,6 @@ import com.board.bbs.common.security.CurrentMember;
 import com.board.bbs.member.application.service.MemberService;
 import com.board.bbs.member.domain.MemberId;
 import java.util.Objects;
-import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
@@ -20,10 +19,13 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 /** {@link CurrentMember}가 붙은 파라미터를 현재 로그인 회원의 식별자로 채운다. */
 @Component
-@RequiredArgsConstructor
 public class CurrentMemberArgumentResolver implements HandlerMethodArgumentResolver {
 
   private final MemberService memberService;
+
+  CurrentMemberArgumentResolver(MemberService memberService) {
+    this.memberService = memberService;
+  }
 
   @Override
   public boolean supportsParameter(MethodParameter parameter) {

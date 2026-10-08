@@ -6,14 +6,16 @@ import com.board.bbs.member.application.port.out.MemberRepository;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 class MemberPersistenceAdapter implements MemberRepository {
 
   private final MemberJpaRepository repository;
+
+  MemberPersistenceAdapter(MemberJpaRepository repository) {
+    this.repository = repository;
+  }
 
   @Override
   public Optional<Member> findBySubject(String subject) {
