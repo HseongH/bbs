@@ -209,7 +209,15 @@ frontend/src/app/
 
 ## 문서
 
-- [백엔드 설계 문서](docs/superpowers/specs/2026-09-18-bbs-design.md) · [구현 계획](docs/superpowers/plans/2026-09-18-bbs.md)
-- [프론트엔드 설계 문서](docs/superpowers/specs/2026-09-21-bbs-frontend-design.md) · [구현 계획](docs/superpowers/plans/2026-09-21-bbs-frontend.md)
-- [Angular 전환 설계 문서](docs/superpowers/specs/2026-09-21-angular-migration-design.md) · [구현 계획](docs/superpowers/plans/2026-09-21-angular-migration.md)
-- [프론트엔드 안내](frontend/README.md)
+정식 문서 체계와 작성 규칙은 [docs/README.md](docs/README.md)에 있다.
+
+| 구분 | 문서 |
+|---|---|
+| 프로젝트 공통 | [Project Charter](docs/project/charter.md) · [SRS](docs/project/srs.md) · [SDS](docs/project/sds.md) · [QA 기준](docs/project/qa-standards.md) · [ADR](docs/project/adr/README.md) |
+| 회원·인증 | [SRS](docs/features/member/srs.md) · [SDS](docs/features/member/sds.md) · [QA](docs/features/member/qa-checklist.md) |
+| 게시글 | [SRS](docs/features/post/srs.md) · [SDS](docs/features/post/sds.md) · [QA](docs/features/post/qa-checklist.md) |
+| 댓글 | [SRS](docs/features/comment/srs.md) · [SDS](docs/features/comment/sds.md) · [QA](docs/features/comment/qa-checklist.md) |
+| 템플릿 | [docs/templates/](docs/templates/README.md) |
+| 프론트엔드 안내 | [frontend/README.md](frontend/README.md) |
+
+개발 과정에서 AI 협업 도구가 만든 설계 기록과 구현 계획은 [docs/superpowers/](docs/superpowers/)에 남아 있다.
