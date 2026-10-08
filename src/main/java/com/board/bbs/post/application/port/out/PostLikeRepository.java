@@ -3,9 +3,8 @@ package com.board.bbs.post.application.port.out;
 import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.post.domain.PostId;
 
-/** 좋아요 기록 포트. */
-public interface PostLikePort {
-
+/** 좋아요 기록 저장소 포트. */
+public interface PostLikeRepository {
   /**
    * 좋아요를 추가한다.
    *

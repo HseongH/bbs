@@ -1,6 +1,6 @@
 package com.board.bbs.member.adapter.in.security;
 
-import com.board.bbs.member.application.port.in.ProvisionMemberUseCase;
+import com.board.bbs.member.application.service.MemberService;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -26,7 +26,7 @@ public class BbsOidcUserService extends OidcUserService {
   private static final String ROLE_PREFIX = "ROLE_";
   private static final String USER_NAME_ATTRIBUTE = "preferred_username";
 
-  private final ProvisionMemberUseCase provisionMemberUseCase;
+  private final MemberService memberService;
 
   @Override
   public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
@@ -36,7 +36,7 @@ public class BbsOidcUserService extends OidcUserService {
     String nickname = Objects.requireNonNullElse(oidcUser.getPreferredUsername(), subject);
     String email = Objects.requireNonNullElse(oidcUser.getEmail(), subject + "@unknown.local");
 
-    provisionMemberUseCase.provision(subject, nickname, email);
+    memberService.provision(subject, nickname, email);
 
     Set<GrantedAuthority> authorities = new LinkedHashSet<>(oidcUser.getAuthorities());
     authorities.addAll(realmRoles(oidcUser));

@@ -2,7 +2,7 @@ package com.board.bbs.post.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.board.bbs.comment.application.port.in.WriteCommentUseCase;
+import com.board.bbs.comment.application.service.CommentCommandService;
 import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.post.domain.PostId;
 import com.board.bbs.support.IntegrationTestBase;
@@ -15,7 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class PostDeletionIntegrationTest extends IntegrationTestBase {
 
   @Autowired private PostCommandService postCommandService;
-  @Autowired private WriteCommentUseCase writeCommentUseCase;
+  @Autowired private CommentCommandService commentCommandService;
   @Autowired private JdbcTemplate jdbcTemplate;
 
   private MemberId author;
@@ -39,8 +39,8 @@ class PostDeletionIntegrationTest extends IntegrationTestBase {
   @Test
   void 게시글을_삭제하면_게시글과_댓글이_모두_삭제된다() {
     PostId postId = postCommandService.create(author, "삭제될 글", "본문입니다.");
-    writeCommentUseCase.write(postId, author, "첫 댓글", null);
-    writeCommentUseCase.write(postId, author, "둘째 댓글", null);
+    commentCommandService.write(postId, author, "첫 댓글", null);
+    commentCommandService.write(postId, author, "둘째 댓글", null);
 
     postCommandService.delete(postId, author, false);
 

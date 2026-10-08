@@ -4,7 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.board.bbs.member.application.port.out.LoadMemberPort;
+import com.board.bbs.member.application.service.MemberService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -27,7 +27,7 @@ class GlobalExceptionHandlerTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockitoBean private LoadMemberPort loadMemberPort;
+  @MockitoBean private MemberService memberService;
 
   @RestController
   static class TestController {

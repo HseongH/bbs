@@ -4,8 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.board.bbs.common.error.BusinessException;
-import com.board.bbs.member.application.port.out.LoadMemberPort;
-import com.board.bbs.member.application.port.out.SaveMemberPort;
+import com.board.bbs.member.application.port.out.MemberRepository;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
 import java.util.HashMap;
@@ -17,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class MemberServiceTest {
 
   private final InMemoryMemberStore store = new InMemoryMemberStore();
-  private final MemberService service = new MemberService(store, store);
+  private final MemberService service = new MemberService(store);
 
   @Test
   void 처음_로그인하면_회원이_생성된다() {
@@ -52,7 +51,7 @@ class MemberServiceTest {
         .isInstanceOf(BusinessException.class);
   }
 
-  static class InMemoryMemberStore implements LoadMemberPort, SaveMemberPort {
+  static class InMemoryMemberStore implements MemberRepository {
 
     private final Map<String, Member> bySubject = new HashMap<>();
     private final AtomicLong sequence = new AtomicLong();

@@ -2,8 +2,7 @@ package com.board.bbs.member.adapter.out.persistence;
 
 import com.board.bbs.common.error.BusinessException;
 import com.board.bbs.common.error.ErrorCode;
-import com.board.bbs.member.application.port.out.LoadMemberPort;
-import com.board.bbs.member.application.port.out.SaveMemberPort;
+import com.board.bbs.member.application.port.out.MemberRepository;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
 import java.util.Optional;
@@ -12,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-class MemberPersistenceAdapter implements LoadMemberPort, SaveMemberPort {
+class MemberPersistenceAdapter implements MemberRepository {
 
   private final MemberJpaRepository repository;
 

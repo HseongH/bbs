@@ -4,8 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.board.bbs.common.error.BusinessException;
-import com.board.bbs.member.application.port.out.LoadMemberPort;
-import com.board.bbs.member.application.port.out.SaveMemberPort;
+import com.board.bbs.member.application.port.out.MemberRepository;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.member.domain.Nickname;
@@ -20,8 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class MemberPersistenceAdapterTest extends IntegrationTestBase {
 
-  @Autowired private LoadMemberPort loadMemberPort;
-  @Autowired private SaveMemberPort saveMemberPort;
+  @Autowired private MemberRepository memberRepository;
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @BeforeEach
@@ -35,10 +33,10 @@ class MemberPersistenceAdapterTest extends IntegrationTestBase {
   @Test
   void 저장한_회원을_식별자로_읽을_수_있다() {
     Member saved =
-        saveMemberPort.save(Member.provision("sub-1", new Nickname("테스터"), "t@example.com"));
+        memberRepository.save(Member.provision("sub-1", new Nickname("테스터"), "t@example.com"));
     MemberId id = Objects.requireNonNull(saved.getId());
 
-    Member loaded = loadMemberPort.loadById(id);
+    Member loaded = memberRepository.loadById(id);
 
     assertThat(loaded.getSubject()).isEqualTo("sub-1");
     assertThat(loaded.getNickname().value()).isEqualTo("테스터");
@@ -47,15 +45,15 @@ class MemberPersistenceAdapterTest extends IntegrationTestBase {
 
   @Test
   void 사용자_식별자로_회원을_찾을_수_있다() {
-    saveMemberPort.save(Member.provision("sub-2", new Nickname("둘째"), "t2@example.com"));
+    memberRepository.save(Member.provision("sub-2", new Nickname("둘째"), "t2@example.com"));
 
-    assertThat(loadMemberPort.findBySubject("sub-2")).isPresent();
-    assertThat(loadMemberPort.findBySubject("없는-sub")).isEmpty();
+    assertThat(memberRepository.findBySubject("sub-2")).isPresent();
+    assertThat(memberRepository.findBySubject("없는-sub")).isEmpty();
   }
 
   @Test
   void 존재하지_않는_회원을_읽으면_예외가_발생한다() {
-    assertThatThrownBy(() -> loadMemberPort.loadById(new MemberId(999_999L)))
+    assertThatThrownBy(() -> memberRepository.loadById(new MemberId(999_999L)))
         .isInstanceOf(BusinessException.class);
   }
 }

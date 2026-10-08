@@ -1,17 +1,11 @@
 package com.board.bbs.comment.application.service;
 
-import com.board.bbs.comment.application.port.in.DeleteCommentUseCase;
-import com.board.bbs.comment.application.port.in.DeleteCommentsOfPostUseCase;
-import com.board.bbs.comment.application.port.in.UpdateCommentUseCase;
-import com.board.bbs.comment.application.port.in.WriteCommentUseCase;
-import com.board.bbs.comment.application.port.out.DeleteCommentsByPostPort;
-import com.board.bbs.comment.application.port.out.LoadCommentPort;
-import com.board.bbs.comment.application.port.out.SaveCommentPort;
+import com.board.bbs.comment.application.port.out.CommentRepository;
 import com.board.bbs.comment.domain.Comment;
 import com.board.bbs.comment.domain.CommentBody;
 import com.board.bbs.comment.domain.CommentId;
 import com.board.bbs.member.domain.MemberId;
-import com.board.bbs.post.application.port.in.GetPostUseCase;
+import com.board.bbs.post.application.service.PostQueryService;
 import com.board.bbs.post.domain.PostId;
 import java.time.Instant;
 import java.util.Objects;
@@ -23,52 +17,71 @@ import org.springframework.transaction.annotation.Transactional;
 /** 댓글 쓰기 유스케이스 구현. 깊이 판단과 권한 검사는 도메인이 한다. */
 @Service
 @RequiredArgsConstructor
-public class CommentCommandService
-    implements WriteCommentUseCase,
-        UpdateCommentUseCase,
-        DeleteCommentUseCase,
-        DeleteCommentsOfPostUseCase {
+public class CommentCommandService {
 
-  private final SaveCommentPort saveCommentPort;
-  private final LoadCommentPort loadCommentPort;
-  private final DeleteCommentsByPostPort deleteCommentsByPostPort;
-  private final GetPostUseCase getPostUseCase;
+  private final CommentRepository commentRepository;
+  private final PostQueryService postQueryService;
 
-  @Override
+  /**
+   * 댓글 또는 답글을 작성한다.
+   *
+   * @param postId 대상 게시글 식별자
+   * @param author 작성자 식별자
+   * @param body 본문
+   * @param parentCommentId 부모 댓글 식별자. 원댓글이면 null
+   * @return 작성된 댓글의 식별자
+   */
   @Transactional
   public CommentId write(
       PostId postId, MemberId author, String body, @Nullable Long parentCommentId) {
 
-    getPostUseCase.getById(postId);
+    postQueryService.getById(postId);
 
     CommentId parentId = parentCommentId == null ? null : new CommentId(parentCommentId);
-    int parentDepth = parentId == null ? 0 : loadCommentPort.load(parentId).getDepth();
+    int parentDepth = parentId == null ? 0 : commentRepository.load(parentId).getDepth();
 
     Comment saved =
-        saveCommentPort.save(
+        commentRepository.save(
             Comment.write(postId, author, new CommentBody(body), parentId, parentDepth));
     return Objects.requireNonNull(saved.getId(), "저장된 댓글은 식별자를 가진다.");
   }
 
-  @Override
+  /**
+   * 댓글을 수정한다.
+   *
+   * @param id 댓글 식별자
+   * @param requester 요청한 회원 식별자
+   * @param body 새 본문
+   */
   @Transactional
   public void update(CommentId id, MemberId requester, String body) {
-    Comment comment = loadCommentPort.load(id);
+    Comment comment = commentRepository.load(id);
     comment.updateBy(requester, new CommentBody(body));
-    saveCommentPort.save(comment);
+    commentRepository.save(comment);
   }
 
-  @Override
+  /**
+   * 댓글을 삭제한다.
+   *
+   * @param id 댓글 식별자
+   * @param requester 요청한 회원 식별자
+   * @param admin 관리자 여부
+   */
   @Transactional
   public void delete(CommentId id, MemberId requester, boolean admin) {
-    Comment comment = loadCommentPort.load(id);
+    Comment comment = commentRepository.load(id);
     comment.deleteBy(requester, admin, Instant.now());
-    saveCommentPort.save(comment);
+    commentRepository.save(comment);
   }
 
-  @Override
+  /**
+   * 게시글에 달린 댓글을 모두 삭제한다.
+   *
+   * @param postId 게시글 식별자
+   * @param deletedAt 삭제 시각
+   */
   @Transactional
   public void deleteAllOfPost(PostId postId, Instant deletedAt) {
-    deleteCommentsByPostPort.softDeleteAllByPost(postId, deletedAt);
+    commentRepository.softDeleteAllByPost(postId, deletedAt);
   }
 }

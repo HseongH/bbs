@@ -3,10 +3,8 @@ package com.board.bbs.comment.adapter.in.web;
 import com.board.bbs.comment.adapter.in.web.dto.CommentResponse;
 import com.board.bbs.comment.adapter.in.web.dto.UpdateCommentRequest;
 import com.board.bbs.comment.adapter.in.web.dto.WriteCommentRequest;
-import com.board.bbs.comment.application.port.in.DeleteCommentUseCase;
-import com.board.bbs.comment.application.port.in.ListCommentsUseCase;
-import com.board.bbs.comment.application.port.in.UpdateCommentUseCase;
-import com.board.bbs.comment.application.port.in.WriteCommentUseCase;
+import com.board.bbs.comment.application.service.CommentCommandService;
+import com.board.bbs.comment.application.service.CommentQueryService;
 import com.board.bbs.comment.domain.CommentId;
 import com.board.bbs.common.security.CurrentMember;
 import com.board.bbs.common.support.PageResponse;
@@ -42,10 +40,8 @@ public class CommentController {
 
   private static final String ADMIN_ROLE = "ROLE_ADMIN";
 
-  private final WriteCommentUseCase writeCommentUseCase;
-  private final ListCommentsUseCase listCommentsUseCase;
-  private final UpdateCommentUseCase updateCommentUseCase;
-  private final DeleteCommentUseCase deleteCommentUseCase;
+  private final CommentCommandService commentCommandService;
+  private final CommentQueryService commentQueryService;
 
   /**
    * 댓글 또는 답글을 작성한다.
@@ -63,7 +59,7 @@ public class CommentController {
       @Valid @RequestBody WriteCommentRequest request) {
 
     CommentId id =
-        writeCommentUseCase.write(
+        commentCommandService.write(
             new PostId(postId), author, request.body(), request.parentCommentId());
     return ResponseEntity.created(URI.create("/api/comments/" + id.value())).build();
   }
@@ -81,7 +77,7 @@ public class CommentController {
       @PathVariable Long postId, @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 
     return PageResponse.from(
-        listCommentsUseCase.list(new PostId(postId), pageable).map(CommentResponse::from));
+        commentQueryService.list(new PostId(postId), pageable).map(CommentResponse::from));
   }
 
   /**
@@ -99,7 +95,7 @@ public class CommentController {
       @CurrentMember MemberId requester,
       @Valid @RequestBody UpdateCommentRequest request) {
 
-    updateCommentUseCase.update(new CommentId(id), requester, request.body());
+    commentCommandService.update(new CommentId(id), requester, request.body());
   }
 
   /**
@@ -119,6 +115,6 @@ public class CommentController {
         authentication.getAuthorities().stream()
             .anyMatch(authority -> ADMIN_ROLE.equals(authority.getAuthority()));
 
-    deleteCommentUseCase.delete(new CommentId(id), requester, admin);
+    commentCommandService.delete(new CommentId(id), requester, admin);
   }
 }
