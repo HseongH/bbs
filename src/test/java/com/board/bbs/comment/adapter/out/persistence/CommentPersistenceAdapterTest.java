@@ -55,7 +55,7 @@ class CommentPersistenceAdapterTest extends IntegrationTestBase {
 
   @Test
   void 저장한_댓글을_다시_읽을_수_있다() {
-    Comment saved = adapter.save(Comment.write(post, author, new CommentBody("댓글"), null, 0));
+    Comment saved = adapter.save(Comment.write(post, author, new CommentBody("댓글"), null));
 
     Comment loaded = adapter.load(Objects.requireNonNull(saved.getId()));
 
@@ -66,10 +66,10 @@ class CommentPersistenceAdapterTest extends IntegrationTestBase {
 
   @Test
   void 대댓글은_부모_식별자와_깊이를_유지한다() {
-    Comment parent = adapter.save(Comment.write(post, author, new CommentBody("원댓글"), null, 0));
+    Comment parent = adapter.save(Comment.write(post, author, new CommentBody("원댓글"), null));
     CommentId parentId = Objects.requireNonNull(parent.getId());
 
-    Comment reply = adapter.save(Comment.write(post, author, new CommentBody("답글"), parentId, 0));
+    Comment reply = adapter.save(Comment.write(post, author, new CommentBody("답글"), parent));
 
     Comment loaded = adapter.load(Objects.requireNonNull(reply.getId()));
     assertThat(loaded.getParentId()).isEqualTo(parentId);
@@ -78,7 +78,7 @@ class CommentPersistenceAdapterTest extends IntegrationTestBase {
 
   @Test
   void 삭제된_댓글은_읽을_수_없다() {
-    Comment saved = adapter.save(Comment.write(post, author, new CommentBody("댓글"), null, 0));
+    Comment saved = adapter.save(Comment.write(post, author, new CommentBody("댓글"), null));
     CommentId id = Objects.requireNonNull(saved.getId());
     jdbcTemplate.update("UPDATE comment SET deleted_at = now() WHERE id = ?", id.value());
 
@@ -87,8 +87,8 @@ class CommentPersistenceAdapterTest extends IntegrationTestBase {
 
   @Test
   void 게시글의_댓글이_한꺼번에_삭제된다() {
-    adapter.save(Comment.write(post, author, new CommentBody("첫 댓글"), null, 0));
-    adapter.save(Comment.write(post, author, new CommentBody("둘째 댓글"), null, 0));
+    adapter.save(Comment.write(post, author, new CommentBody("첫 댓글"), null));
+    adapter.save(Comment.write(post, author, new CommentBody("둘째 댓글"), null));
     assertThat(adapter.listByPost(post, PageRequest.of(0, 10)).getTotalElements()).isEqualTo(2);
 
     adapter.softDeleteAllByPost(post, Instant.now());
@@ -98,9 +98,9 @@ class CommentPersistenceAdapterTest extends IntegrationTestBase {
 
   @Test
   void 댓글_목록은_작성_순서대로_반환된다() {
-    adapter.save(Comment.write(post, author, new CommentBody("첫째"), null, 0));
-    adapter.save(Comment.write(post, author, new CommentBody("둘째"), null, 0));
-    adapter.save(Comment.write(post, author, new CommentBody("셋째"), null, 0));
+    adapter.save(Comment.write(post, author, new CommentBody("첫째"), null));
+    adapter.save(Comment.write(post, author, new CommentBody("둘째"), null));
+    adapter.save(Comment.write(post, author, new CommentBody("셋째"), null));
 
     assertThat(adapter.listByPost(post, PageRequest.of(0, 10)).getContent())
         .extracting(comment -> comment.getBody().value())

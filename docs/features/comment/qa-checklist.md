@@ -1,13 +1,13 @@
 ---
 doc_id: CMT-QA
 title: 댓글 QA 체크리스트
-version: 1.0.1
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.1.0, CMT-SRS 1.0.0, CMT-SDS 1.1.0]
+related: [PRJ-QA 1.1.0, CMT-SRS 1.1.0, CMT-SDS 1.2.0]
 ---
 
 # 댓글 QA 체크리스트
@@ -39,7 +39,7 @@ related: [PRJ-QA 1.1.0, CMT-SRS 1.0.0, CMT-SDS 1.1.0]
 | TC-CMT-007 | CMT-FR-002 | 원댓글에 답글 작성 | 깊이 1, 부모 식별자 기록 | `CommentTest#원댓글에_달린_답글의_깊이는_1이다`, `CommentControllerTest#대댓글은_깊이_1로_기록된다`, `CommentPersistenceAdapterTest#대댓글은_부모_식별자와_깊이를_유지한다` | Pass |
 | TC-CMT-008 | CMT-FR-002 | 삭제된 댓글에 답글 작성 | `404 COMMENT_NOT_FOUND` | 자동 테스트 없음 | N/T |
 | TC-CMT-009 | CMT-FR-003 | 대댓글에 답글 작성 | `400 COMMENT_DEPTH_EXCEEDED` | `CommentTest#대댓글에는_답글을_달_수_없다`, `CommentControllerTest#대댓글에는_답글을_달_수_없다` | Pass |
-| TC-CMT-010 | CMT-FR-008 | 게시글 A의 댓글을 부모로 지정해 게시글 B에 답글 작성 | 거부 | 코드 검토: `CommentCommandService.write`와 `Comment.write`에 게시글 일치 검사가 없어 **작성이 허용됨** | **Fail** |
+| TC-CMT-010 | CMT-FR-008 | 게시글 A의 댓글을 부모로 지정해 게시글 B에 답글 작성 | 거부 | `CommentTest#다른_게시글의_댓글에는_답글을_달_수_없다`, `CommentControllerTest#다른_게시글의_댓글에는_답글을_달_수_없다` (`404 COMMENT_NOT_FOUND`) | Pass (1.1.0, 1.0.x에서 Fail) |
 
 ### 2.2 조회
 
@@ -48,6 +48,8 @@ related: [PRJ-QA 1.1.0, CMT-SRS 1.0.0, CMT-SDS 1.1.0]
 | TC-CMT-011 | CMT-FR-004, COM-NFR-014 | 여러 댓글 작성 후 목록 | 작성 순서대로 | `CommentPersistenceAdapterTest#댓글_목록은_작성_순서대로_반환된다` | Pass |
 | TC-CMT-012 | CMT-FR-004, COM-NFR-012 | 삭제된 댓글 | 읽을 수 없음 | `CommentPersistenceAdapterTest#삭제된_댓글은_읽을_수_없다` | Pass |
 | TC-CMT-013 | CMT-FR-004 | 저장한 댓글을 다시 읽기 | 같은 값 | `CommentPersistenceAdapterTest#저장한_댓글을_다시_읽을_수_있다` | Pass |
+| TC-CMT-014 | CMT-FR-004 | 존재하지 않는 게시글의 댓글 목록 (회귀, CMT-OPEN-05) | `404 POST_NOT_FOUND` | `CommentControllerTest#존재하지_않는_게시글의_댓글_목록은_404다` | Pass |
+| TC-CMT-015 | CMT-FR-004 | 삭제된 게시글의 댓글 목록 (회귀, CMT-OPEN-05) | `404 POST_NOT_FOUND` | `CommentControllerTest#삭제된_게시글의_댓글_목록은_404다` | Pass |
 
 ### 2.3 수정과 삭제
 
@@ -78,21 +80,18 @@ related: [PRJ-QA 1.1.0, CMT-SRS 1.0.0, CMT-SDS 1.1.0]
 | CMT-FR-001 | 001~006 | 부분 (삭제된 게시글 미검증) |
 | CMT-FR-002 | 007, 008 | 부분 (삭제된 부모 미검증) |
 | CMT-FR-003 | 009 | 완전 |
-| CMT-FR-004 | 001, 011~013 | 완전 |
+| CMT-FR-004 | 001, 011~015 | 완전 |
 | CMT-FR-005 | 020~022, 024 | 부분 |
 | CMT-FR-006 | 021, 023 | 완전 |
 | CMT-FR-007 | 025, 026 | 완전 |
-| CMT-FR-008 | 010 | **미구현 (Fail)** |
+| CMT-FR-008 | 010 | 완전 |
 | CMT-FR-020~023 | 030~034 | 화면 단위 테스트 완전, E2E 미실행 |
 
 ## 4. 결과 요약과 후속 조치
 
-- 집계: 전체 25건 중 Pass 20, **Fail 1**, N/T 4 (자동 테스트 없음 3, E2E 미실행 1).
-- **TC-CMT-010 (Fail)**: 대댓글의 부모가 다른 게시글에 속해도 작성이 허용된다. 수정 절차는 다음과 같다.
-  1. 재현 테스트를 먼저 작성한다 (`CommentTest` 또는 `CommentControllerTest`).
-  2. `Comment.write`가 부모의 `PostId`를 받아 대상 게시글과 비교하도록 바꾼다.
-  3. 오류 코드를 정하고 [프로젝트 SRS §5.1](../../project/srs.md#51-오류-코드-목록)에 추가한다.
-  4. 이 행의 판정을 Pass로 바꾸고 SRS·SDS·QA의 버전을 함께 올린다.
+- 집계: 전체 27건 중 Pass 23, Fail 0, N/T 4 (자동 테스트 없음 3, E2E 미실행 1).
+- TC-CMT-010은 1.0.x에서 Fail이었다. 재현 테스트를 먼저 추가하고 `Comment.write`가 부모 댓글의 게시글을 검사하도록 고쳐 Pass가 되었다. 오류 코드는 기존 `COMMENT_NOT_FOUND`를 재사용하므로 프로젝트 SRS의 오류 코드 목록은 바뀌지 않는다.
+- TC-CMT-014, 015는 CMT-OPEN-05를 해결하면서 추가한 회귀 항목이다.
 - 자동 테스트가 없는 항목(TC-CMT-006, 008, 024)은 회귀 테스트 추가 후보다.
 
 ## 변경 이력
@@ -101,3 +100,4 @@ related: [PRJ-QA 1.1.0, CMT-SRS 1.0.0, CMT-SDS 1.1.0]
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준 수행) | HseongH |
 | 1.0.1 | 2026-10-09 | `main` f46a99c(포트 정리, Lombok 제거 반영)에서 재수행. 판정 변화 없음. 참조 테스트 이름 전수 확인 | HseongH |
+| 1.1.0 | 2026-10-09 | TC-CMT-010 Fail → Pass (CMT-OPEN-01 해결). 회귀 항목 TC-CMT-014, 015 추가 (CMT-OPEN-05 해결) | HseongH |

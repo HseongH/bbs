@@ -38,15 +38,23 @@ class CommentControllerTest extends IntegrationTestBase {
     jdbcTemplate.update("DELETE FROM post");
     jdbcTemplate.update("DELETE FROM member");
 
-    Long authorId = 회원을_만든다(AUTHOR_SUBJECT);
+    회원을_만든다(AUTHOR_SUBJECT);
     회원을_만든다(OTHER_SUBJECT);
 
+    postId = 게시글을_만든다();
+  }
+
+  private Long 게시글을_만든다() {
+    Long authorId =
+        Objects.requireNonNull(
+            jdbcTemplate.queryForObject(
+                "SELECT id FROM member WHERE subject = ?", Long.class, AUTHOR_SUBJECT));
     jdbcTemplate.update(
         "INSERT INTO post (title, content, author_id, view_count, like_count,"
             + " created_at, updated_at) VALUES ('글', '본문', ?, 0, 0, now(), now())",
         authorId);
-    postId =
-        Objects.requireNonNull(jdbcTemplate.queryForObject("SELECT max(id) FROM post", Long.class));
+    return Objects.requireNonNull(
+        jdbcTemplate.queryForObject("SELECT max(id) FROM post", Long.class));
   }
 
   private Long 회원을_만든다(String subject) {
@@ -137,6 +145,40 @@ class CommentControllerTest extends IntegrationTestBase {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"body\":\"댓글\"}"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("POST_NOT_FOUND"));
+  }
+
+  @Test
+  void 다른_게시글의_댓글에는_답글을_달_수_없다() throws Exception {
+    Long otherPostParentId = 댓글을_만든다("다른 글의 댓글", null);
+    Long targetPostId = 게시글을_만든다();
+
+    mockMvc
+        .perform(
+            post("/api/posts/{postId}/comments", targetPostId)
+                .with(로그인(AUTHOR_SUBJECT))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"body\":\"답글\",\"parentCommentId\":%d}".formatted(otherPostParentId)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("COMMENT_NOT_FOUND"));
+  }
+
+  @Test
+  void 존재하지_않는_게시글의_댓글_목록은_404다() throws Exception {
+    mockMvc
+        .perform(get("/api/posts/{postId}/comments", 999_999L))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("POST_NOT_FOUND"));
+  }
+
+  @Test
+  void 삭제된_게시글의_댓글_목록은_404다() throws Exception {
+    jdbcTemplate.update("UPDATE post SET deleted_at = now() WHERE id = ?", postId);
+
+    mockMvc
+        .perform(get("/api/posts/{postId}/comments", postId))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("POST_NOT_FOUND"));
   }

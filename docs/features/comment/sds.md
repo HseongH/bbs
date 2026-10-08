@@ -1,13 +1,13 @@
 ---
 doc_id: CMT-SDS
 title: 댓글 설계 명세서
-version: 1.1.0
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.1.0, CMT-SRS 1.0.0, CMT-QA 1.0.1]
+related: [PRJ-SDS 1.1.0, CMT-SRS 1.1.0, CMT-QA 1.1.0]
 ---
 
 # 댓글 설계 명세서
@@ -29,17 +29,21 @@ related: [PRJ-SDS 1.1.0, CMT-SRS 1.0.0, CMT-QA 1.0.1]
 
 | 요소 | 종류 | 책임 |
 |---|---|---|
-| `Comment` | 애그리게이트 루트 | 본문 보유, 깊이 결정과 제한, 수정·삭제 권한과 삭제 상태 검사 |
+| `Comment` | 애그리게이트 루트 | 본문 보유, 부모와 같은 게시글인지 검사, 깊이 결정과 제한, 수정·삭제 권한과 삭제 상태 검사 |
 | `CommentId` | 값 객체 | 1 이상의 식별자 |
 | `CommentBody` | 값 객체 | 공백 제거 후 1~1,000자 |
 
-깊이 규칙은 생성 시점에 결정된다.
+부모 규칙과 깊이 규칙은 생성 시점에 결정된다.
 
 ```
-Comment.write(postId, author, body, parentId, parentDepth)
-  depth = parentId == null ? 0 : parentDepth + 1
+Comment.write(postId, author, body, parent)
+  parent == null → depth = 0
+  parent.postId != postId → BusinessException(COMMENT_NOT_FOUND)
+  depth = parent.depth + 1
   depth > MAX_DEPTH(1) → BusinessException(COMMENT_DEPTH_EXCEEDED)
 ```
+
+다른 게시글의 댓글은 이 게시글에서 보이지 않으므로, 없는 댓글과 같은 오류로 거부한다.
 
 | 메서드 | 사전 조건 | 실패 |
 |---|---|---|
@@ -98,27 +102,23 @@ flowchart TD
     C -- "아니오" --> D0["depth = 0"]
     C -- "예" --> F{"부모 확인"}
     F -- "없음·삭제됨" --> E2["404 COMMENT_NOT_FOUND"]
-    F -- "있음" --> G["depth = 부모 depth + 1"]
+    F -- "있음" --> P{"부모가 같은 게시글?"}
+    P -- "아니오" --> E2
+    P -- "예" --> G["depth = 부모 depth + 1"]
     G --> H{"depth > 1?"}
     H -- "예" --> E3["400 COMMENT_DEPTH_EXCEEDED"]
     H -- "아니오" --> S["저장 후 201 Created"]
     D0 --> S
-    F -. "검사 누락" .-> X["부모가 같은 게시글인지<br/>확인하지 않음"]
     classDef error fill:#f8cecc,stroke:#b85450,color:#000
-    classDef gap fill:#fff2cc,stroke:#d6b656,color:#000,stroke-dasharray:4 3
     class E1,E2,E3 error
-    class X gap
 ```
 
 | 단계 | 담당 코드 |
 |---|---|
 | 게시글 확인 | `PostQueryService.getById(postId)` (post 기능의 서비스) |
 | 부모 확인 | `CommentRepository.load(parentId)` |
-| depth 계산과 제한 | `Comment.write(...)` (도메인) |
+| 같은 게시글 검사, depth 계산과 제한 | `Comment.write(...)` (도메인) |
 | 저장 | `CommentRepository.save(comment)` |
-| 검사 누락 | [SRS CMT-OPEN-01](srs.md#6-미결-사항), [QA TC-CMT-010](qa-checklist.md) (Fail) |
-
-현재 흐름은 부모 댓글의 `postId`와 요청의 `postId`가 같은지 확인하지 않는다 ([SRS CMT-OPEN-01](srs.md#6-미결-사항)).
 
 ### 3.2 게시글 삭제에 따른 일괄 삭제 (CMT-FR-007)
 
@@ -201,11 +201,11 @@ OFFSET ? LIMIT ?
 | CMT-FR-001 | `CommentCommandService.write`, `PostQueryService.getById`, `CommentBody` | `CommentControllerTest`, `CommentTest` |
 | CMT-FR-002 | `Comment.write` (깊이 결정) | `CommentTest`, `CommentControllerTest`, `CommentPersistenceAdapterTest` |
 | CMT-FR-003 | `Comment.write` (MAX_DEPTH), `ck_comment_depth` | `CommentTest`, `CommentControllerTest` |
-| CMT-FR-004 | `CommentQueryService`, `CommentJpaRepository` | `CommentPersistenceAdapterTest`, `CommentControllerTest` |
+| CMT-FR-004 | `CommentQueryService`, `PostQueryService.getById`, `CommentJpaRepository` | `CommentPersistenceAdapterTest`, `CommentControllerTest` |
 | CMT-FR-005 | `Comment.updateBy` | `CommentTest`, `CommentControllerTest` |
 | CMT-FR-006 | `Comment.deleteBy` | `CommentTest`, `CommentControllerTest`, `CommentPersistenceAdapterTest` |
 | CMT-FR-007 | `PostDeletedListener`, `softDeleteAllByPostId` | `CommentPersistenceAdapterTest`, `PostDeletionIntegrationTest` |
-| CMT-FR-008 | 미구현 | 없음 |
+| CMT-FR-008 | `Comment.write` (같은 게시글 검사) | `CommentTest`, `CommentControllerTest` |
 | CMT-FR-020~023 | `features/comment` 화면 요소 | `comment-section.spec`, E2E |
 
 ## 변경 이력
@@ -214,3 +214,4 @@ OFFSET ? LIMIT ?
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | 인바운드 포트 제거와 저장소 포트 통합 반영 (ADR-0010). 작성 흐름을 Mermaid 다이어그램으로 교체 | HseongH |
+| 1.2.0 | 2026-10-09 | `Comment.write`가 부모 댓글을 받아 같은 게시글인지 검사하도록 변경(CMT-FR-008). 목록 조회가 게시글 존재를 확인 | HseongH |

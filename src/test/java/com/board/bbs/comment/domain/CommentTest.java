@@ -17,7 +17,7 @@ class CommentTest {
 
   @Test
   void 원댓글의_깊이는_0이다() {
-    Comment comment = Comment.write(POST, AUTHOR, new CommentBody("댓글"), null, 0);
+    Comment comment = Comment.write(POST, AUTHOR, new CommentBody("댓글"), null);
 
     assertThat(comment.getDepth()).isZero();
     assertThat(comment.getParentId()).isNull();
@@ -25,7 +25,7 @@ class CommentTest {
 
   @Test
   void 원댓글에_달린_답글의_깊이는_1이다() {
-    Comment reply = Comment.write(POST, AUTHOR, new CommentBody("답글"), new CommentId(10L), 0);
+    Comment reply = Comment.write(POST, AUTHOR, new CommentBody("답글"), 부모_댓글(10L, POST, 0));
 
     assertThat(reply.getDepth()).isEqualTo(1);
     assertThat(reply.getParentId()).isEqualTo(new CommentId(10L));
@@ -33,11 +33,35 @@ class CommentTest {
 
   @Test
   void 대댓글에는_답글을_달_수_없다() {
-    assertThatThrownBy(
-            () -> Comment.write(POST, AUTHOR, new CommentBody("답답글"), new CommentId(10L), 1))
+    Comment reply = 부모_댓글(10L, POST, 1);
+
+    assertThatThrownBy(() -> Comment.write(POST, AUTHOR, new CommentBody("답답글"), reply))
         .isInstanceOf(BusinessException.class)
         .extracting("errorCode")
         .isEqualTo(ErrorCode.COMMENT_DEPTH_EXCEEDED);
+  }
+
+  @Test
+  void 다른_게시글의_댓글에는_답글을_달_수_없다() {
+    Comment otherPostComment = 부모_댓글(10L, new PostId(2L), 0);
+
+    assertThatThrownBy(() -> Comment.write(POST, AUTHOR, new CommentBody("답글"), otherPostComment))
+        .isInstanceOf(BusinessException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.COMMENT_NOT_FOUND);
+  }
+
+  private static Comment 부모_댓글(long id, PostId postId, int depth) {
+    CommentId parentId = depth == 0 ? null : new CommentId(id - 1);
+    return Comment.restore(
+        new CommentId(id),
+        postId,
+        AUTHOR,
+        new CommentBody("부모"),
+        parentId,
+        depth,
+        Instant.EPOCH,
+        null);
   }
 
   @Test

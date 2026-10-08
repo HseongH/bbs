@@ -43,28 +43,30 @@ public class Comment {
   }
 
   /**
-   * 댓글 또는 답글을 작성한다. 깊이는 부모의 깊이에서 결정되며 한 단계까지만 허용한다.
+   * 댓글 또는 답글을 작성한다. 답글은 같은 게시글의 댓글에만 달 수 있고, 깊이는 한 단계까지만 허용한다.
    *
    * @param postId 대상 게시글 식별자
    * @param authorId 작성자 식별자
    * @param body 본문
-   * @param parentId 부모 댓글 식별자. 원댓글이면 null
-   * @param parentDepth 부모 댓글의 깊이. 원댓글이면 무시된다
+   * @param parent 부모 댓글. 원댓글이면 null
    * @return 작성된 댓글
-   * @throws BusinessException 허용 깊이를 넘는 경우
+   * @throws BusinessException 부모가 다른 게시글의 댓글이면 COMMENT_NOT_FOUND, 허용 깊이를 넘으면 COMMENT_DEPTH_EXCEEDED
    */
   public static Comment write(
-      PostId postId,
-      MemberId authorId,
-      CommentBody body,
-      @Nullable CommentId parentId,
-      int parentDepth) {
+      PostId postId, MemberId authorId, CommentBody body, @Nullable Comment parent) {
 
-    int depth = parentId == null ? 0 : parentDepth + 1;
+    if (parent == null) {
+      return new Comment(null, postId, authorId, body, null, 0, null, null);
+    }
+    // 다른 게시글의 댓글은 이 게시글에서 보이지 않으므로, 없는 댓글과 같게 취급한다.
+    if (!parent.postId.equals(postId)) {
+      throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
+    }
+    int depth = parent.depth + 1;
     if (depth > MAX_DEPTH) {
       throw new BusinessException(ErrorCode.COMMENT_DEPTH_EXCEEDED);
     }
-    return new Comment(null, postId, authorId, body, parentId, depth, null, null);
+    return new Comment(null, postId, authorId, body, parent.getId(), depth, null, null);
   }
 
   /**
