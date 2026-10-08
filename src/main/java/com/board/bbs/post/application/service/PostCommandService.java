@@ -9,18 +9,21 @@ import com.board.bbs.post.domain.PostId;
 import com.board.bbs.post.domain.Title;
 import java.time.Instant;
 import java.util.Objects;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** 게시글 쓰기 유스케이스 구현. 권한 판단은 도메인이 하고 여기서는 조율만 한다. */
 @Service
-@RequiredArgsConstructor
 public class PostCommandService {
 
   private final PostRepository postRepository;
   private final ApplicationEventPublisher eventPublisher;
+
+  PostCommandService(PostRepository postRepository, ApplicationEventPublisher eventPublisher) {
+    this.postRepository = postRepository;
+    this.eventPublisher = eventPublisher;
+  }
 
   /**
    * 게시글을 작성한다.

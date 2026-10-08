@@ -9,18 +9,21 @@ import com.board.bbs.post.application.service.PostQueryService;
 import com.board.bbs.post.domain.PostId;
 import java.time.Instant;
 import java.util.Objects;
-import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** 댓글 쓰기 유스케이스 구현. 깊이 판단과 권한 검사는 도메인이 한다. */
 @Service
-@RequiredArgsConstructor
 public class CommentCommandService {
 
   private final CommentRepository commentRepository;
   private final PostQueryService postQueryService;
+
+  CommentCommandService(CommentRepository commentRepository, PostQueryService postQueryService) {
+    this.commentRepository = commentRepository;
+    this.postQueryService = postQueryService;
+  }
 
   /**
    * 댓글 또는 답글을 작성한다.

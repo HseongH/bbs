@@ -6,7 +6,6 @@ import com.board.bbs.post.application.port.out.PostRepository;
 import com.board.bbs.post.application.port.out.ViewDeduplicationPort;
 import com.board.bbs.post.domain.Post;
 import com.board.bbs.post.domain.PostId;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,11 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** 게시글 읽기 유스케이스 구현. */
 @Service
-@RequiredArgsConstructor
 public class PostQueryService {
 
   private final PostRepository postRepository;
   private final ViewDeduplicationPort viewDeduplicationPort;
+
+  PostQueryService(PostRepository postRepository, ViewDeduplicationPort viewDeduplicationPort) {
+    this.postRepository = postRepository;
+    this.viewDeduplicationPort = viewDeduplicationPort;
+  }
 
   /**
    * 게시글을 조회한다.

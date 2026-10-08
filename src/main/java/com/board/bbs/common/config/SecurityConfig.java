@@ -3,7 +3,6 @@ package com.board.bbs.common.config;
 import com.board.bbs.common.error.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,10 +19,13 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 /** 인증·인가 규칙. */
 @Configuration
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
   private final OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService;
+
+  SecurityConfig(OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService) {
+    this.oidcUserService = oidcUserService;
+  }
 
   /**
    * 보안 필터 체인을 구성한다.

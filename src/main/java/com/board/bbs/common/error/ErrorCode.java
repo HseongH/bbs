@@ -1,12 +1,8 @@
 package com.board.bbs.common.error;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 /** 애플리케이션이 반환하는 모든 에러의 단일 목록. 예외를 던지는 쪽은 HTTP를 알 필요가 없다. */
-@Getter
-@RequiredArgsConstructor
 public enum ErrorCode {
   INVALID_REQUEST(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
   UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -21,4 +17,17 @@ public enum ErrorCode {
 
   private final HttpStatus status;
   private final String defaultMessage;
+
+  ErrorCode(HttpStatus status, String defaultMessage) {
+    this.status = status;
+    this.defaultMessage = defaultMessage;
+  }
+
+  public HttpStatus getStatus() {
+    return status;
+  }
+
+  public String getDefaultMessage() {
+    return defaultMessage;
+  }
 }

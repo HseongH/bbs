@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 /** Keycloak 로그인 직후 로컬 회원을 보장한다. 이후 어디서도 회원 존재 여부를 걱정할 필요가 없다. */
 @Service
-@RequiredArgsConstructor
 public class BbsOidcUserService extends OidcUserService {
 
   private static final String REALM_ACCESS_CLAIM = "realm_access";
@@ -27,6 +25,10 @@ public class BbsOidcUserService extends OidcUserService {
   private static final String USER_NAME_ATTRIBUTE = "preferred_username";
 
   private final MemberService memberService;
+
+  BbsOidcUserService(MemberService memberService) {
+    this.memberService = memberService;
+  }
 
   @Override
   public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {

@@ -7,17 +7,19 @@ import com.board.bbs.common.error.BusinessException;
 import com.board.bbs.common.error.ErrorCode;
 import com.board.bbs.post.domain.PostId;
 import java.time.Instant;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 /** 댓글 영속성 어댑터. */
 @Component
-@RequiredArgsConstructor
 public class CommentPersistenceAdapter implements CommentRepository {
 
   private final CommentJpaRepository repository;
+
+  CommentPersistenceAdapter(CommentJpaRepository repository) {
+    this.repository = repository;
+  }
 
   @Override
   public Comment save(Comment comment) {

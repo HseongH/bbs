@@ -17,7 +17,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
-import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
@@ -40,7 +39,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "게시글")
 @RestController
 @RequestMapping("/api/posts")
-@RequiredArgsConstructor
 public class PostController {
 
   private static final String ADMIN_ROLE = "ROLE_ADMIN";
@@ -48,6 +46,15 @@ public class PostController {
   private final PostCommandService postCommandService;
   private final PostQueryService postQueryService;
   private final PostLikeService postLikeService;
+
+  PostController(
+      PostCommandService postCommandService,
+      PostQueryService postQueryService,
+      PostLikeService postLikeService) {
+    this.postCommandService = postCommandService;
+    this.postQueryService = postQueryService;
+    this.postLikeService = postLikeService;
+  }
 
   /**
    * 게시글을 작성한다.

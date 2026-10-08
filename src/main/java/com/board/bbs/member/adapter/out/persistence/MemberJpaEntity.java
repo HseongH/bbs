@@ -8,9 +8,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -19,8 +16,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 /** 회원 영속성 매핑. */
 @Entity
 @Table(name = "member")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class MemberJpaEntity {
 
@@ -48,6 +43,9 @@ public class MemberJpaEntity {
   @Nullable
   private Instant updatedAt;
 
+  /** JPA 전용. */
+  protected MemberJpaEntity() {}
+
   MemberJpaEntity(@Nullable Long id, String subject, String nickname, String email) {
     this.id = id;
     this.subject = subject;
@@ -57,5 +55,21 @@ public class MemberJpaEntity {
 
   void changeNickname(String newNickname) {
     this.nickname = newNickname;
+  }
+
+  @Nullable Long getId() {
+    return id;
+  }
+
+  String getSubject() {
+    return subject;
+  }
+
+  String getNickname() {
+    return nickname;
+  }
+
+  String getEmail() {
+    return email;
   }
 }

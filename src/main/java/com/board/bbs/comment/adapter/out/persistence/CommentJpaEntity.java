@@ -8,9 +8,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -19,8 +16,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 /** 댓글 영속성 매핑. 게시글과 부모 댓글은 식별자 컬럼으로만 참조한다. */
 @Entity
 @Table(name = "comment")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class CommentJpaEntity {
 
@@ -57,6 +52,9 @@ public class CommentJpaEntity {
 
   @Nullable private Instant deletedAt;
 
+  /** JPA 전용. */
+  protected CommentJpaEntity() {}
+
   CommentJpaEntity(
       @Nullable Long id,
       Long postId,
@@ -75,5 +73,37 @@ public class CommentJpaEntity {
     this.depth = depth;
     this.createdAt = createdAt;
     this.deletedAt = deletedAt;
+  }
+
+  @Nullable Long getId() {
+    return id;
+  }
+
+  Long getPostId() {
+    return postId;
+  }
+
+  Long getAuthorId() {
+    return authorId;
+  }
+
+  String getBody() {
+    return body;
+  }
+
+  @Nullable Long getParentCommentId() {
+    return parentCommentId;
+  }
+
+  short getDepth() {
+    return depth;
+  }
+
+  @Nullable Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  @Nullable Instant getDeletedAt() {
+    return deletedAt;
   }
 }

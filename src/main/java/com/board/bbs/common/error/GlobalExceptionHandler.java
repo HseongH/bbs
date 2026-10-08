@@ -6,8 +6,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -28,9 +29,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * <p>Spring MVC가 던지는 예외는 이미 알맞은 상태 코드를 담고 있으므로 {@link ResponseEntityExceptionHandler}가 처리하도록 두고, 이
  * 클래스는 확장 필드만 채운다.
  */
-@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
   private static final String CODE_PROPERTY = "code";
 

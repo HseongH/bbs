@@ -1,9 +1,6 @@
 package com.board.bbs.common.error;
 
-import lombok.Getter;
-
 /** 예상된 실패를 나타내는 예외. 스택트레이스는 의미가 없으므로 수집하지 않는다. */
-@Getter
 public class BusinessException extends RuntimeException {
 
   private final transient ErrorCode errorCode;
@@ -26,5 +23,9 @@ public class BusinessException extends RuntimeException {
   public BusinessException(ErrorCode errorCode, String message) {
     super(message, null, false, false);
     this.errorCode = errorCode;
+  }
+
+  public ErrorCode getErrorCode() {
+    return errorCode;
   }
 }
