@@ -93,7 +93,7 @@ docker compose rm -sf keycloak && docker compose up -d keycloak
 
 프론트엔드는 `cd frontend && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다.
 
-`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, 커밋 전에 포맷과 정적 분석을 검사하는 훅을 설치한다. `frontend/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
+`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, 커밋 전에 포맷과 정적 분석을 검사하는 훅과, 커밋 메시지가 Angular 형식(`type(scope): subject`)을 따르는지 검사하는 훅을 설치한다. `frontend/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
 
 ## 구조
 

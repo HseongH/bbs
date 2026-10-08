@@ -2,6 +2,7 @@ package com.board.bbs.common.error;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -110,7 +111,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     HttpStatus status = errorCode.getStatus();
     ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
     problem.setTitle(status.getReasonPhrase());
-    problem.setType(URI.create("urn:bbs:error:" + errorCode.name().toLowerCase()));
+    problem.setType(URI.create("urn:bbs:error:" + errorCode.name().toLowerCase(Locale.ROOT)));
     problem.setInstance(URI.create(requestUri));
     problem.setProperty(CODE_PROPERTY, errorCode.name());
     return problem;
