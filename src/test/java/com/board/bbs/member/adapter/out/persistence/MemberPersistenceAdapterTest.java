@@ -33,7 +33,8 @@ class MemberPersistenceAdapterTest extends IntegrationTestBase {
   @Test
   void 저장한_회원을_식별자로_읽을_수_있다() {
     Member saved =
-        memberRepository.save(Member.provision("sub-1", new Nickname("테스터"), "t@example.com"));
+        memberRepository.saveIfAbsent(
+            Member.provision("sub-1", new Nickname("테스터"), "t@example.com"));
     MemberId id = Objects.requireNonNull(saved.getId());
 
     Member loaded = memberRepository.loadById(id);
@@ -45,7 +46,7 @@ class MemberPersistenceAdapterTest extends IntegrationTestBase {
 
   @Test
   void 사용자_식별자로_회원을_찾을_수_있다() {
-    memberRepository.save(Member.provision("sub-2", new Nickname("둘째"), "t2@example.com"));
+    memberRepository.saveIfAbsent(Member.provision("sub-2", new Nickname("둘째"), "t2@example.com"));
 
     assertThat(memberRepository.findBySubject("sub-2")).isPresent();
     assertThat(memberRepository.findBySubject("없는-sub")).isEmpty();

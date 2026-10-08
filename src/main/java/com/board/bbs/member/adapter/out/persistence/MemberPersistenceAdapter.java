@@ -31,7 +31,11 @@ class MemberPersistenceAdapter implements MemberRepository {
   }
 
   @Override
-  public Member save(Member member) {
-    return MemberMapper.toDomain(repository.save(MemberMapper.toEntity(member)));
+  public Member saveIfAbsent(Member member) {
+    repository.insertIfAbsent(member.getSubject(), member.getNickname().value(), member.getEmail());
+    return repository
+        .findBySubject(member.getSubject())
+        .map(MemberMapper::toDomain)
+        .orElseThrow(() -> new IllegalStateException("방금 저장한 회원을 찾을 수 없습니다."));
   }
 }

@@ -29,6 +29,21 @@ class MemberTest {
   }
 
   @Test
+  void 외부에서_받은_닉네임이_50자를_넘으면_50자로_자른다() {
+    Nickname nickname = Nickname.truncating("가".repeat(60));
+
+    assertThat(nickname.value()).isEqualTo("가".repeat(50));
+  }
+
+  @Test
+  void 닉네임을_자를_때_두_단위로_된_문자를_가르지_않는다() {
+    String emoji = Character.toString(0x1F600); // 두 개의 char로 이루어진 문자
+    Nickname nickname = Nickname.truncating("가".repeat(49) + emoji + "나");
+
+    assertThat(nickname.value()).isEqualTo("가".repeat(49));
+  }
+
+  @Test
   void 회원_식별자는_양수여야_한다() {
     assertThatThrownBy(() -> new MemberId(0L)).isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> new MemberId(null)).isInstanceOf(IllegalArgumentException.class);

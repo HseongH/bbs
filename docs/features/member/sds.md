@@ -1,13 +1,13 @@
 ---
 doc_id: MEM-SDS
 title: 회원·인증 설계 명세서
-version: 1.1.0
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.1.0, MEM-SRS 1.0.0, MEM-QA 1.0.1]
+related: [PRJ-SDS 1.1.0, MEM-SRS 1.1.0, MEM-QA 1.1.0]
 ---
 
 # 회원·인증 설계 명세서
@@ -33,14 +33,14 @@ related: [PRJ-SDS 1.1.0, MEM-SRS 1.0.0, MEM-QA 1.0.1]
 |---|---|---|
 | `Member` | 애그리게이트 루트 | `subject`, 닉네임, 이메일 보유. `provision()`으로 생성, `changeNickname()` (현재 호출하는 곳 없음) |
 | `MemberId` | 값 객체 | 1 이상의 식별자. **다른 모든 기능이 작성자 식별자로 사용한다** |
-| `Nickname` | 값 객체 | 공백 제거 후 1~50자 |
+| `Nickname` | 값 객체 | 공백 제거 후 1~50자. `truncating()`은 외부에서 받은 이름을 50자로 자른다 (두 개의 `char`로 된 문자는 가르지 않음) |
 
 ### 2.2 애플리케이션 (`member.application`)
 
 | 요소 | 종류 | 책임 |
 |---|---|---|
 | `MemberService` | 서비스 | `provision(subject, nickname, email) → MemberId`: 있으면 기존 식별자, 없으면 생성. `getIdBySubject(subject) → MemberId`, `getById(MemberId) → Member`: 없으면 `MEMBER_NOT_FOUND` |
-| `MemberRepository` | 아웃바운드 포트 | `findBySubject`, `loadById` (없으면 `MEMBER_NOT_FOUND`), `save` |
+| `MemberRepository` | 아웃바운드 포트 | `findBySubject`, `loadById` (없으면 `MEMBER_NOT_FOUND`), `saveIfAbsent` (같은 `subject`가 있으면 기존 회원 반환. 어댑터는 `INSERT ... ON CONFLICT (subject) DO NOTHING` 후 조회) |
 
 인바운드 포트는 두지 않는다. 인증 어댑터 두 개와 컨트롤러가 모두 `MemberService`를 직접 사용한다 ([ADR-0010](../../project/adr/0010-drop-inbound-ports.md)).
 
@@ -69,7 +69,8 @@ Spring Security oauth2Login → BbsOidcUserService.loadUser(request)
   │  email    = email ?: "{sub}@unknown.local"
   ├─ MemberService.provision(subject, nickname, email)           [트랜잭션]
   │    findBySubject(subject) 있음 → 기존 MemberId (정보 갱신 안 함)
-  │                         없음 → Member.provision(...) 저장
+  │                         없음 → saveIfAbsent(Member.provision(subject, Nickname.truncating(nickname), email))
+  │                                동시에 다른 요청이 먼저 저장했으면 그 회원을 반환
   └─ 권한 = 기존 권한 + realm_access.roles.map("ROLE_" + it)
      → DefaultOidcUser(권한, idToken, userInfo, nameAttribute="preferred_username")
 ```
@@ -128,7 +129,8 @@ CurrentMemberArgumentResolver.resolveArgument(@CurrentMember(required) MemberId)
 | 요구사항 | 설계 요소 | 자동 테스트 |
 |---|---|---|
 | MEM-FR-001 | `SecurityConfig.oauth2Login`, `BbsOidcUserService` | 없음 (E2E `auth.setup`이 실제 로그인 수행) |
-| MEM-FR-002 | `MemberService.provision`, `uk_member_subject` | `MemberServiceTest`, `MemberPersistenceAdapterTest`, `MemberTest` |
+| MEM-FR-002 | `MemberService.provision`, `Nickname.truncating`, `uk_member_subject` | `MemberServiceTest`, `MemberPersistenceAdapterTest`, `MemberTest` |
+| MEM-NFR-001 | `MemberRepository.saveIfAbsent` (`ON CONFLICT`) | `MemberProvisioningConcurrencyTest` |
 | MEM-FR-003 | `BbsOidcUserService.realmRoles` | 없음 |
 | MEM-FR-004 | `SecurityConfig.logout` | `SecurityCsrfTest` |
 | MEM-FR-005 | `MemberController`, `MemberService.getById` | `MemberControllerTest`, `MemberServiceTest` |
@@ -141,3 +143,4 @@ CurrentMemberArgumentResolver.resolveArgument(@CurrentMember(required) MemberId)
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | 인바운드 포트 제거와 저장소 포트 통합 반영 (ADR-0010). 현재 회원 해석이 서비스를 거치도록 바뀐 점 반영 | HseongH |
+| 1.2.0 | 2026-10-09 | 회원 저장을 `saveIfAbsent`로 바꿔 동시 최초 로그인을 처리하고, 긴 닉네임을 자르는 `Nickname.truncating` 추가 | HseongH |

@@ -17,12 +17,4 @@ final class MemberMapper {
         new Nickname(entity.getNickname()),
         entity.getEmail());
   }
-
-  static MemberJpaEntity toEntity(Member member) {
-    return new MemberJpaEntity(
-        member.getId() == null ? null : member.getId().value(),
-        member.getSubject(),
-        member.getNickname().value(),
-        member.getEmail());
-  }
 }
