@@ -1,4 +1,4 @@
-package com.board.bbs.common.security;
+package com.board.bbs.member.adapter.in.security;
 
 import com.board.bbs.member.application.port.in.ProvisionMemberUseCase;
 import java.util.Collection;
