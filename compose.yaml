@@ -13,12 +13,16 @@ services:
       timeout: 3s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
+  # Redis 프로토콜과 호환되는 BSD 라이선스 포크. 스프링 부트는 이미지 이름으로 Valkey를 알아보지 못하므로
+  # 레이블로 Redis 연결임을 알려 준다.
+  valkey:
+    image: valkey/valkey:9-alpine
+    labels:
+      org.springframework.boot.service-connection: redis
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
