@@ -38,10 +38,12 @@ public class PostJpaEntity {
   @Column(name = "author_id", nullable = false, updatable = false)
   private Long authorId;
 
-  @Column(nullable = false)
+  /** 원자적 UPDATE로만 바뀐다. 엔티티 저장이 불러올 당시의 값으로 덮어쓰지 않도록 갱신 대상에서 뺀다. */
+  @Column(nullable = false, updatable = false)
   private long viewCount;
 
-  @Column(nullable = false)
+  /** 원자적 UPDATE로만 바뀐다. 엔티티 저장이 불러올 당시의 값으로 덮어쓰지 않도록 갱신 대상에서 뺀다. */
+  @Column(nullable = false, updatable = false)
   private long likeCount;
 
   @CreatedDate
