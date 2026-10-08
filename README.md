@@ -26,7 +26,9 @@ docker compose up -d
 ./gradlew bootRun
 ```
 
-`compose.yaml`이 PostgreSQL · Redis · Keycloak을 띄우고, Keycloak realm은 `docker/keycloak/bbs-realm.json`에서 자동으로 구성된다. 별도 수작업 없이 바로 로그인을 시험할 수 있다.
+`compose.yaml`이 PostgreSQL · Valkey · Keycloak을 띄우고, Keycloak realm은 `docker/keycloak/bbs-realm.json`에서 자동으로 구성된다. 별도 수작업 없이 바로 로그인을 시험할 수 있다.
+
+Valkey는 Redis 프로토콜과 호환되는 BSD 라이선스 포크다. 애플리케이션은 Spring Data Redis로 접속하므로 코드에서는 Redis라는 이름을 그대로 쓴다. Redis 8부터 바뀐 라이선스(RSALv2·SSPLv1·AGPLv3)를 따질 필요가 없도록 Valkey를 쓴다.
 
 | 주소 | 용도 |
 |---|---|
