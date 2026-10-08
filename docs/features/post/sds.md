@@ -1,13 +1,13 @@
 ---
 doc_id: PST-SDS
 title: 게시글 설계 명세서
-version: 1.0.0
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.0.0, PST-SRS 1.0.0, PST-QA 1.0.0]
+related: [PRJ-SDS 1.1.0, PST-SRS 1.0.0, PST-QA 1.0.1]
 ---
 
 # 게시글 설계 명세서
@@ -32,11 +32,19 @@ related: [PRJ-SDS 1.0.0, PST-SRS 1.0.0, PST-QA 1.0.0]
 
 `Post`의 상태 전이:
 
-```
-          write()                  deleteBy(requester, admin, now)
- (없음) ──────────▶ 활성 ──────────────────────────────────────▶ 삭제됨
-                    │  ▲                                           │
-                    └──┘ updateBy(requester, title, content)       └── updateBy / deleteBy → POST_NOT_FOUND
+```mermaid
+stateDiagram-v2
+    state "활성" as Active
+    state "삭제됨 (deleted_at 기록)" as Deleted
+    [*] --> Active: write()
+    Active --> Deleted: deleteBy() 작성자 또는 관리자
+    note right of Active
+        updateBy(): 작성자만 가능, 상태는 그대로 활성
+    end note
+    note right of Deleted
+        updateBy(), deleteBy() 모두 거부
+        POST_NOT_FOUND
+    end note
 ```
 
 | 메서드 | 사전 조건 | 실패 |
@@ -48,30 +56,29 @@ related: [PRJ-SDS 1.0.0, PST-SRS 1.0.0, PST-QA 1.0.0]
 
 ### 2.2 애플리케이션 (`post.application`)
 
-**인바운드 포트 (다른 기능과 웹 어댑터에 공개)**
+**애플리케이션 서비스 (웹 어댑터와 다른 기능에 공개)**
 
-| 포트 | 메서드 | 구현 |
+인바운드 포트는 두지 않는다. 컨트롤러와 다른 기능은 서비스를 직접 사용한다 ([ADR-0010](../../project/adr/0010-drop-inbound-ports.md)).
+
+| 서비스 | 메서드 | 트랜잭션 |
 |---|---|---|
-| `CreatePostUseCase` | `create(author, title, content) → PostId` | `PostCommandService` |
-| `UpdatePostUseCase` | `update(id, requester, title, content)` | `PostCommandService` |
-| `DeletePostUseCase` | `delete(id, requester, admin)` | `PostCommandService` |
-| `GetPostUseCase` | `getById(id) → Post` | `PostQueryService` |
-| `ViewPostUseCase` | `getAndCountView(id, viewerKey) → Post` | `PostQueryService` |
-| `SearchPostsUseCase` | `search(condition, pageable) → Page<PostSummary>` | `PostQueryService` |
-| `LikePostUseCase` | `like(postId, memberId)`, `unlike(postId, memberId)` | `PostLikeService` |
+| `PostCommandService` | `create(author, title, content) → PostId` | 쓰기 |
+| | `update(id, requester, title, content)` | 쓰기 |
+| | `delete(id, requester, admin)` | 쓰기, `PostDeleted` 발행 |
+| `PostQueryService` | `getById(id) → Post` | 읽기 전용 |
+| | `getAndCountView(id, viewerKey) → Post` | 쓰기 (조회수 증가) |
+| | `search(condition, pageable) → Page<PostSummary>` | 읽기 전용 |
+| `PostLikeService` | `like(postId, memberId)`, `unlike(postId, memberId)` | 쓰기 |
 
-`GetPostUseCase`는 `comment` 기능이 게시글 존재를 확인하는 데 사용한다 ([ADR-0009](../../project/adr/0009-feature-boundaries-via-events.md)).
+`PostQueryService.getById`는 `comment` 기능이 게시글 존재를 확인하는 데에도 사용한다 ([ADR-0009](../../project/adr/0009-feature-boundaries-via-events.md)).
 
 **아웃바운드 포트 (기능 내부)**
 
-| 포트 | 책임 | 어댑터 |
+| 포트 | 메서드 | 어댑터 |
 |---|---|---|
-| `LoadPostPort` | 삭제되지 않은 게시글 읽기. 없으면 `POST_NOT_FOUND` | `PostPersistenceAdapter` |
-| `SavePostPort` | 게시글 저장 (카운터 제외) | `PostPersistenceAdapter` |
-| `SearchPostPort` | 목록 프로젝션 조회 | `PostPersistenceAdapter` → `PostQueryRepository` |
-| `PostCounterPort` | 조회수 증가, 좋아요 수 증감 (원자적) | `PostPersistenceAdapter` |
-| `PostLikePort` | 좋아요 행 추가·삭제, 실제로 바뀌었는지 반환 | `PostLikePersistenceAdapter` |
-| `ViewDeduplicationPort` | 처음 보는 조회인지 판정하고 기록 | `RedisViewDeduplicationAdapter` |
+| `PostRepository` | `save`(카운터 제외), `load`(삭제되지 않은 글, 없으면 `POST_NOT_FOUND`), `search`, `increaseViewCount`, `increaseLikeCount`, `decreaseLikeCount`(원자적) | `PostPersistenceAdapter` (→ `PostQueryRepository`) |
+| `PostLikeRepository` | `like`, `unlike` (실제로 바뀌었는지 반환) | `PostLikePersistenceAdapter` |
+| `ViewDeduplicationPort` | `markViewed` (처음 보는 조회인지 판정하고 기록) | `RedisViewDeduplicationAdapter` |
 
 **읽기 모델**
 
@@ -102,43 +109,54 @@ related: [PRJ-SDS 1.0.0, PST-SRS 1.0.0, PST-QA 1.0.0]
 PostController.get(id, viewer?)
   viewerKey = viewer ? "m{memberId}" : "s{sessionId}"
   └─ PostQueryService.getAndCountView(id, viewerKey)        [트랜잭션]
-       ├─ LoadPostPort.load(id)                               없거나 삭제됨 → 404
+       ├─ PostRepository.load(id)                               없거나 삭제됨 → 404
        ├─ ViewDeduplicationPort.markViewed(id, viewerKey)     Redis SET NX EX 86400
-       │    └─ true (처음)  → PostCounterPort.increaseViewCount(id)
+       │    └─ true (처음)  → PostRepository.increaseViewCount(id)
        │                       UPDATE post SET view_count = view_count + 1
        └─ 불러온 Post 반환 (조회수는 증가 전 값)
 ```
 
 ### 3.2 삭제 (PST-FR-006)
 
-```
-PostController.delete(id, requester, authentication)
-  admin = 권한에 ROLE_ADMIN 포함 여부
-  └─ PostCommandService.delete(id, requester, admin)       [트랜잭션 시작]
-       ├─ LoadPostPort.load(id)
-       ├─ post.deleteBy(requester, admin, now)              권한·상태 검사 (도메인)
-       ├─ SavePostPort.save(post)                           deleted_at 기록, 카운터는 갱신 제외
-       └─ publishEvent(PostDeleted(id, now))
-            └─ [comment] PostDeletedListener               동기 수신, 같은 트랜잭션
-                 └─ UPDATE comment SET deleted_at = now
-                    WHERE post_id = ? AND deleted_at IS NULL
-                                                            [트랜잭션 커밋]
+```mermaid
+sequenceDiagram
+    participant C as PostController
+    participant S as PostCommandService
+    participant P as Post (도메인)
+    participant R as PostRepository
+    participant L as PostDeletedListener (comment)
+    participant CS as CommentCommandService (comment)
+    C->>C: admin = 권한에 ROLE_ADMIN 포함 여부
+    C->>S: delete(id, requester, admin)
+    activate S
+    Note over S,CS: 하나의 트랜잭션
+    S->>R: load(id)
+    R-->>S: Post (없거나 삭제됨이면 POST_NOT_FOUND)
+    S->>P: deleteBy(requester, admin, now)
+    Note right of P: 권한·삭제 상태 검사<br/>실패하면 ACCESS_DENIED
+    S->>R: save(post)
+    Note right of R: deleted_at 기록<br/>카운터 컬럼은 갱신 제외
+    S->>L: publishEvent(PostDeleted(id, now)) 동기 전달
+    L->>CS: deleteAllOfPost(postId, deletedAt)
+    CS->>CS: UPDATE comment SET deleted_at<br/>WHERE post_id = ? AND deleted_at IS NULL
+    S-->>C: 완료 (커밋). 중간에 실패하면 모두 롤백
+    deactivate S
 ```
 
 ### 3.3 좋아요 (PST-FR-007, 008)
 
 ```
 PostLikeService.like(postId, memberId)                     [트랜잭션]
-  ├─ LoadPostPort.load(postId)                              없거나 삭제됨 → 404
-  ├─ PostLikePort.like(postId, memberId)
+  ├─ PostRepository.load(postId)                              없거나 삭제됨 → 404
+  ├─ PostLikeRepository.like(postId, memberId)
   │    INSERT INTO post_like ... ON CONFLICT DO NOTHING     영향 행 0 → ALREADY_LIKED (409)
-  └─ PostCounterPort.increaseLikeCount(postId)
+  └─ PostRepository.increaseLikeCount(postId)
        UPDATE post SET like_count = like_count + 1
 
 PostLikeService.unlike(postId, memberId)                   [트랜잭션]
-  ├─ LoadPostPort.load(postId)
-  ├─ PostLikePort.unlike(...)  DELETE ...                  영향 행 0 → NOT_LIKED (409)
-  └─ PostCounterPort.decreaseLikeCount(postId)
+  ├─ PostRepository.load(postId)
+  ├─ PostLikeRepository.unlike(...)  DELETE ...                  영향 행 0 → NOT_LIKED (409)
+  └─ PostRepository.decreaseLikeCount(postId)
        UPDATE post SET like_count = like_count - 1 WHERE ... AND like_count > 0
 ```
 
@@ -230,12 +248,12 @@ SELECT count(*) FROM post p WHERE <같은 조건>
 | 요구사항 | 설계 요소 | 자동 테스트 |
 |---|---|---|
 | PST-FR-001 | `Post.write`, `Title`, `Content`, `CreatePostRequest` | `PostTest`, `PostControllerTest` |
-| PST-FR-002 | `PostQueryService.getAndCountView`, `LoadPostPort` | `PostControllerTest`, `PostPersistenceAdapterTest` |
-| PST-FR-003 | `ViewDeduplicationPort`, `PostCounterPort.increaseViewCount` | `PostControllerTest#게시글을_조회하면_조회수가_올라간다` |
+| PST-FR-002 | `PostQueryService.getAndCountView`, `PostRepository.load` | `PostControllerTest`, `PostPersistenceAdapterTest` |
+| PST-FR-003 | `ViewDeduplicationPort`, `PostRepository.increaseViewCount` | `PostControllerTest#게시글을_조회하면_조회수가_올라간다` |
 | PST-FR-004, 009, 010 | `PostQueryRepository`, `PostSearchCondition` | `PostQueryRepositoryTest` |
 | PST-FR-005 | `Post.updateBy` | `PostTest`, `PostControllerTest` |
 | PST-FR-006 | `Post.deleteBy`, `PostDeleted`, `PostDeletedListener` | `PostTest`, `PostDeletionIntegrationTest` |
-| PST-FR-007, 008 | `PostLikeService`, `PostLikePort`, `PostCounterPort` | `PostControllerTest`, `PostLikeConcurrencyTest` |
+| PST-FR-007, 008 | `PostLikeService`, `PostLikeRepository`, `PostRepository` | `PostControllerTest`, `PostLikeConcurrencyTest` |
 | PST-FR-011 | `PostJpaEntity`의 `updatable = false` | `PostCounterPreservationTest` |
 | PST-FR-020~024 | `features/post` 화면 요소 | `post-list-page.spec`, `post-detail-page.spec`, `post-form.spec`, `like-button.spec`, `post.store.spec`, `auth.guard.spec`, E2E |
 
@@ -246,3 +264,4 @@ SELECT count(*) FROM post p WHERE <같은 조건>
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
+| 1.1.0 | 2026-10-09 | 인바운드 포트 제거와 저장소 포트 통합 반영 (ADR-0010). 상태 전이와 삭제 흐름을 Mermaid 다이어그램으로 교체 | HseongH |

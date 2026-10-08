@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-QA
 title: 게시판(bbs) 공통 QA 기준
-version: 1.0.0
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.0.0, PRJ-SDS 1.0.0]
+related: [PRJ-SRS 1.0.0, PRJ-SDS 1.1.0]
 ---
 
 # 게시판(bbs) 공통 QA 기준
@@ -52,7 +52,7 @@ related: [PRJ-SRS 1.0.0, PRJ-SDS 1.0.0]
 | 항목 | 기준 | 위반 시 |
 |---|---|---|
 | 포맷 | google-java-format (Spotless), Prettier | 빌드 실패 |
-| 정적 분석 | Checkstyle (Google Style), ESLint | 빌드 실패 |
+| 정적 분석 | Checkstyle (서식을 뺀 이름·구조 규칙), Error Prone (경고도 실패로 처리), ESLint | 빌드 실패 |
 | null 안정성 | NullAway (JSpecify 모드), 모든 패키지 `@NullMarked` | 컴파일 실패 |
 | 아키텍처 | `HexagonalArchitectureTest`, `FeatureBoundaryTest` | 빌드 실패 |
 | 라인 커버리지 (전체) | 80% 이상 | 빌드 실패 |
@@ -93,6 +93,7 @@ related: [PRJ-SRS 1.0.0, PRJ-SDS 1.0.0]
 | JDK | Temurin 25 |
 | 데이터베이스 | Testcontainers PostgreSQL (`application-test.yml`) |
 | Redis | Testcontainers Redis |
+| 컨테이너 이미지 | 통합 테스트도 `compose.yaml`의 이미지 태그를 읽는다. 개발 환경과 테스트 환경의 버전이 같다 |
 | 인증 | 테스트에서는 `oidcLogin()` 등 스프링 보안 테스트 지원으로 대체한다. 실제 Keycloak은 E2E에서만 사용한다 |
 | E2E 계정 | `tester` / `tester` (USER), `admin-user` / `admin` (USER, ADMIN) |
 
@@ -101,3 +102,4 @@ related: [PRJ-SRS 1.0.0, PRJ-SDS 1.0.0]
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 | HseongH |
+| 1.1.0 | 2026-10-09 | 정적 분석 기준(Checkstyle 범위, Error Prone)과 테스트 이미지 출처 갱신 (PR #8) | HseongH |

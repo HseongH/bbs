@@ -1,13 +1,13 @@
 ---
 doc_id: MEM-QA
 title: 회원·인증 QA 체크리스트
-version: 1.0.0
+version: 1.0.1
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.0.0, MEM-SRS 1.0.0, MEM-SDS 1.0.0]
+related: [PRJ-QA 1.1.0, MEM-SRS 1.0.0, MEM-SDS 1.1.0]
 ---
 
 # 회원·인증 QA 체크리스트
@@ -18,9 +18,9 @@ related: [PRJ-QA 1.0.0, MEM-SRS 1.0.0, MEM-SDS 1.0.0]
 
 | 항목 | 값 |
 |---|---|
-| 대상 커밋 | `main` e96a878 |
+| 대상 커밋 | `main` f46a99c (최초 수행은 e96a878) |
 | 수행일 | 2026-10-09 |
-| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 99개, 실패 0, 오류 0, 건너뜀 0) |
+| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 103개, 실패 0, 오류 0, 건너뜀 0) |
 | 화면 자동 검증 | `pnpm verify` 성공 (테스트 39개 통과) |
 | E2E, 수동 검증 | 실행하지 않음 (N/T) |
 
@@ -90,4 +90,5 @@ related: [PRJ-QA 1.0.0, MEM-SRS 1.0.0, MEM-SDS 1.0.0]
 
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
-| 1.0.0 | 2026-10-09 | 최초 작성 | HseongH |
+| 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준 수행) | HseongH |
+| 1.0.1 | 2026-10-09 | `main` f46a99c(포트 정리, Lombok 제거 반영)에서 재수행. 판정 변화 없음. 참조 테스트 이름 전수 확인 | HseongH |

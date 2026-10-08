@@ -1,13 +1,13 @@
 ---
 doc_id: CMT-SDS
 title: 댓글 설계 명세서
-version: 1.0.0
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.0.0, CMT-SRS 1.0.0, CMT-QA 1.0.0]
+related: [PRJ-SDS 1.1.0, CMT-SRS 1.0.0, CMT-QA 1.0.1]
 ---
 
 # 댓글 설계 명세서
@@ -20,7 +20,7 @@ related: [PRJ-SDS 1.0.0, CMT-SRS 1.0.0, CMT-QA 1.0.0]
 
 댓글 기능은 게시글 기능에 다음 두 경로로만 연결된다 ([ADR-0009](../../project/adr/0009-feature-boundaries-via-events.md)).
 
-- 작성 시 게시글 존재 확인: 공개 유스케이스 `GetPostUseCase` 호출
+- 작성 시 게시글 존재 확인: `post`의 애플리케이션 서비스 `PostQueryService.getById` 호출
 - 게시글 삭제 시 댓글 정리: 도메인 이벤트 `PostDeleted` 수신
 
 ## 2. 구성 요소
@@ -48,30 +48,29 @@ Comment.write(postId, author, body, parentId, parentDepth)
 
 ### 2.2 애플리케이션 (`comment.application`)
 
-**인바운드 포트**
+**애플리케이션 서비스**
 
-| 포트 | 메서드 | 구현 |
+인바운드 포트는 두지 않는다 ([ADR-0010](../../project/adr/0010-drop-inbound-ports.md)).
+
+| 서비스 | 메서드 | 호출하는 곳 |
 |---|---|---|
-| `WriteCommentUseCase` | `write(postId, author, body, parentCommentId?) → CommentId` | `CommentCommandService` |
-| `UpdateCommentUseCase` | `update(id, requester, body)` | `CommentCommandService` |
-| `DeleteCommentUseCase` | `delete(id, requester, admin)` | `CommentCommandService` |
-| `DeleteCommentsOfPostUseCase` | `deleteAllOfPost(postId, deletedAt)` | `CommentCommandService` |
-| `ListCommentsUseCase` | `list(postId, pageable) → Page<Comment>` | `CommentQueryService` |
+| `CommentCommandService` | `write(postId, author, body, parentCommentId?) → CommentId` | `CommentController` |
+| | `update(id, requester, body)` | `CommentController` |
+| | `delete(id, requester, admin)` | `CommentController` |
+| | `deleteAllOfPost(postId, deletedAt)` | `PostDeletedListener` |
+| `CommentQueryService` | `list(postId, pageable) → Page<Comment>` | `CommentController` |
 
 **아웃바운드 포트**
 
-| 포트 | 책임 | 어댑터 |
+| 포트 | 메서드 | 어댑터 |
 |---|---|---|
-| `LoadCommentPort` | 삭제되지 않은 댓글 읽기. 없으면 `COMMENT_NOT_FOUND` | `CommentPersistenceAdapter` |
-| `SaveCommentPort` | 댓글 저장 | `CommentPersistenceAdapter` |
-| `ListCommentPort` | 게시글별 목록 (작성 순) | `CommentPersistenceAdapter` |
-| `DeleteCommentsByPostPort` | 게시글의 댓글 일괄 소프트 삭제 | `CommentPersistenceAdapter` |
+| `CommentRepository` | `save`, `load`(삭제되지 않은 댓글, 없으면 `COMMENT_NOT_FOUND`), `listByPost`(작성 순), `softDeleteAllByPost`(일괄 소프트 삭제) | `CommentPersistenceAdapter` |
 
 **다른 기능에 대한 의존**
 
 | 대상 | 용도 |
 |---|---|
-| `post.application.port.in.GetPostUseCase` | 작성 전 게시글이 존재하고 삭제되지 않았는지 확인 |
+| `post.application.service.PostQueryService` | `getById`로 작성 전 게시글이 존재하고 삭제되지 않았는지 확인 |
 | `post.domain.PostId`, `post.domain.PostDeleted` | 게시글 식별자, 삭제 이벤트 |
 | `member.domain.MemberId` | 작성자 식별자 |
 
@@ -82,23 +81,42 @@ Comment.write(postId, author, body, parentId, parentDepth)
 | `CommentController` | `in/web` | REST 엔드포인트, 관리자 여부 판단 |
 | `WriteCommentRequest`, `UpdateCommentRequest` | `in/web/dto` | 입력 검증 |
 | `CommentResponse` | `in/web/dto` | 응답 직렬화 |
-| `PostDeletedListener` | `in/event` | `PostDeleted` 수신 → `DeleteCommentsOfPostUseCase` 호출 |
+| `PostDeletedListener` | `in/event` | `PostDeleted` 수신 → `CommentCommandService.deleteAllOfPost` 호출 |
 | `CommentJpaEntity`, `CommentJpaRepository`, `CommentMapper` | `out/persistence` | 매핑, 조회, 일괄 소프트 삭제 |
 
 ## 3. 처리 흐름
 
 ### 3.1 작성 (CMT-FR-001, 002, 003)
 
+`CommentCommandService.write`는 하나의 트랜잭션에서 다음 순서로 검사한다.
+
+```mermaid
+flowchart TD
+    A["POST /api/posts/{postId}/comments"] --> B{"게시글 확인"}
+    B -- "없음·삭제됨" --> E1["404 POST_NOT_FOUND"]
+    B -- "있음" --> C{"부모 지정?"}
+    C -- "아니오" --> D0["depth = 0"]
+    C -- "예" --> F{"부모 확인"}
+    F -- "없음·삭제됨" --> E2["404 COMMENT_NOT_FOUND"]
+    F -- "있음" --> G["depth = 부모 depth + 1"]
+    G --> H{"depth > 1?"}
+    H -- "예" --> E3["400 COMMENT_DEPTH_EXCEEDED"]
+    H -- "아니오" --> S["저장 후 201 Created"]
+    D0 --> S
+    F -. "검사 누락" .-> X["부모가 같은 게시글인지<br/>확인하지 않음"]
+    classDef error fill:#f8cecc,stroke:#b85450,color:#000
+    classDef gap fill:#fff2cc,stroke:#d6b656,color:#000,stroke-dasharray:4 3
+    class E1,E2,E3 error
+    class X gap
 ```
-CommentController.write(postId, author, {body, parentCommentId?})
-  └─ CommentCommandService.write(...)                         [트랜잭션]
-       ├─ GetPostUseCase.getById(postId)                       없거나 삭제됨 → POST_NOT_FOUND
-       ├─ parentCommentId 있음 → LoadCommentPort.load(parent)  없거나 삭제됨 → COMMENT_NOT_FOUND
-       │                          parentDepth = parent.depth
-       ├─ Comment.write(postId, author, body, parentId, parentDepth)
-       │                                                       depth > 1 → COMMENT_DEPTH_EXCEEDED
-       └─ SaveCommentPort.save(comment) → CommentId
-```
+
+| 단계 | 담당 코드 |
+|---|---|
+| 게시글 확인 | `PostQueryService.getById(postId)` (post 기능의 서비스) |
+| 부모 확인 | `CommentRepository.load(parentId)` |
+| depth 계산과 제한 | `Comment.write(...)` (도메인) |
+| 저장 | `CommentRepository.save(comment)` |
+| 검사 누락 | [SRS CMT-OPEN-01](srs.md#6-미결-사항), [QA TC-CMT-010](qa-checklist.md) (Fail) |
 
 현재 흐름은 부모 댓글의 `postId`와 요청의 `postId`가 같은지 확인하지 않는다 ([SRS CMT-OPEN-01](srs.md#6-미결-사항)).
 
@@ -108,6 +126,7 @@ CommentController.write(postId, author, {body, parentCommentId?})
 [post] PostCommandService.delete → publishEvent(PostDeleted(postId, deletedAt))
   └─ [comment] PostDeletedListener.on(event)                  동기 @EventListener, 같은 트랜잭션
        └─ CommentCommandService.deleteAllOfPost(postId, deletedAt)
+            └─ CommentRepository.softDeleteAllByPost(postId, deletedAt)
             └─ UPDATE comment SET deleted_at = :deletedAt
                WHERE post_id = :postId AND deleted_at IS NULL
 ```
@@ -179,7 +198,7 @@ OFFSET ? LIMIT ?
 
 | 요구사항 | 설계 요소 | 자동 테스트 |
 |---|---|---|
-| CMT-FR-001 | `CommentCommandService.write`, `GetPostUseCase`, `CommentBody` | `CommentControllerTest`, `CommentTest` |
+| CMT-FR-001 | `CommentCommandService.write`, `PostQueryService.getById`, `CommentBody` | `CommentControllerTest`, `CommentTest` |
 | CMT-FR-002 | `Comment.write` (깊이 결정) | `CommentTest`, `CommentControllerTest`, `CommentPersistenceAdapterTest` |
 | CMT-FR-003 | `Comment.write` (MAX_DEPTH), `ck_comment_depth` | `CommentTest`, `CommentControllerTest` |
 | CMT-FR-004 | `CommentQueryService`, `CommentJpaRepository` | `CommentPersistenceAdapterTest`, `CommentControllerTest` |
@@ -194,3 +213,4 @@ OFFSET ? LIMIT ?
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
+| 1.1.0 | 2026-10-09 | 인바운드 포트 제거와 저장소 포트 통합 반영 (ADR-0010). 작성 흐름을 Mermaid 다이어그램으로 교체 | HseongH |
