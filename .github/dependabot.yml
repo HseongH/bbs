@@ -10,6 +10,11 @@ updates:
     groups:
       gradle-minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # 1.37.0에서 JavaFormatterOptions.Style이 record로 바뀌어 Spotless가 포매터를 호출하지 못한다.
+      # Spotless가 대응하면 이 규칙을 지운다. https://github.com/diffplug/spotless/issues/3126
+      - dependency-name: com.google.googlejavaformat:google-java-format
+        versions: [">= 1.37.0"]
 
   - package-ecosystem: github-actions
     directory: /
