@@ -1,0 +1,36 @@
+name: line-endings
+
+# 저장소(index)에 CRLF로 저장된 텍스트 파일이 있으면 실패한다.
+# .gitattributes가 eol을 지정해도 Dependabot처럼 API로 커밋하는 도구는 정규화를 거치지 않는다.
+# 경로 조건 없이 모든 변경에서 실행한다.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 저장소에 CRLF로 저장된 파일이 없는지 확인
+        run: |
+          crlf=$(git ls-files --eol | awk '$1 == "i/crlf" || $1 == "i/mixed"')
+          if [ -n "$crlf" ]; then
+            echo "::error::저장소에 CRLF 줄바꿈으로 저장된 파일이 있습니다."
+            echo "$crlf"
+            echo
+            echo "고치는 방법: git add --renormalize <파일> 후 커밋"
+            exit 1
+          fi
+          echo "CRLF로 저장된 파일이 없습니다."
