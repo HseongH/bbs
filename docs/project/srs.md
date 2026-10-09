@@ -7,7 +7,7 @@ owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.6.0, PRJ-QA 1.3.0, PRJ-QC 1.0.0]
+related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.6.0, PRJ-QA 1.3.0, PRJ-QC 1.1.0]
 ---
 
 # 게시판(bbs) 프로젝트 요구사항 명세서
