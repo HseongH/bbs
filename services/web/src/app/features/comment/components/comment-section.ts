@@ -1,4 +1,5 @@
-import { Component, computed, effect, inject, input, viewChild } from "@angular/core";
+import { Component, computed, effect, inject, input, signal, viewChild } from "@angular/core";
+import { toProblem } from "@/core/api/problem";
 import { CurrentMemberStore } from "@/core/auth/current-member.store";
 import { CommentStore } from "../comment.store";
 import { CommentFormComponent } from "./comment-form";
@@ -12,7 +13,12 @@ import { CommentItemComponent } from "./comment-item";
       <h2 class="text-lg font-medium">댓글 {{ visibleCount() }}</h2>
 
       @if (memberStore.member()) {
-        <app-comment-form label="댓글" submitLabel="등록" (saved)="write($event)" />
+        <app-comment-form
+          label="댓글"
+          submitLabel="등록"
+          [error]="writeError()"
+          (saved)="write($event)"
+        />
       } @else {
         <p class="text-sm text-slate-500">댓글을 쓰려면 로그인이 필요합니다.</p>
       }
@@ -61,8 +67,16 @@ export class CommentSectionComponent {
 
   private readonly form = viewChild(CommentFormComponent);
 
+  protected readonly writeError = signal<string | null>(null);
+
+  /** 실패하면 입력한 내용을 남겨 두고 이유를 알린다. */
   protected async write(body: string): Promise<void> {
-    await this.store.write({ body });
-    this.form()?.reset();
+    this.writeError.set(null);
+    try {
+      await this.store.write({ body });
+      this.form()?.reset();
+    } catch (error) {
+      this.writeError.set(toProblem(error)?.detail ?? "댓글을 등록하지 못했습니다.");
+    }
   }
 }

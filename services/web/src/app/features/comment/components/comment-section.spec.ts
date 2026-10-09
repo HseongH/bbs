@@ -257,4 +257,82 @@ describe("CommentSectionComponent", () => {
 
     await vi.waitFor(() => expect(받은본문).toEqual({ body: "답글입니다", parentCommentId: 7 }));
   });
+
+  describe("요청이 실패하면", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const 서버오류 = () =>
+      HttpResponse.json(
+        { status: 500, code: "INTERNAL_ERROR", detail: "잠시 후 다시 시도해 주세요." },
+        { status: 500 },
+      );
+
+    it("댓글 등록 실패를 안내하고 입력한 내용을 남긴다", async () => {
+      server.use(
+        http.get("/api/posts/:postId/comments", () => HttpResponse.json(댓글페이지([]))),
+        http.post("/api/posts/:postId/comments", 서버오류),
+      );
+      await 화면을_그린다();
+
+      const 입력란 = await screen.findByLabelText("댓글");
+      await userEvent.type(입력란, "새 댓글");
+      await userEvent.click(screen.getByRole("button", { name: "등록" }));
+
+      expect(await screen.findByText("잠시 후 다시 시도해 주세요.")).toBeInTheDocument();
+      expect(입력란).toHaveValue("새 댓글");
+    });
+
+    it("댓글 수정 실패를 안내하고 수정 중인 내용을 남긴다", async () => {
+      server.use(
+        http.get("/api/posts/:postId/comments", () =>
+          HttpResponse.json(댓글페이지([묶음(댓글({ id: 7, body: "원래 본문" }))])),
+        ),
+        http.patch("/api/comments/:id", 서버오류),
+      );
+      await 화면을_그린다();
+
+      await userEvent.click(await screen.findByRole("button", { name: "수정" }));
+      const 입력란 = screen.getByLabelText("댓글 수정");
+      await userEvent.type(입력란, " 고침");
+      await userEvent.click(within(입력란.closest("form")!).getByRole("button", { name: "수정" }));
+
+      expect(await screen.findByText("잠시 후 다시 시도해 주세요.")).toBeInTheDocument();
+      expect(screen.getByLabelText("댓글 수정")).toHaveValue("원래 본문 고침");
+    });
+
+    it("답글 등록 실패를 안내하고 입력한 내용을 남긴다", async () => {
+      server.use(
+        http.get("/api/posts/:postId/comments", () =>
+          HttpResponse.json(댓글페이지([묶음(댓글({ id: 7 }))])),
+        ),
+        http.post("/api/posts/:postId/comments", 서버오류),
+      );
+      await 화면을_그린다();
+
+      await userEvent.click(await screen.findByRole("button", { name: "답글 달기" }));
+      const 답글란 = screen.getByLabelText("답글");
+      await userEvent.type(답글란, "답글입니다");
+      await userEvent.click(within(답글란.closest("form")!).getByRole("button", { name: "등록" }));
+
+      expect(await screen.findByText("잠시 후 다시 시도해 주세요.")).toBeInTheDocument();
+      expect(screen.getByLabelText("답글")).toHaveValue("답글입니다");
+    });
+
+    it("댓글 삭제 실패를 안내한다", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      server.use(
+        http.get("/api/posts/:postId/comments", () =>
+          HttpResponse.json(댓글페이지([묶음(댓글({ id: 7 }))])),
+        ),
+        http.delete("/api/comments/:id", 서버오류),
+      );
+      await 화면을_그린다();
+
+      await userEvent.click(await screen.findByRole("button", { name: "삭제" }));
+
+      expect(await screen.findByText("잠시 후 다시 시도해 주세요.")).toBeInTheDocument();
+    });
+  });
 });
