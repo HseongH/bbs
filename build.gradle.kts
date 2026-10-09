@@ -1,48 +1,10 @@
+// 저장소 전체의 작업만 둔다. 서비스의 빌드는 services/ 아래 각 빌드 스크립트와 build-logic의 컨벤션 플러그인이 맡는다.
 plugins {
-    id("bbs.spring-boot-conventions")
+    base
+    alias(libs.plugins.spotless)
 }
 
-group = "com.board"
-version = "0.0.1-SNAPSHOT"
-
-dependencies {
-    implementation(libs.spring.boot.starter.web)
-    implementation(libs.spring.boot.starter.data.jpa)
-    implementation(libs.spring.boot.starter.validation)
-    implementation(libs.spring.boot.starter.actuator)
-
-    implementation(libs.spring.boot.starter.security)
-    implementation(libs.spring.boot.starter.oauth2.client)
-    implementation(libs.spring.boot.starter.data.redis)
-    implementation(libs.spring.boot.starter.session.data.redis)
-
-    implementation(libs.spring.boot.flyway)
-    runtimeOnly(libs.flyway.database.postgresql)
-    runtimeOnly(libs.postgresql)
-
-    implementation(libs.querydsl.jpa)
-    annotationProcessor(variantOf(libs.querydsl.apt) { classifier("jakarta") })
-    annotationProcessor(libs.jakarta.annotation.api)
-    annotationProcessor(libs.jakarta.persistence.api)
-
-    implementation(libs.jspecify)
-
-    implementation(libs.springdoc.openapi.webmvc.ui)
-
-    developmentOnly(libs.spring.boot.devtools)
-    developmentOnly(libs.spring.boot.docker.compose)
-
-    testImplementation(libs.spring.boot.testcontainers)
-    testImplementation(libs.spring.boot.starter.webmvc.test)
-    testImplementation(libs.spring.boot.starter.data.jpa.test)
-    testImplementation(libs.spring.boot.starter.security.test)
-    testImplementation(libs.testcontainers.junit.jupiter)
-    testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.testcontainers.redis)
-    testImplementation(libs.archunit.junit5)
-}
-
-// Gradle 스크립트의 포맷. Java 소스의 규칙은 bbs.java-conventions에 있다.
+// Gradle 스크립트의 포맷. Java 소스의 규칙은 build-logic의 bbs.java-conventions에 있다.
 spotless {
     kotlinGradle {
         target("**/*.gradle.kts")

@@ -10,3 +10,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "bbs"
+
+include(":services:board")

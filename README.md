@@ -23,7 +23,7 @@ Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 RE
 
 ```bash
 docker compose up -d
-./gradlew bootRun
+./gradlew :services:board:bootRun
 ```
 
 `compose.yaml`이 PostgreSQL · Valkey · Keycloak을 띄우고, Keycloak realm은 `docker/keycloak/bbs-realm.json`에서 자동으로 구성된다. 별도 수작업 없이 바로 로그인을 시험할 수 있다.
@@ -62,7 +62,7 @@ cd frontend && pnpm gen:api
 export BBS_HOST=<서버 주소>
 
 docker compose up -d
-./gradlew bootRun
+./gradlew :services:board:bootRun
 cd frontend && pnpm dev
 ```
 
@@ -80,7 +80,7 @@ docker compose rm -sf keycloak && docker compose up -d keycloak
 ./gradlew build
 ```
 
-이 한 줄이 아래를 모두 수행하며, 하나라도 실패하면 빌드가 실패한다.
+저장소 루트에서 실행하면 모든 Java 서비스(현재 `services/board`)에 대해 아래를 수행하며, 하나라도 실패하면 빌드가 실패한다. 검사 규칙은 `build-logic`의 컨벤션 플러그인 한 곳에 있고, 각 서비스는 플러그인을 적용해 같은 기준을 얻는다. 서비스 하나만 검증하려면 `./gradlew :services:board:check`를 쓴다. 리포트는 `services/board/build/reports/`에 생긴다.
 
 | 검사 | 도구 |
 |---|---|
