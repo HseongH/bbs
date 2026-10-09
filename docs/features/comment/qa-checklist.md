@@ -1,7 +1,7 @@
 ---
 doc_id: CMT-QA
 title: 댓글 QA 체크리스트
-version: 1.3.1
+version: 1.3.2
 status: In Review
 owner: HseongH
 reviewers: []
@@ -22,7 +22,7 @@ related: [PRJ-QA 1.3.0, CMT-SRS 1.3.0, CMT-SDS 1.5.1]
 | 수행일 | 2026-10-09 |
 | 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
-| E2E | `pnpm e2e` 성공 (Firefox, 4개 통과). `main` 05a00c4에서 `docker compose -f deploy/compose.yaml up -d --wait`, `./gradlew :services:board:bootRun` 후 2026-10-09 수행 |
+| E2E | `pnpm e2e` 성공 (Chromium, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 1fa1827에 E2E 브라우저를 Chromium으로 바꾸는 설정을 적용하고, `deploy/compose.yaml`의 컨테이너와 `./gradlew :services:board:bootRun`을 띄운 뒤 2026-10-09 수행 (이전 수행: Firefox, `main` 05a00c4) |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
 ## 2. 테스트 항목
@@ -128,3 +128,4 @@ related: [PRJ-QA 1.3.0, CMT-SRS 1.3.0, CMT-SDS 1.5.1]
 | 1.2.0 | 2026-10-09 | `feature/comment-threads`에서 수행. 원댓글 단위 목록과 삭제된 원댓글 표시 항목 추가(TC-CMT-016~019, 035~037, 040~043), TC-CMT-008 N/T → Pass, TC-CMT-011 근거 테스트 교체 | HseongH |
 | 1.3.0 | 2026-10-09 | `fix/review-defects`에서 수행. 회귀 항목 TC-CMT-044(삭제와 작성의 경쟁), 045(1보다 작은 식별자) 추가 | HseongH |
 | 1.3.1 | 2026-10-09 | `main` 05a00c4에서 E2E 수행. TC-CMT-034 N/T → Pass | HseongH |
+| 1.3.2 | 2026-10-09 | E2E 브라우저를 Chromium으로 바꾸고 재수행. TC-CMT-034 판정 변화 없음 (Pass) | HseongH |

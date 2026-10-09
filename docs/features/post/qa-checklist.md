@@ -1,7 +1,7 @@
 ---
 doc_id: PST-QA
 title: 게시글 QA 체크리스트
-version: 1.2.0
+version: 1.2.1
 status: In Review
 owner: HseongH
 reviewers: []
@@ -22,7 +22,7 @@ related: [PRJ-QA 1.3.0, PST-SRS 1.1.0, PST-SDS 1.3.1]
 | 수행일 | 2026-10-09 |
 | 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
-| E2E | 이번 수행에서는 실행하지 않음. E2E 근거 항목(TC-PST-043, 051)의 판정은 이전 수행 결과다: `pnpm e2e` 성공 (Firefox, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 0b719d8에 Firefox 설정을 적용해 2026-10-09 수행 |
+| E2E | `pnpm e2e` 성공 (Chromium, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 1fa1827에 E2E 브라우저를 Chromium으로 바꾸는 설정을 적용하고, `deploy/compose.yaml`의 컨테이너와 `./gradlew :services:board:bootRun`을 띄운 뒤 2026-10-09 수행 (이전 수행: Firefox, `main` 0b719d8) |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
 ## 2. 테스트 항목
@@ -138,3 +138,4 @@ related: [PRJ-QA 1.3.0, PST-SRS 1.1.0, PST-SDS 1.3.1]
 | 1.0.2 | 2026-10-09 | `main` 85cce67(결함 수정 3건, Valkey 전환 반영)에서 재수행. 판정 변화 없음 | HseongH |
 | 1.1.0 | 2026-10-09 | E2E를 Firefox로 실행해 TC-PST-043, 051을 N/T → Pass로 판정 | HseongH |
 | 1.2.0 | 2026-10-09 | `fix/review-defects`에서 수행. 회귀 항목 TC-PST-052(조회수 롤백), 053(1보다 작은 식별자) 추가, TC-PST-010 N/T → Pass | HseongH |
+| 1.2.1 | 2026-10-09 | E2E 브라우저를 Chromium으로 바꾸고 재수행. TC-PST-043, 051 판정 변화 없음 (Pass) | HseongH |
