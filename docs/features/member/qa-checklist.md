@@ -1,7 +1,7 @@
 ---
 doc_id: MEM-QA
 title: 회원·인증 QA 체크리스트
-version: 1.4.0
+version: 1.4.1
 status: In Review
 owner: HseongH
 reviewers: []
@@ -22,7 +22,7 @@ related: [PRJ-QA 1.3.0, MEM-SRS 1.2.0, MEM-SDS 1.4.1]
 | 수행일 | 2026-10-09 |
 | 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
-| E2E | 이번 수행에서는 실행하지 않음. E2E 근거 항목(TC-MEM-001, 039)의 판정은 이전 수행 결과다: `pnpm e2e` 성공 (Firefox, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 0b719d8에 Firefox 설정을 적용해 2026-10-09 수행 |
+| E2E | `pnpm e2e` 성공 (Chromium, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 1fa1827에 E2E 브라우저를 Chromium으로 바꾸는 설정을 적용하고, `deploy/compose.yaml`의 컨테이너와 `./gradlew :services:board:bootRun`을 띄운 뒤 2026-10-09 수행 (이전 수행: Firefox, `main` 0b719d8) |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
 ## 2. 테스트 항목
@@ -108,3 +108,4 @@ related: [PRJ-QA 1.3.0, MEM-SRS 1.2.0, MEM-SDS 1.4.1]
 | 1.2.0 | 2026-10-09 | 공통 보안 항목에 액추에이터 접근 회귀 항목 TC-MEM-014~017 추가 (OPEN-04 해결, PR #18). 수행 정보를 `main` 85cce67 재수행 결과로 정정 | HseongH |
 | 1.3.0 | 2026-10-09 | E2E를 Firefox로 실행해 TC-MEM-001, 039를 N/T → Pass로 판정 | HseongH |
 | 1.4.0 | 2026-10-09 | `fix/review-defects`에서 수행. 회귀 항목 TC-MEM-018(공백 사용자 이름), 019(401 응답 형식) 추가 | HseongH |
+| 1.4.1 | 2026-10-09 | E2E 브라우저를 Chromium으로 바꾸고 재수행. TC-MEM-001, 039 판정 변화 없음 (Pass) | HseongH |
