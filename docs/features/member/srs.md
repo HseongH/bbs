@@ -1,31 +1,31 @@
 ---
 doc_id: MEM-SRS
 title: 회원·인증 요구사항 명세서
-version: 1.2.0
+version: 1.3.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
-last_updated: 2026-10-09
-related: [PRJ-SRS 1.5.0, MEM-SDS 1.4.1, MEM-QA 1.4.0]
+last_updated: 2026-10-10
+related: [PRJ-SRS 1.7.0, MEM-SDS 2.0.0, MEM-QA 1.5.0]
 ---
 
 # 회원·인증 요구사항 명세서
 
-> [프로젝트 SRS](../../project/srs.md)의 공통 요구사항(`COM-*`)을 모두 상속한다. 인증 방식의 근거는 [ADR-0008](../../project/adr/0008-oidc-bff-and-redis-session.md)에 있다.
+> [프로젝트 SRS](../../project/srs.md)의 공통 요구사항(`COM-*`)을 모두 상속한다. 인증 방식의 근거는 [ADR-0008](../../project/adr/0008-oidc-bff-and-redis-session.md)과 [ADR-0016](../../project/adr/0016-auth-service-with-internal-token.md)에 있다. 이 기능은 두 서비스에 걸쳐 있다: 로그인·로그아웃·역할 매핑은 auth가, 회원과 현재 회원 식별은 board가 맡는다.
 
 ## 1. 개요
 
 ### 1.1 목적
 
-사용자가 Keycloak 계정으로 로그인하면, 게시판이 그 사용자를 로컬 회원으로 인식하고 다른 기능에 "현재 회원"을 제공한다. 회원 가입과 비밀번호 관리는 Keycloak이 맡는다.
+사용자가 Keycloak 계정으로 로그인하면, 게시판이 그 사용자를 로컬 회원으로 인식하고 다른 기능에 "현재 회원"을 제공한다. 회원 가입과 비밀번호 관리는 Keycloak이 맡는다. 게시판(board)은 Keycloak을 직접 알지 못하고, auth가 전달하는 내부 토큰으로 사용자를 안다.
 
 ### 1.2 범위
 
 | 포함 | 제외 |
 |---|---|
 | Keycloak 로그인, 로그아웃 | 회원 가입, 비밀번호 변경·찾기 (Keycloak 담당) |
-| 최초 로그인 시 로컬 회원 자동 생성 | 회원 정보 수정 API·화면 |
+| 처음 인증된 API 요청 시 로컬 회원 자동 생성 | 회원 정보 수정 API·화면 |
 | Keycloak 역할을 권한으로 매핑 | 회원 탈퇴 |
 | 내 정보 조회 | 다른 회원 프로필 조회 |
 | 다른 기능에 현재 회원 식별자 제공 | |
@@ -35,9 +35,9 @@ related: [PRJ-SRS 1.5.0, MEM-SDS 1.4.1, MEM-QA 1.4.0]
 
 | 항목 | 규칙 | 출처 |
 |---|---|---|
-| 사용자 식별자 (`subject`) | 필수, 회원마다 고유, 바뀌지 않음 | Keycloak `sub` |
-| 닉네임 | 필수. 앞뒤 공백을 제거한 뒤 1~50자 | Keycloak `preferred_username`. 없거나 공백뿐이면 `sub`. 50자를 넘으면 50자로 잘라 저장한다 (문자를 가운데에서 자르지 않는다) |
-| 이메일 | 필수 | Keycloak `email`. 없거나 공백뿐이면 `{sub}@unknown.local` |
+| 사용자 식별자 (`subject`) | 필수, 회원마다 고유, 바뀌지 않음 | Keycloak `sub`. auth가 내부 토큰의 `sub`로 전달한다 |
+| 닉네임 | 필수. 앞뒤 공백을 제거한 뒤 1~50자 | Keycloak `preferred_username`. 없거나 공백뿐이면 `sub` (auth가 정해서 내부 토큰의 `nickname`으로 전달한다). 50자를 넘으면 board가 50자로 잘라 저장한다 (문자를 가운데에서 자르지 않는다) |
+| 이메일 | 필수 | Keycloak `email`. 없거나 공백뿐이면 `{sub}@unknown.local` (auth가 정해서 내부 토큰의 `email`로 전달한다) |
 
 ## 3. 기능 요구사항
 
@@ -45,17 +45,17 @@ related: [PRJ-SRS 1.5.0, MEM-SDS 1.4.1, MEM-QA 1.4.0]
 
 | ID | 요구사항 | 수용 기준 |
 |---|---|---|
-| MEM-FR-001 | 사용자는 Keycloak 계정으로 로그인할 수 있다. | `/oauth2/authorization/keycloak`에서 시작해 Keycloak 로그인 후 게시판으로 돌아오면 세션이 생긴다. 브라우저에는 토큰이 아니라 세션 쿠키만 전달된다. |
-| MEM-FR-002 | 처음 로그인한 사용자는 로컬 회원으로 자동 생성된다. | 같은 사용자가 다시 로그인해도 회원이 중복 생성되지 않는다. `subject`의 고유성은 데이터베이스 제약으로도 보장한다. |
-| MEM-FR-003 | Keycloak realm 역할을 게시판 권한으로 매핑한다. | realm 역할 `X`는 권한 `ROLE_X`가 된다. `ADMIN` 역할을 가진 사용자는 `ROLE_ADMIN` 권한을 가진다. |
-| MEM-FR-004 | 로그인한 사용자는 로그아웃할 수 있다. | `POST /logout`(CSRF 토큰 필요)이 `204`를 반환하고 세션이 무효화된다. |
+| MEM-FR-001 | 사용자는 Keycloak 계정으로 로그인할 수 있다. | 진입점의 `/oauth2/authorization/keycloak`에서 시작해 Keycloak 로그인 후 게시판으로 돌아오면 auth에 세션이 생긴다. 브라우저에는 토큰이 아니라 세션 쿠키만 전달된다. |
+| MEM-FR-002 | 로그인한 사용자는 처음 인증된 API 요청에서 로컬 회원으로 자동 생성된다. | 회원은 내부 토큰의 사용자 식별자, 닉네임, 이메일로 만든다. 같은 사용자의 이후 요청이나 다시 로그인한 뒤의 요청에서 회원이 중복 생성되지 않는다. `subject`의 고유성은 데이터베이스 제약으로도 보장한다. 화면은 로그인 직후 내 정보를 조회하므로 사용자가 느끼는 생성 시점은 로그인 직후와 같다. |
+| MEM-FR-003 | Keycloak realm 역할 중 게시판이 정의한 역할을 게시판 권한으로 매핑한다. | 게시판이 정의한 역할은 `USER`, `ADMIN`이다. 이 역할 `X`는 내부 토큰의 역할로 전달되어 board에서 권한 `ROLE_X`가 된다. `ADMIN` 역할을 가진 사용자는 `ROLE_ADMIN` 권한을 가진다. 그 밖의 realm 역할(`offline_access` 등)은 전달하지 않는다. |
+| MEM-FR-004 | 로그인한 사용자는 로그아웃할 수 있다. | `POST /logout`(CSRF 토큰 필요)이 `204`를 반환하고 auth의 세션이 무효화된다. 이후의 API 요청에는 내부 토큰이 붙지 않는다. |
 
 ### 3.2 회원 정보
 
 | ID | 요구사항 | 수용 기준 |
 |---|---|---|
 | MEM-FR-005 | 로그인한 사용자는 자신의 회원 정보를 조회할 수 있다. | `GET /api/members/me`가 식별자, 닉네임, 이메일을 반환한다. 미인증이면 `401 UNAUTHENTICATED`이다. |
-| MEM-FR-006 | 다른 기능의 API는 현재 회원 식별자를 받을 수 있다. | 컨트롤러 파라미터에 `@CurrentMember`를 붙이면 현재 회원 식별자가 채워진다. 필수인데 미인증이면 `401`, 선택이면 `null`이다. 인증은 되었지만 로컬 회원이 없으면 `404 MEMBER_NOT_FOUND`이다. |
+| MEM-FR-006 | 다른 기능의 API는 현재 회원 식별자를 받을 수 있다. | 컨트롤러 파라미터에 `@CurrentMember`를 붙이면 현재 회원 식별자가 채워진다. 필수인데 미인증이면 `401`, 선택이면 `null`이다. 인증되었는데 로컬 회원이 없으면 그 자리에서 만든다(MEM-FR-002). |
 
 ### 3.3 화면
 
@@ -72,15 +72,17 @@ related: [PRJ-SRS 1.5.0, MEM-SDS 1.4.1, MEM-QA 1.4.0]
 
 | ID | 요구사항 | 검증 |
 |---|---|---|
-| MEM-NFR-001 | 로그인 직후 회원 생성은 같은 사용자의 동시 최초 로그인에서도 회원을 하나만 만들고, 모든 로그인이 성공한다. | `MemberProvisioningConcurrencyTest`, `uk_member_subject` 제약 |
+| MEM-NFR-001 | 회원 생성은 같은 사용자의 동시 첫 요청에서도 회원을 하나만 만들고, 모든 요청이 성공한다. | [QA](qa-checklist.md) TC-MEM-013, `uk_member_subject` 제약 |
 
 ## 5. 인터페이스
 
-| 메서드 | 경로 | 요구사항 | 인증 | 성공 |
-|---|---|---|---|---|
-| `GET` | `/oauth2/authorization/keycloak` | MEM-FR-001 | 불필요 | `302` (Keycloak으로) |
-| `POST` | `/logout` | MEM-FR-004 | 필요 | `204` |
-| `GET` | `/api/members/me` | MEM-FR-005 | 필요 | `200` |
+모든 경로는 진입점을 거친다.
+
+| 메서드 | 경로 | 요구사항 | 처리 서비스 | 인증 | 성공 |
+|---|---|---|---|---|---|
+| `GET` | `/oauth2/authorization/keycloak` | MEM-FR-001 | auth | 불필요 | `302` (Keycloak으로) |
+| `POST` | `/logout` | MEM-FR-004 | auth | 필요 | `204` |
+| `GET` | `/api/members/me` | MEM-FR-005 | board (auth의 판정 후) | 필요 | `200` |
 
 ## 6. 미결 사항
 
@@ -90,6 +92,7 @@ related: [PRJ-SRS 1.5.0, MEM-SDS 1.4.1, MEM-QA 1.4.0]
 | MEM-OPEN-02 | **해결됨 (1.1.0).** `preferred_username`이 50자를 넘으면 회원 생성이 실패해 로그인할 수 없었다. 50자로 잘라 저장한다 (§3 닉네임 규칙). | - |
 | MEM-OPEN-03 | **해결됨 (1.1.0).** 같은 사용자의 동시 최초 로그인에서 일부 요청이 유니크 제약 위반으로 실패했다. `INSERT ... ON CONFLICT DO NOTHING`으로 데이터베이스가 중복을 판정한다 ([ADR-0005](../../project/adr/0005-database-decides-duplicates.md)와 같은 방식, MEM-NFR-001). | - |
 | MEM-OPEN-04 | 역할 수준 인가를 하지 않는다 ([프로젝트 SRS OPEN-03](../../project/srs.md#7-미결-사항)). | `USER` 역할이 없어도 회원 기능을 쓸 수 있다. |
+| MEM-OPEN-05 | Keycloak에서 역할을 바꿔도 이미 로그인한 사용자에게는 다시 로그인할 때까지 반영되지 않는다. 역할은 로그인할 때 auth의 세션에 저장된다. 1.2.x에서도 같았다. | 관리자 권한을 회수해도 세션이 만료될 때까지(최대 30분 무활동) 관리자 기능을 쓸 수 있다. |
 
 ## 변경 이력
 
@@ -98,3 +101,4 @@ related: [PRJ-SRS 1.5.0, MEM-SDS 1.4.1, MEM-QA 1.4.0]
 | 1.0.0 | 2026-10-09 | 최초 작성 (구현 완료 시점 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | MEM-OPEN-02, 03 해결: 긴 닉네임은 잘라서 저장, 동시 최초 로그인이 모두 성공하도록 MEM-NFR-001 강화 | HseongH |
 | 1.2.0 | 2026-10-09 | 닉네임·이메일 규칙: Keycloak 값이 공백뿐인 경우도 없는 경우와 같이 대체값을 쓰도록 명시 (공백 사용자 이름으로 로그인이 실패하던 결함 수정) | HseongH |
+| 1.3.0 | 2026-10-10 | auth 서비스 분리 반영 ([ADR-0016](../../project/adr/0016-auth-service-with-internal-token.md)): 회원 생성 시점을 "처음 인증된 API 요청"으로 변경(MEM-FR-002, MEM-NFR-001), 역할 매핑을 게시판이 정의한 역할로 한정(MEM-FR-003), 로컬 회원이 없을 때 `404` 대신 생성(MEM-FR-006), 데이터 항목과 인터페이스에 담당 서비스 명시, MEM-OPEN-05(역할 변경 반영 시점) 기록 | HseongH |

@@ -1,35 +1,49 @@
 ---
 doc_id: MEM-SDS
 title: 회원·인증 설계 명세서
-version: 1.4.1
+version: 2.0.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
-last_updated: 2026-10-09
-related: [PRJ-SDS 1.6.0, MEM-SRS 1.2.0, MEM-QA 1.4.0, PRJ-CS 1.1.0]
+last_updated: 2026-10-10
+related: [PRJ-SDS 1.8.0, MEM-SRS 1.3.0, MEM-QA 1.5.0, PRJ-CS 1.1.0]
 ---
 
 # 회원·인증 설계 명세서
 
-> 인증 흐름의 전체 그림과 보안 설정(URL 접근 규칙, CSRF)은 [프로젝트 SDS §7](../../project/sds.md#7-보안-설계)에 있다. 이 문서는 `com.board.bbs.member` 패키지와 화면의 `core/auth`를 다룬다.
+> 인증 흐름의 전체 그림, 접근 제어 계층, CSRF, 내부 토큰과 서명 키는 [프로젝트 SDS §7](../../project/sds.md#7-보안-설계)에 있다. 이 문서는 회원·인증 기능이 auth와 board에 어떻게 나뉘는지, board의 `com.board.bbs.member` 패키지, 화면의 `core/auth`를 다룬다.
 >
 > **이 문서가 다루지 않는 것:** 메서드 시그니처(코드가 기준), 요청·응답 필드(OpenAPI 문서가 기준), 테스트 목록([QA 체크리스트](qa-checklist.md)가 기준). 작성 기준은 [문서 체계 §8](../../README.md#8-sds-작성-기준)에 있다.
 
 ## 1. 설계 개요
 
-회원 기능은 **외부 신원(Keycloak `sub`)과 내부 식별자(`MemberId`)를 연결하는 경계**다. 다른 기능은 Keycloak이나 OIDC를 전혀 모르고 `MemberId`만 사용한다. 이 연결은 두 지점에서 일어난다.
+회원 기능은 **외부 신원과 내부 식별자(`MemberId`)를 연결하는 경계**다. 이 경계는 두 서비스에 나뉘어 있다 ([ADR-0016](../../project/adr/0016-auth-service-with-internal-token.md)).
+
+| 서비스 | 맡는 일 | 아는 것 |
+|---|---|---|
+| auth | 로그인, 로그아웃, 사용자 정보 정규화(닉네임·이메일 대체값), 역할 걸러내기, 내부 토큰 발급 | Keycloak과 그 클레임 형식. 회원 테이블은 모른다 |
+| board | 회원 생성과 조회, 현재 회원 식별, 역할을 권한으로 바꾸기 | 내부 토큰의 클레임. Keycloak은 모른다 |
+
+board 안에서 다른 기능은 내부 토큰도 모르고 `MemberId`만 사용한다. 연결은 board의 한 지점에서 일어난다.
 
 | 시점 | 담당 | 하는 일 |
 |---|---|---|
-| 로그인할 때 | `BbsOidcUserService` | 회원이 없으면 만들고, realm 역할을 권한으로 매핑한다 |
-| API 요청마다 | `CurrentMemberArgumentResolver` | 세션의 `sub`로 회원을 찾아 `@CurrentMember MemberId` 파라미터를 채운다 |
-
-`common`의 보안 설정은 OIDC 사용자 서비스를 **인터페이스 타입으로** 주입받는다. 그래서 `common`은 `member`에 의존하지 않는다 ([ADR-0009](../../project/adr/0009-feature-boundaries-via-events.md)).
+| API 요청마다 | `CurrentMemberArgumentResolver` | 내부 토큰의 사용자 식별자로 회원을 찾고, 없으면 토큰의 클레임으로 만들어 `@CurrentMember MemberId` 파라미터를 채운다 |
 
 ## 2. 구성 요소
 
-### 2.1 도메인 (`member.domain`)
+### 2.1 auth
+
+auth의 전체 구성은 [프로젝트 SDS §7.6](../../project/sds.md#76-auth-서비스-구성)에 있다. 회원·인증 기능에 해당하는 요소는 다음과 같다.
+
+| 요소 | 책임 |
+|---|---|
+| 로그인 사용자 변환 | Keycloak의 사용자 정보에서 bbs 사용자 정보(식별자, 닉네임, 이메일, 역할)를 만든다. 닉네임·이메일이 없거나 공백뿐이면 대체값을 쓰고, 역할은 bbs가 정의한 것만 남긴다 ([SRS §2](srs.md#2-데이터-항목), MEM-FR-003) |
+| 보안 설정의 로그인·로그아웃 | Authorization Code 흐름과 세션 무효화. 로그아웃은 리다이렉트 대신 `204`를 돌려준다 |
+| 내부 토큰 발급 | 세션의 bbs 사용자 정보를 그대로 내부 토큰의 클레임으로 옮긴다 |
+
+### 2.2 board 도메인 (`member.domain`)
 
 | 요소 | 종류 | 책임 |
 |---|---|---|
@@ -37,61 +51,73 @@ related: [PRJ-SDS 1.6.0, MEM-SRS 1.2.0, MEM-QA 1.4.0, PRJ-CS 1.1.0]
 | `MemberId` | 값 객체 | 회원 식별자. **다른 모든 기능이 작성자 식별자로 사용한다** |
 | `Nickname` | 값 객체 | 닉네임 규칙. 외부에서 받은 이름은 거부하지 않고 최대 길이로 자르는 생성 경로가 따로 있다 ([SRS §2](srs.md#2-데이터-항목)) |
 
-닉네임을 만드는 경로가 둘인 이유: 사용자가 직접 입력하는 값은 규칙을 어기면 거부해야 하지만, Keycloak에서 받은 이름은 사용자가 고칠 수 없으므로 거부하면 로그인 자체가 막힌다 (MEM-OPEN-02 해결).
+닉네임을 만드는 경로가 둘인 이유: 사용자가 직접 입력하는 값은 규칙을 어기면 거부해야 하지만, 외부에서 받은 이름은 사용자가 고칠 수 없으므로 거부하면 게시판을 쓸 수 없게 된다 (MEM-OPEN-02 해결).
 
-### 2.2 애플리케이션 (`member.application`)
+### 2.3 board 애플리케이션 (`member.application`)
 
 | 요소 | 종류 | 책임 |
 |---|---|---|
-| `MemberService` | 서비스 | 회원 프로비저닝(있으면 기존 회원, 없으면 생성), `subject`나 식별자로 회원 조회 |
+| `MemberService` | 서비스 | 회원 프로비저닝(있으면 기존 회원, 없으면 생성), 식별자로 회원 조회 |
 | `MemberRepository` | 아웃바운드 포트 | 회원 조회와 "없을 때만 저장". 동시에 같은 사용자를 저장해도 실패하지 않는다 |
 
-인바운드 포트는 두지 않는다. 인증 어댑터 두 개와 컨트롤러가 모두 `MemberService`를 직접 사용한다 ([ADR-0010](../../project/adr/0010-drop-inbound-ports.md)).
+인바운드 포트는 두지 않는다. 인증 어댑터와 컨트롤러가 `MemberService`를 직접 사용한다 ([ADR-0010](../../project/adr/0010-drop-inbound-ports.md)).
 
-### 2.3 어댑터 (`member.adapter`)
+### 2.4 board 어댑터 (`member.adapter`)
 
 | 요소 | 위치 | 책임 |
 |---|---|---|
-| `BbsOidcUserService` | `in/security` | OIDC 사용자 로드 → 회원 프로비저닝 → realm 역할 매핑 |
-| `CurrentMemberArgumentResolver`, `CurrentMemberWebConfig` | `in/web` | `@CurrentMember` 파라미터 해석과 등록 |
+| 내부 토큰 해석 | `in/security` | 검증된 내부 토큰에서 사용자 식별자, 닉네임, 이메일을 꺼내고, 역할 클레임을 `ROLE_` 접두사의 권한으로 바꾼다. 내부 토큰의 클레임 이름은 이 요소만 안다 |
+| `CurrentMemberArgumentResolver`, `CurrentMemberWebConfig` | `in/web` | `@CurrentMember` 파라미터 해석과 등록 (§3.2) |
 | `MemberController` | `in/web` | 내 정보 조회 |
 | `MemberPersistenceAdapter` | `out/persistence` | `MemberRepository` 구현. 중복 판정은 데이터베이스가 한다 |
 
-`@CurrentMember` 어노테이션 자체는 모든 기능의 컨트롤러가 쓰므로 `common`에 있다.
+`@CurrentMember` 어노테이션 자체는 모든 기능의 컨트롤러가 쓰므로 `common`에 있다. board의 보안 설정(`common`)은 토큰의 권한 변환을 `member`의 구현에 직접 의존하지 않고 스프링의 변환기 타입으로 주입받는다. 그래서 `common`은 `member`에 의존하지 않는다 ([ADR-0009](../../project/adr/0009-feature-boundaries-via-events.md)).
 
 ## 3. 처리 흐름
 
-### 3.1 로그인 (MEM-FR-001, 002, 003)
+### 3.1 로그인과 로그아웃 (MEM-FR-001, 003, 004)
 
-1. 스프링 보안이 인가 코드를 토큰으로 교환하고 ID 토큰을 검증한다.
-2. `BbsOidcUserService`가 토큰에서 `sub`, 사용자 이름, 이메일을 꺼낸다. 사용자 이름이 없거나 공백뿐이면 `sub`를, 이메일이 없거나 공백뿐이면 `sub`로 만든 대체 주소를 쓴다. 공백뿐인 이름을 그대로 넘기면 닉네임 규칙에 걸려 로그인이 실패한다.
-3. 회원을 프로비저닝한다 (하나의 트랜잭션).
-   - `sub`로 찾으면 기존 회원을 쓴다. **닉네임과 이메일은 갱신하지 않는다** ([SRS MEM-OPEN-01](srs.md#6-미결-사항)).
-   - 없으면 "없을 때만 저장"한다. 같은 사용자가 동시에 처음 로그인해서 다른 요청이 먼저 저장했다면, 그 회원을 그대로 쓴다.
-4. realm 역할을 `ROLE_` 접두사의 권한으로 매핑해 인증 정보에 더한다.
+로그인 흐름의 순서는 [프로젝트 SDS §7.1](../../project/sds.md#71-로그인-흐름)에 있다. 회원·인증 기능에서 중요한 점은 다음과 같다.
 
-3단계의 "없을 때만 저장"은 데이터베이스의 유니크 제약과 `ON CONFLICT DO NOTHING`, 이어지는 재조회로 구현한다. 조회 후 저장 방식은 동시 요청 두 개가 함께 조회를 통과해서 한쪽이 제약 위반으로 실패했다 ([ADR-0005](../../project/adr/0005-database-decides-duplicates.md)와 같은 방식, MEM-NFR-001).
+1. auth가 Keycloak의 ID 토큰과 사용자 정보에서 사용자 식별자, 사용자 이름, 이메일, realm 역할을 꺼낸다.
+2. 사용자 이름이 없거나 공백뿐이면 사용자 식별자를, 이메일이 없거나 공백뿐이면 사용자 식별자로 만든 대체 주소를 쓴다. 공백뿐인 이름을 그대로 넘기면 board의 닉네임 규칙에 걸려 회원을 만들 수 없다.
+3. realm 역할 중 `USER`, `ADMIN`만 남긴다.
+4. 이 값을 세션에 저장한다. **회원은 만들지 않는다.**
 
-### 3.2 현재 회원 해석 (MEM-FR-006)
+로그아웃은 auth의 세션을 무효화한다. 그 뒤의 API 요청에는 내부 토큰이 붙지 않으므로 board는 그 요청을 익명으로 처리한다. board에는 무효화할 세션이 없다.
+
+### 3.2 현재 회원 해석과 회원 생성 (MEM-FR-002, 006, MEM-NFR-001)
 
 | 상황 | 결과 |
 |---|---|
-| 로그인 상태이고 로컬 회원이 있음 | 회원 식별자 |
-| 로그인 상태인데 로컬 회원이 없음 | `404 MEMBER_NOT_FOUND` |
-| 미인증, 파라미터가 필수 | `401 UNAUTHENTICATED` |
-| 미인증, 파라미터가 선택 | `null` |
+| 유효한 내부 토큰, 로컬 회원 있음 | 회원 식별자 |
+| 유효한 내부 토큰, 로컬 회원 없음 | 토큰의 클레임으로 회원을 만들고 그 식별자 |
+| 토큰 없음, 파라미터가 필수 | `401 UNAUTHENTICATED` |
+| 토큰 없음, 파라미터가 선택 | `null` |
+| 토큰이 있지만 서명·만료·발급자·대상 검증 실패 | 보안 필터에서 `401 UNAUTHENTICATED` (해석기까지 오지 않음) |
 
-요청마다 `sub`로 회원을 조회한다. 세션에 회원 식별자를 저장하지 않는 이유는, 세션 직렬화 형식에 도메인 타입을 넣지 않고 회원 데이터의 변경을 즉시 반영하기 위해서다.
+회원 생성은 하나의 트랜잭션이다.
+
+- 사용자 식별자로 찾으면 기존 회원을 쓴다. **닉네임과 이메일은 갱신하지 않는다** ([SRS MEM-OPEN-01](srs.md#6-미결-사항)).
+- 없으면 "없을 때만 저장"한다. 같은 사용자의 첫 요청 여러 개가 동시에 와서 다른 요청이 먼저 저장했다면, 그 회원을 그대로 쓴다.
+
+"없을 때만 저장"은 데이터베이스의 유니크 제약과 `ON CONFLICT DO NOTHING`, 이어지는 재조회로 구현한다. 조회 후 저장 방식은 동시 요청 두 개가 함께 조회를 통과해서 한쪽이 제약 위반으로 실패했다 ([ADR-0005](../../project/adr/0005-database-decides-duplicates.md)와 같은 방식, MEM-NFR-001). 로그인 직후 화면은 내 정보 조회와 게시글 목록 조회를 함께 보내므로, 이 동시 첫 요청은 실제로 자주 일어난다.
+
+요청마다 사용자 식별자로 회원을 조회한다. 회원 식별자를 내부 토큰에 넣지 않는 이유는 auth가 회원 테이블을 모르게 하기 위해서다. 회원 식별자는 board의 데이터이고, auth는 외부 신원만 다룬다.
 
 ## 4. 인터페이스 설계
 
-엔드포인트 목록은 [SRS §5](srs.md#5-인터페이스)에, 응답 필드는 OpenAPI 문서에 있다. 회원 기능이 쓰는 오류 코드는 `UNAUTHENTICATED`, `MEMBER_NOT_FOUND`다.
+엔드포인트 목록과 처리 서비스는 [SRS §5](srs.md#5-인터페이스)에, 응답 필드는 OpenAPI 문서에 있다. 회원 기능이 쓰는 오류 코드는 `UNAUTHENTICATED`, `MEMBER_NOT_FOUND`다. `MEMBER_NOT_FOUND`는 식별자로 회원을 읽을 때만 쓰고, 현재 회원 해석에서는 더 이상 나오지 않는다.
+
+내부 토큰의 클레임은 auth와 board 사이의 계약이다. 클레임 이름이나 서명 방식을 바꾸면 두 서비스를 함께 바꿔야 하므로, auth가 발급한 토큰을 board의 검증 설정으로 검증하는 계약 테스트가 이 계약을 고정한다.
 
 ## 5. 데이터 설계
 
-[프로젝트 SDS §5](../../project/sds.md#5-데이터-관점)의 `member` 테이블을 사용한다. `subject`의 유니크 제약이 같은 사용자의 중복 생성을 최종적으로 막고, 동시 최초 로그인에서 중복을 판정하는 기준이 된다.
+[프로젝트 SDS §5](../../project/sds.md#5-데이터-관점)의 `member` 테이블을 사용한다. 스키마는 바뀌지 않는다. `subject`의 유니크 제약이 같은 사용자의 중복 생성을 최종적으로 막고, 동시 첫 요청에서 중복을 판정하는 기준이 된다.
 
 ## 6. 화면 설계 (`services/web/src/app/core/auth`)
+
+화면 코드는 이번 변경에서 바뀌지 않는다. 화면이 보는 경로(`/oauth2/authorization/keycloak`, `/logout`, `/api/members/me`)와 응답(`401`, `204`)이 그대로이기 때문이다.
 
 | 요소 | 책임 |
 |---|---|
@@ -106,12 +132,14 @@ related: [PRJ-SDS 1.6.0, MEM-SRS 1.2.0, MEM-QA 1.4.0, PRJ-CS 1.1.0]
 
 | 결정 | 이유 | 대안과 기각 이유 |
 |---|---|---|
-| 최초 로그인 시 자동 생성 (JIT provisioning) | 별도 가입 절차 없이 Keycloak 계정만으로 사용 | 가입 화면: 같은 정보를 두 번 입력하게 된다 |
-| 다른 기능에는 `MemberId`만 노출 | 인증 방식이 바뀌어도 다른 기능이 영향을 받지 않는다 | `OidcUser`를 컨트롤러에서 직접 사용: 모든 기능이 OIDC에 묶인다 |
-| 회원 생성의 중복 판정을 데이터베이스에 맡김 | 동시 최초 로그인이 모두 성공한다 | 조회 후 저장: 동시 요청 중 일부가 제약 위반으로 실패 (MEM-OPEN-03) |
-| 외부 이름이 길면 잘라서 저장 | 사용자가 고칠 수 없는 값 때문에 로그인이 막히지 않는다 | 로그인 거부: MEM-OPEN-02의 원인. 제한 늘리기: 화면 표시 규칙이 함께 바뀐다 |
-| 요청마다 `subject`로 회원 조회 | 세션에 도메인 타입을 넣지 않는다 | 세션에 회원 식별자 캐시: 조회 1회를 줄이지만 세션 직렬화와 무효화 문제가 생긴다 |
-| 로그인 시 닉네임·이메일을 갱신하지 않음 | 구현 단순화 | 매 로그인 동기화: [SRS MEM-OPEN-01](srs.md#6-미결-사항)로 남겨 둠 |
+| 회원은 board가 첫 인증된 요청에서 만든다 (JIT provisioning) | auth가 board를 호출하지 않아 두 서비스가 서로를 모른다. 회원 테이블은 board의 데이터다 | 로그인 직후 auth가 board의 내부 API 호출: auth가 board에 의존하고, board가 멈추면 로그인이 실패한다. 회원 생성 이벤트 발행: 메시지 브로커가 필요하고 첫 요청에서 회원이 아직 없을 수 있다 |
+| 닉네임·이메일 대체값과 역할 걸러내기는 auth가 한다 | IdP의 값이 비어 있거나 IdP 고유의 역할이 섞이는 것은 IdP 쪽 사정이다. board는 항상 채워진 값과 bbs의 역할만 받는다 | board가 처리: board가 IdP의 사정을 알게 된다 |
+| 닉네임 길이 자르기는 board가 한다 | 닉네임 규칙(최대 50자)은 board의 도메인 규칙이다 | auth가 처리: auth가 board의 도메인 규칙을 알게 된다 |
+| 다른 기능에는 `MemberId`만 노출 | 인증 방식이 바뀌어도 다른 기능이 영향을 받지 않는다. 이번 변경에서 실제로 게시글·댓글 기능은 바뀌지 않는다 | 토큰이나 인증 객체를 컨트롤러에서 직접 사용: 모든 기능이 인증 방식에 묶인다 |
+| 회원 생성의 중복 판정을 데이터베이스에 맡김 | 동시 첫 요청이 모두 성공한다 | 조회 후 저장: 동시 요청 중 일부가 제약 위반으로 실패 (MEM-OPEN-03) |
+| 외부 이름이 길면 잘라서 저장 | 사용자가 고칠 수 없는 값 때문에 게시판을 못 쓰는 일이 없다 | 거부: MEM-OPEN-02의 원인. 제한 늘리기: 화면 표시 규칙이 함께 바뀐다 |
+| 요청마다 사용자 식별자로 회원 조회 | auth가 회원 식별자를 모르게 한다 | 내부 토큰에 회원 식별자 포함: auth가 회원 테이블을 알아야 한다 |
+| 회원 생성 이후 닉네임·이메일을 갱신하지 않음 | 구현 단순화 | 매 요청 동기화: [SRS MEM-OPEN-01](srs.md#6-미결-사항)로 남겨 둠 |
 
 ## 8. 요구사항 대응표
 
@@ -119,9 +147,10 @@ related: [PRJ-SDS 1.6.0, MEM-SRS 1.2.0, MEM-QA 1.4.0, PRJ-CS 1.1.0]
 
 | 요구사항 | 설계 요소 |
 |---|---|
-| MEM-FR-001, 003 | 보안 설정의 OIDC 로그인, `BbsOidcUserService` (§3.1) |
-| MEM-FR-002, MEM-NFR-001 | `MemberService`, `MemberRepository`의 "없을 때만 저장", `Nickname` (§3.1) |
-| MEM-FR-004 | 보안 설정의 로그아웃 처리 |
+| MEM-FR-001 | auth의 보안 설정(로그인), 로그인 사용자 변환 (§3.1) |
+| MEM-FR-002, MEM-NFR-001 | board의 `CurrentMemberArgumentResolver`, `MemberService`, `MemberRepository`의 "없을 때만 저장", `Nickname` (§3.2) |
+| MEM-FR-003 | auth의 로그인 사용자 변환(역할 걸러내기), board의 내부 토큰 해석(권한 변환) |
+| MEM-FR-004 | auth의 보안 설정(로그아웃) |
 | MEM-FR-005 | `MemberController`, `MemberService` |
 | MEM-FR-006 | `CurrentMemberArgumentResolver` (§3.2) |
 | MEM-FR-020~023 | `core/auth`, `main.ts` (§6) |
@@ -136,3 +165,4 @@ related: [PRJ-SDS 1.6.0, MEM-SRS 1.2.0, MEM-QA 1.4.0, PRJ-CS 1.1.0]
 | 1.3.0 | 2026-10-09 | 세밀도 조정: 메서드 시그니처, 의사 코드, 응답 예시, 테스트 목록을 빼고 책임·흐름·결정 중심으로 재작성. 결함 수정(MEM-OPEN-02, 03)의 설계 결정을 §7에 추가 | HseongH |
 | 1.4.0 | 2026-10-09 | 로그인 흐름: 공백뿐인 사용자 이름·이메일도 대체값을 쓰도록 변경 (MEM-SRS 1.2.0) | HseongH |
 | 1.4.1 | 2026-10-09 | 화면 설계 절의 경로를 `services/web/`으로 정정 (모노레포 전환, ADR-0014). 의미 변경 없음 | HseongH |
+| 2.0.0 | 2026-10-10 | auth 서비스 분리 반영 ([ADR-0016](../../project/adr/0016-auth-service-with-internal-token.md), MEM-SRS 1.3.0): 기능을 auth와 board의 책임으로 나눠 다시 씀. 회원 생성을 로그인 시점에서 board의 첫 인증된 요청으로 옮기고, `BbsOidcUserService`를 auth의 로그인 사용자 변환과 board의 내부 토큰 해석으로 나눔. 서비스 간 계약(내부 토큰 클레임) 절 추가 | HseongH |
