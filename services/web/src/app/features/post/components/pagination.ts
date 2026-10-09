@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from "@angular/core";
+import { Component, computed, input, output } from "@angular/core";
 import { ButtonComponent } from "@/shared/ui/button";
 
 @Component({
   selector: "app-pagination",
   imports: [ButtonComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (totalPages() > 1) {
       <nav class="flex justify-center gap-1 py-4" aria-label="페이지">

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from "@angular/core";
+import { Component, effect, inject, input, signal } from "@angular/core";
 import { Router } from "@angular/router";
 import { fieldErrors, toProblem } from "@/core/api/problem";
 import { PostFormComponent } from "../components/post-form";
@@ -7,7 +7,6 @@ import { PostStore } from "../post.store";
 @Component({
   selector: "app-post-edit-page",
   imports: [PostFormComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- 오류 상태에서 value()를 읽으면 예외가 나므로 먼저 걸러낸다. -->
     @if (store.detail.error()) {

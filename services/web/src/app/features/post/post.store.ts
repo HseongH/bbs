@@ -1,5 +1,5 @@
 import { httpResource } from "@angular/common/http";
-import { inject, Injectable, signal } from "@angular/core";
+import { inject, Service, signal } from "@angular/core";
 import { firstValueFrom } from "rxjs";
 import { PostApiService, type PostDetail, type PostPage } from "./post-api.service";
 
@@ -10,7 +10,7 @@ export interface PostListSearch {
 }
 
 /** 재조회 범위를 이 서비스가 소유한다. 컴포넌트가 직접 reload를 부르면 범위가 흩어진다. */
-@Injectable({ providedIn: "root" })
+@Service()
 export class PostStore {
   private readonly api = inject(PostApiService);
 

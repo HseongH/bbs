@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { RouterLink, RouterOutlet } from "@angular/router";
 import { LOGIN_URL } from "@/core/auth/auth.interceptor";
 import { CurrentMemberStore } from "@/core/auth/current-member.store";
@@ -6,7 +6,6 @@ import { CurrentMemberStore } from "@/core/auth/current-member.store";
 @Component({
   selector: "app-root",
   imports: [RouterLink, RouterOutlet],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="border-b border-slate-200">
       <div class="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">

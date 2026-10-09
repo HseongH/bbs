@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from "@angular/core";
+import { Component, computed, effect, inject, input } from "@angular/core";
 import { Router } from "@angular/router";
 import { isProblemCode, toProblem } from "@/core/api/problem";
 import { CurrentMemberStore } from "@/core/auth/current-member.store";
@@ -10,7 +10,6 @@ import { PostStore } from "../post.store";
 @Component({
   selector: "app-post-detail-page",
   imports: [PostDetailComponent, CommentSectionComponent, LikeButtonComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (errorMessage(); as message) {
       <p class="py-8 text-center text-slate-600">{{ message }}</p>

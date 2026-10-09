@@ -1,5 +1,5 @@
 import { HttpClient, HttpContext, httpResource } from "@angular/common/http";
-import { computed, inject, Injectable } from "@angular/core";
+import { computed, inject, Service } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
 import { filter, firstValueFrom } from "rxjs";
 import type { components } from "@/core/api/schema";
@@ -7,7 +7,7 @@ import { SKIP_LOGIN_REDIRECT } from "./auth.interceptor";
 
 export type Member = components["schemas"]["MemberResponse"];
 
-@Injectable({ providedIn: "root" })
+@Service()
 export class CurrentMemberStore {
   private readonly http = inject(HttpClient);
 

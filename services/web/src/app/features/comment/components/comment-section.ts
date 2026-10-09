@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  viewChild,
-} from "@angular/core";
+import { Component, computed, effect, inject, input, viewChild } from "@angular/core";
 import { CurrentMemberStore } from "@/core/auth/current-member.store";
 import { CommentStore } from "../comment.store";
 import { CommentFormComponent } from "./comment-form";
@@ -15,7 +7,6 @@ import { CommentItemComponent } from "./comment-item";
 @Component({
   selector: "app-comment-section",
   imports: [CommentFormComponent, CommentItemComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="space-y-3 border-t border-slate-200 pt-4">
       <h2 class="text-lg font-medium">댓글 {{ visibleCount() }}</h2>
@@ -44,10 +35,10 @@ import { CommentItemComponent } from "./comment-item";
   `,
 })
 export class CommentSectionComponent {
-  readonly postId = input.required<number>();
-
   protected readonly store = inject(CommentStore);
   protected readonly memberStore = inject(CurrentMemberStore);
+
+  readonly postId = input.required<number>();
 
   /** 서버의 전체 건수는 원댓글 수다. 화면에 보이는 댓글(삭제되지 않은 원댓글과 대댓글)을 센다. */
   protected readonly visibleCount = computed(() =>

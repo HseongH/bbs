@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
+import { Component, computed, input } from "@angular/core";
 
 type Variant = "default" | "outline" | "destructive" | "ghost";
 type Size = "default" | "sm";
@@ -17,7 +17,6 @@ const SIZE: Record<Size, string> = {
 
 @Component({
   selector: "app-button",
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
       [type]="type()"

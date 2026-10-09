@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
+import { Component, inject, signal } from "@angular/core";
 import { Router } from "@angular/router";
 import { fieldErrors, toProblem } from "@/core/api/problem";
 import { PostFormComponent } from "../components/post-form";
@@ -7,7 +7,6 @@ import { PostStore } from "../post.store";
 @Component({
   selector: "app-post-new-page",
   imports: [PostFormComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-post-form
       [initial]="{ title: '', content: '' }"

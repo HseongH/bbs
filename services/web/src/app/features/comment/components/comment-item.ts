@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from "@angular/core";
+import { Component, computed, inject, input, signal } from "@angular/core";
 import { CurrentMemberStore } from "@/core/auth/current-member.store";
 import type { Comment } from "../comment-api.service";
 import { CommentStore } from "../comment.store";
@@ -9,7 +9,6 @@ type ViewMode = "view" | "edit" | "reply";
 @Component({
   selector: "app-comment-item",
   imports: [CommentFormComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <li [class]="comment().depth > 0 ? 'border-l-2 border-slate-200 py-2 pl-6' : 'py-2'">
       @if (comment().deleted) {
@@ -44,10 +43,10 @@ type ViewMode = "view" | "edit" | "reply";
   `,
 })
 export class CommentItemComponent {
-  readonly comment = input.required<Comment>();
-
   private readonly store = inject(CommentStore);
   private readonly memberStore = inject(CurrentMemberStore);
+
+  readonly comment = input.required<Comment>();
 
   protected readonly mode = signal<ViewMode>("view");
 

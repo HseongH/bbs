@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input } from "@angular/core";
+import { Component, effect, inject, input } from "@angular/core";
 import { Router, RouterLink } from "@angular/router";
 import { PaginationComponent } from "../components/pagination";
 import { PostListComponent } from "../components/post-list";
@@ -13,7 +13,6 @@ function 정수로(value: string | undefined, 기본값: number, 최댓값: numb
 @Component({
   selector: "app-post-list-page",
   imports: [PostListComponent, SearchFormComponent, PaginationComponent, RouterLink],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-4">
       <div class="flex justify-end">
