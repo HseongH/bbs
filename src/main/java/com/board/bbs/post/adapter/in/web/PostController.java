@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import java.net.URI;
 import org.jspecify.annotations.Nullable;
 import org.springdoc.core.annotations.ParameterObject;
@@ -83,7 +84,7 @@ public class PostController {
   @Operation(summary = "게시글 단건 조회")
   @GetMapping("/{id}")
   public PostResponse get(
-      @PathVariable Long id,
+      @PathVariable @Positive Long id,
       @CurrentMember(required = false) @Nullable MemberId viewer,
       HttpServletRequest request) {
 
@@ -102,7 +103,7 @@ public class PostController {
   @PatchMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void update(
-      @PathVariable Long id,
+      @PathVariable @Positive Long id,
       @CurrentMember MemberId requester,
       @Valid @RequestBody UpdatePostRequest request) {
 
@@ -120,7 +121,9 @@ public class PostController {
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(
-      @PathVariable Long id, @CurrentMember MemberId requester, Authentication authentication) {
+      @PathVariable @Positive Long id,
+      @CurrentMember MemberId requester,
+      Authentication authentication) {
 
     boolean admin =
         authentication.getAuthorities().stream()
@@ -159,7 +162,7 @@ public class PostController {
   @Operation(summary = "좋아요")
   @PostMapping("/{id}/likes")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void like(@PathVariable Long id, @CurrentMember MemberId memberId) {
+  public void like(@PathVariable @Positive Long id, @CurrentMember MemberId memberId) {
     postLikeService.like(new PostId(id), memberId);
   }
 
@@ -172,7 +175,7 @@ public class PostController {
   @Operation(summary = "좋아요 취소")
   @DeleteMapping("/{id}/likes")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void unlike(@PathVariable Long id, @CurrentMember MemberId memberId) {
+  public void unlike(@PathVariable @Positive Long id, @CurrentMember MemberId memberId) {
     postLikeService.unlike(new PostId(id), memberId);
   }
 }

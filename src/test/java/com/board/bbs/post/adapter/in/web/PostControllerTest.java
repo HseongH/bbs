@@ -211,4 +211,16 @@ class PostControllerTest extends IntegrationTestBase {
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("NOT_LIKED"));
   }
+
+  @Test
+  void 식별자가_1보다_작으면_400이다() throws Exception {
+    mockMvc
+        .perform(get("/api/posts/{id}", 0))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    mockMvc
+        .perform(post("/api/posts/{id}/likes", -1).with(로그인(OTHER_SUBJECT)).with(csrf()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+  }
 }

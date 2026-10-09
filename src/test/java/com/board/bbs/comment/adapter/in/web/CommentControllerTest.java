@@ -301,4 +301,16 @@ class CommentControllerTest extends IntegrationTestBase {
         .perform(get("/api/posts/{postId}/comments", postId))
         .andExpect(jsonPath("$.totalElements").value(0));
   }
+
+  @Test
+  void 식별자가_1보다_작으면_400이다() throws Exception {
+    mockMvc
+        .perform(get("/api/posts/{postId}/comments", 0))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    mockMvc
+        .perform(delete("/api/comments/{id}", 0).with(로그인(AUTHOR_SUBJECT)).with(csrf()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+  }
 }

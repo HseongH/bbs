@@ -2,6 +2,7 @@ package com.board.bbs.common.error;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -16,11 +18,14 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterErrors;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -74,8 +79,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             .collect(
                 Collectors.toMap(
                     FieldError::getField,
-                    error ->
-                        error.getDefaultMessage() == null ? "올바르지 않은 값" : error.getDefaultMessage(),
+                    GlobalExceptionHandler::messageOf,
                     (first, second) -> first));
 
     ProblemDetail problem =
@@ -84,6 +88,38 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             ErrorCode.INVALID_REQUEST.getDefaultMessage(),
             requestUri(request));
     problem.setProperty("errors", fieldErrors);
+
+    return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
+  }
+
+  /** 경로 변수처럼 본문이 아닌 인자의 제약 위반도 본문 검증 실패와 같은 형태로 돌려준다. */
+  @Override
+  @Nullable
+  protected ResponseEntity<Object> handleHandlerMethodValidationException(
+      HandlerMethodValidationException ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+
+    Map<String, String> errors = new LinkedHashMap<>();
+    for (ParameterValidationResult result : ex.getParameterValidationResults()) {
+      if (result instanceof ParameterErrors bodyErrors) {
+        bodyErrors
+            .getFieldErrors()
+            .forEach(error -> errors.putIfAbsent(error.getField(), messageOf(error)));
+      } else {
+        String name =
+            Objects.requireNonNullElse(result.getMethodParameter().getParameterName(), "unknown");
+        result.getResolvableErrors().forEach(error -> errors.putIfAbsent(name, messageOf(error)));
+      }
+    }
+
+    ProblemDetail problem =
+        toProblemDetail(
+            ErrorCode.INVALID_REQUEST,
+            ErrorCode.INVALID_REQUEST.getDefaultMessage(),
+            requestUri(request));
+    problem.setProperty("errors", errors);
 
     return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
   }
@@ -107,6 +143,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       }
     }
     return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+  }
+
+  private static String messageOf(MessageSourceResolvable error) {
+    return Objects.requireNonNullElse(error.getDefaultMessage(), "올바르지 않은 값");
   }
 
   private ProblemDetail toProblemDetail(ErrorCode errorCode, String detail, String requestUri) {
