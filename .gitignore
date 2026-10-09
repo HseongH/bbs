@@ -43,4 +43,5 @@ out/
 ### Frontend ###
 frontend/node_modules
 frontend/dist
-frontend/.angular
+# Angular CLI 캐시. 저장소 루트에서 ng를 실행해도 생기므로 위치를 가리지 않는다.
+.angular/
