@@ -28,15 +28,6 @@ public interface CommentRepository {
   Comment load(CommentId id);
 
   /**
-   * 게시글의 삭제되지 않은 댓글을 작성 순서대로 조회한다.
-   *
-   * @param postId 게시글 식별자
-   * @param pageable 페이지 정보
-   * @return 댓글 페이지
-   */
-  Page<Comment> listByPost(PostId postId, Pageable pageable);
-
-  /**
    * 목록에 나올 원댓글을 한 페이지 읽는다. 삭제되지 않았거나, 살아 있는 대댓글이 있는 원댓글이다.
    *
    * <p>작성 순(같으면 식별자 순)으로 고정하며 {@code pageable}의 정렬은 무시한다.

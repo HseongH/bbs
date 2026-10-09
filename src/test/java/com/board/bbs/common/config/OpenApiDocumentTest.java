@@ -72,4 +72,21 @@ class OpenApiDocumentTest extends IntegrationTestBase {
     List<String> comment = JsonPath.read(body, "$.components.schemas.CommentResponse.required");
     assertThat(comment).doesNotContain("parentCommentId");
   }
+
+  @Test
+  void 댓글_응답의_가려질_수_있는_필드는_필수가_아니다() throws Exception {
+    String body =
+        mockMvc
+            .perform(MockMvcRequestBuilders.get("/v3/api-docs"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    List<String> comment = JsonPath.read(body, "$.components.schemas.CommentResponse.required");
+    assertThat(comment).doesNotContain("body", "authorId", "parentCommentId").contains("deleted");
+
+    List<String> thread =
+        JsonPath.read(body, "$.components.schemas.CommentThreadResponse.required");
+    assertThat(thread).contains("root", "replies");
+  }
 }

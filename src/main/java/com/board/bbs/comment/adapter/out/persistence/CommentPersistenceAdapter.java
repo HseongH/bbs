@@ -37,13 +37,6 @@ public class CommentPersistenceAdapter implements CommentRepository {
   }
 
   @Override
-  public Page<Comment> listByPost(PostId postId, Pageable pageable) {
-    return repository
-        .findByPostIdAndDeletedAtIsNullOrderByCreatedAtAscIdAsc(postId.value(), pageable)
-        .map(CommentMapper::toDomain);
-  }
-
-  @Override
   public Page<Comment> listRoots(PostId postId, Pageable pageable) {
     Pageable withoutSort = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
     return repository.findRootsForListing(postId.value(), withoutSort).map(CommentMapper::toDomain);

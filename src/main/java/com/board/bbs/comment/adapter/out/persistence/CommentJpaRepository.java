@@ -15,9 +15,6 @@ interface CommentJpaRepository extends JpaRepository<CommentJpaEntity, Long> {
 
   Optional<CommentJpaEntity> findByIdAndDeletedAtIsNull(Long id);
 
-  Page<CommentJpaEntity> findByPostIdAndDeletedAtIsNullOrderByCreatedAtAscIdAsc(
-      Long postId, Pageable pageable);
-
   String ROOTS_FOR_LISTING =
       " FROM CommentJpaEntity c"
           + " WHERE c.postId = :postId AND c.depth = 0"

@@ -1,5 +1,6 @@
 package com.board.bbs.comment.adapter.in.web;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -104,8 +105,10 @@ class CommentControllerTest extends IntegrationTestBase {
         .perform(get("/api/posts/{postId}/comments", postId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(1))
-        .andExpect(jsonPath("$.content[0].body").value("첫 댓글"))
-        .andExpect(jsonPath("$.content[0].depth").value(0));
+        .andExpect(jsonPath("$.content[0].root.body").value("첫 댓글"))
+        .andExpect(jsonPath("$.content[0].root.deleted").value(false))
+        .andExpect(jsonPath("$.content[0].root.depth").value(0))
+        .andExpect(jsonPath("$.content[0].replies.length()").value(0));
   }
 
   @Test
@@ -116,8 +119,8 @@ class CommentControllerTest extends IntegrationTestBase {
     mockMvc
         .perform(get("/api/posts/{postId}/comments", postId))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[1].depth").value(1))
-        .andExpect(jsonPath("$.content[1].parentCommentId").value(parentId));
+        .andExpect(jsonPath("$.content[0].replies[0].depth").value(1))
+        .andExpect(jsonPath("$.content[0].replies[0].parentCommentId").value(parentId));
   }
 
   @Test
@@ -181,6 +184,78 @@ class CommentControllerTest extends IntegrationTestBase {
         .perform(get("/api/posts/{postId}/comments", postId))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("POST_NOT_FOUND"));
+  }
+
+  @Test
+  void 삭제된_원댓글은_본문과_작성자를_가리고_대댓글과_함께_나온다() throws Exception {
+    Long rootId = 댓글을_만든다("원댓글", null);
+    댓글을_만든다("답글", rootId);
+    삭제한다(rootId);
+
+    mockMvc
+        .perform(get("/api/posts/{postId}/comments", postId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].root.id").value(rootId))
+        .andExpect(jsonPath("$.content[0].root.deleted").value(true))
+        .andExpect(jsonPath("$.content[0].root.body").value(nullValue()))
+        .andExpect(jsonPath("$.content[0].root.authorId").value(nullValue()))
+        .andExpect(jsonPath("$.content[0].replies[0].body").value("답글"))
+        .andExpect(jsonPath("$.content[0].replies[0].deleted").value(false));
+  }
+
+  @Test
+  void 대댓글이_없는_삭제된_원댓글은_목록에_나오지_않는다() throws Exception {
+    삭제한다(댓글을_만든다("원댓글", null));
+
+    mockMvc
+        .perform(get("/api/posts/{postId}/comments", postId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(0));
+  }
+
+  @Test
+  void 페이지_크기는_원댓글_수_기준이고_대댓글은_잘리지_않는다() throws Exception {
+    Long first = 댓글을_만든다("원댓글 A", null);
+    댓글을_만든다("답글 1", first);
+    댓글을_만든다("답글 2", first);
+    댓글을_만든다("원댓글 B", null);
+
+    mockMvc
+        .perform(get("/api/posts/{postId}/comments", postId).param("size", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(2))
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].replies.length()").value(2));
+  }
+
+  @Test
+  void 정렬_파라미터는_무시한다() throws Exception {
+    mockMvc
+        .perform(get("/api/posts/{postId}/comments", postId).param("sort", "foo"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void 삭제된_원댓글에는_답글을_달_수_없다() throws Exception {
+    Long rootId = 댓글을_만든다("원댓글", null);
+    삭제한다(rootId);
+
+    mockMvc
+        .perform(
+            post("/api/posts/{postId}/comments", postId)
+                .with(로그인(AUTHOR_SUBJECT))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"body\":\"답글\",\"parentCommentId\":%d}".formatted(rootId)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("COMMENT_NOT_FOUND"));
+  }
+
+  private void 삭제한다(Long commentId) throws Exception {
+    mockMvc
+        .perform(delete("/api/comments/{id}", commentId).with(로그인(AUTHOR_SUBJECT)).with(csrf()))
+        .andExpect(status().isNoContent());
   }
 
   @Test
