@@ -96,7 +96,7 @@ docker compose -f deploy/compose.yaml rm -sf keycloak && docker compose -f deplo
 
 통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다. 이미지는 `deploy/compose.yaml`에서 읽으므로 개발 환경과 테스트가 같은 버전을 쓴다.
 
-GitHub Actions(`.github/workflows/backend.yml`)가 push와 PR마다 같은 `./gradlew check`를 실행한다.
+GitHub Actions는 서비스마다 워크플로를 하나씩 두고, 그 서비스에 관계된 파일이 바뀐 push와 PR에서만 실행한다. `board.yml`은 `./gradlew :services:board:check`를 실행하며 공통 빌드 파일(`build-logic/`, `gradle/`, `config/`, 루트 Gradle 파일)이나 `deploy/compose.yaml`이 바뀌어도 실행된다. `web.yml`은 `services/web`에서 `pnpm verify`를 실행한다.
 
 프론트엔드는 `cd services/web && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다. E2E 브라우저는 Firefox이며, 처음 한 번 `pnpm exec playwright install firefox`로 Playwright 전용 Firefox를 내려받아야 한다 (설치된 Firefox는 쓰지 않는다).
 
@@ -104,7 +104,7 @@ GitHub Actions(`.github/workflows/backend.yml`)가 push와 PR마다 같은 `./gr
 
 ### 의존성 버전
 
-버전은 `gradle/libs.versions.toml` 한 곳에서 관리한다. 스프링 부트 BOM이 관리하는 의존성은 버전 없이 등록하고, 직접 정하는 버전과 도구(Checkstyle, google-java-format) 버전만 적는다. Dependabot(`.github/dependabot.yml`)이 매주 Gradle 의존성, GitHub Actions, compose 이미지의 업데이트 PR을 올리고, CI가 이를 검증한다.
+버전은 `gradle/libs.versions.toml` 한 곳에서 관리한다. 스프링 부트 BOM이 관리하는 의존성은 버전 없이 등록하고, 직접 정하는 버전과 도구(Checkstyle, google-java-format) 버전만 적는다. Dependabot(`.github/dependabot.yml`)이 매주 Gradle 의존성, 화면의 npm 의존성, GitHub Actions, compose 이미지의 업데이트 PR을 올리고, CI가 이를 검증한다.
 
 ## 구조
 

@@ -1,0 +1,44 @@
+name: web
+
+# 화면 서비스만 바뀌었을 때 실행한다 (COM-NFR-033).
+on:
+  push:
+    branches: [main]
+    paths: &web-paths
+      - "services/web/**"
+      - ".github/workflows/web.yml"
+  pull_request:
+    paths: *web-paths
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/web
+    steps:
+      - uses: actions/checkout@v7
+
+      # 버전은 package.json의 packageManager에서 읽는다.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: services/web/package.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: services/web/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # ESLint, Prettier, 타입 검사, 단위 테스트
+      - run: pnpm verify

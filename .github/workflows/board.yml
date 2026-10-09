@@ -1,11 +1,22 @@
-name: backend
+name: board
 
+# 포함 목록으로 실행 조건을 건다. board 디렉터리에 더해, 모든 Java 서비스의 빌드 결과를 바꿀 수 있는
+# 공통 빌드 파일과 통합 테스트가 이미지를 읽는 compose 파일이 바뀌어도 실행한다 (COM-NFR-033).
 on:
   push:
     branches: [main]
-    paths-ignore: ["frontend/**"]
+    paths: &board-paths
+      - "services/board/**"
+      - "build-logic/**"
+      - "gradle/**"
+      - "config/**"
+      - "settings.gradle.kts"
+      - "build.gradle.kts"
+      - "gradlew"
+      - "deploy/compose.yaml"
+      - ".github/workflows/board.yml"
   pull_request:
-    paths-ignore: ["frontend/**"]
+    paths: *board-paths
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,11 +40,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       # 포맷, Checkstyle, Error Prone·NullAway 컴파일, ArchUnit을 포함한 전체 테스트, 커버리지 기준
-      - run: ./gradlew check
+      - run: ./gradlew :services:board:check
 
       - if: failure()
         uses: actions/upload-artifact@v6
         with:
           name: reports
-          path: build/reports/
+          path: services/board/build/reports/
           retention-days: 7
