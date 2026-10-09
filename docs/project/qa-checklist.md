@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-QC
 title: 게시판(bbs) 프로젝트 QA 체크리스트
-version: 1.2.0
+version: 1.3.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.3.0, PRJ-SRS 1.5.0, PRJ-SDS 1.6.0]
+related: [PRJ-QA 1.4.0, PRJ-SRS 1.6.0, PRJ-SDS 1.7.0]
 ---
 
 # 게시판(bbs) 프로젝트 QA 체크리스트
@@ -40,6 +40,8 @@ related: [PRJ-QA 1.3.0, PRJ-SRS 1.5.0, PRJ-SDS 1.6.0]
 |---|---|---|---|---|---|
 | TC-COM-005 | COM-NFR-033 | board 파일을 바꾼 PR | `board` 워크플로가 실행되어 통과 | PR의 CI 실행 기록: PR #28(커밋 431fd7b)에서 `board` 워크플로 실행, `./gradlew :services:board:check :spotlessCheck` 작업 22개 성공 ([실행 기록](https://github.com/HseongH/bbs/actions/runs/37935282153)) | Pass |
 | TC-COM-006 | COM-NFR-033 | web 파일을 바꾼 PR | `web` 워크플로가 실행되어 통과 | PR의 CI 실행 기록: PR #28(커밋 431fd7b)에서 `web` 워크플로 실행, `pnpm verify` 테스트 파일 12개·테스트 42개 통과 ([실행 기록](https://github.com/HseongH/bbs/actions/runs/37935282134)) | Pass |
+| TC-COM-016 | COM-NFR-036 | `e2e` 워크플로를 추가한 PR | `e2e` 워크플로가 실행되어 E2E 4개 통과 | PR의 CI 실행 기록 | N/T |
+| TC-COM-017 | COM-NFR-036 | `e2e` 워크플로의 실행 조건 검토 | board·web·`deploy/`와 board의 실행 결과를 바꾸는 공통 빌드 파일이 조건에 있음 | 구성 검토: `e2e`의 `paths`에 `services/board/**`, `services/web/**`, `deploy/**`, `build-logic/**`, `gradle/**`, 루트 Gradle 파일, 자기 파일 포함 | Pass |
 | TC-COM-007 | COM-NFR-033 | 워크플로의 실행 조건 검토 | `board`의 조건에 Java 공통 빌드 파일과 `deploy/compose.yaml`이 있고, `web`의 조건에 board 경로가 없음 | 구성 검토: `board`의 `paths`에 `build-logic/**`, `gradle/**`, `config/**`, 루트 Gradle 파일, `gradlew`, `deploy/compose.yaml` 포함. `web`의 `paths`는 `services/web/**`와 자기 파일뿐 | Pass |
 
 ### 2.3 의존성 갱신
@@ -70,12 +72,13 @@ related: [PRJ-QA 1.3.0, PRJ-SRS 1.5.0, PRJ-SDS 1.6.0]
 | COM-NFR-033 | 005~007 | CI 기록 |
 | COM-NFR-034 | 001~004 | 부분 |
 | COM-NFR-035 | 008 | 없음 (구성 검토) |
+| COM-NFR-036 | 016, 017 | CI 기록 |
 | COM-CON-004 | 009, 013 | 없음 (명령 확인) |
 | COM-CON-006 | 012 | E2E |
 
 ## 4. 결과 요약과 후속 조치
 
-- 집계: 전체 15건 중 Pass 15, Fail 0, N/T 0.
+- 집계: 전체 17건 중 Pass 16, Fail 0, N/T 1. TC-COM-016은 이 체크리스트를 고친 PR의 CI 실행 후 판정한다.
 - TC-COM-005, 006은 두 서비스를 함께 바꾼 PR #28에서 판정했다. 한 서비스만 바꾼 PR에서 다른 워크플로가 실행되지 않는 것은 실행 조건 검토(TC-COM-007)로만 확인했으므로, 다음 단일 서비스 PR에서 실행 목록을 한 번 확인한다.
 - 수행 중 발견한 결함: Keycloak에 상태 검사가 없어 `up --wait`와 board의 compose 연동이 Keycloak 준비 전에 넘어갔다. 컨테이너가 없는 상태에서 `bootRun`하면 issuer 조회에 실패해 COM-CON-004를 어겼다. 상태 검사를 추가해 고쳤고(TC-COM-009, 013의 근거 실행은 수정 후), 수정 전 재현(`--wait` 직후 조회 실패)과 수정 후 성공을 모두 확인했다.
 - 자동 테스트 추가 후보: TC-COM-001, 002의 위반 코드 검사는 매번 수동이다. 빌드 규칙을 검사하는 Gradle TestKit 테스트로 바꿀 수 있다.
@@ -87,3 +90,4 @@ related: [PRJ-QA 1.3.0, PRJ-SRS 1.5.0, PRJ-SDS 1.6.0]
 | 1.0.0 | 2026-10-09 | 최초 작성: 모노레포 전환의 공통 요구사항 항목 (ADR-0014). 판정은 구현 후 채운다 | HseongH |
 | 1.1.0 | 2026-10-09 | `refactor/monorepo`에서 수행. 최종 리뷰 반영(CI의 Gradle 스크립트 포맷 검사, Keycloak 전용 바인딩 주소, TC-COM-001·002 근거의 수행 시점 명시). TC-COM-001~004, 007~015 판정 (Pass 13). TC-COM-005, 006은 CI 실행 후 판정 | HseongH |
 | 1.2.0 | 2026-10-09 | PR #28의 CI 실행 기록으로 TC-COM-005, 006 판정 (Pass 15) | HseongH |
+| 1.3.0 | 2026-10-09 | `e2e` 워크플로 항목 TC-COM-016, 017 추가 (PRJ-SRS 1.6.0). TC-COM-017 판정, 016은 CI 실행 후 판정 | HseongH |

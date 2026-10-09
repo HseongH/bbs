@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-SRS
 title: 게시판(bbs) 프로젝트 요구사항 명세서
-version: 1.5.0
+version: 1.6.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.6.0, PRJ-QA 1.3.0, PRJ-QC 1.2.0]
+related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.7.0, PRJ-QA 1.4.0, PRJ-QC 1.3.0]
 ---
 
 # 게시판(bbs) 프로젝트 요구사항 명세서
@@ -141,6 +141,7 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | COM-NFR-033 | 모든 서비스는 변경이 PR에 올라오면 그 서비스의 검증이 자동으로 실행된다. Java 서비스 공통 빌드 파일이 바뀌면 모든 Java 서비스가 검증된다. 관계없는 서비스의 검증은 실행하지 않는다. | [프로젝트 QA](qa-checklist.md) TC-COM-005~007 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)) |
 | COM-NFR-034 | 모든 Java 서비스는 공통 빌드 규칙으로 같은 품질 기준(COM-NFR-031)을 적용받는다. 서비스의 빌드 스크립트에 품질 규칙을 복사하지 않는다. | [프로젝트 QA](qa-checklist.md) TC-COM-001~004 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)) |
 | COM-NFR-035 | 모든 서비스의 의존성(Gradle, npm, GitHub Actions, 컨테이너 이미지)은 자동 갱신 PR로 관리한다. | [프로젝트 QA](qa-checklist.md) TC-COM-008 ([ADR-0012](adr/0012-version-catalog-and-dependabot.md), [ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)) |
+| COM-NFR-036 | 화면, board, 실행 환경(`deploy/`) 중 하나라도 바뀐 PR에서는 실제 구성(컨테이너, board, 화면)을 띄워 E2E 시나리오가 자동으로 실행된다. | [프로젝트 QA](qa-checklist.md) TC-COM-016, 017 |
 
 ### 4.5 성능 (미정)
 
@@ -209,3 +210,4 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | 1.3.0 | 2026-10-09 | 원댓글 단위 댓글 목록 반영: COM-NFR-012에 삭제된 원댓글 자리 표시 예외(CMT-FR-009) 추가, COM-NFR-014의 검증 테스트를 원댓글 목록 테스트로 교체 | HseongH |
 | 1.4.0 | 2026-10-09 | 코드 리뷰 결함 수정 반영: COM-IF-004에 1보다 작은 식별자(경로 변수, 요청 본문) 추가, COM-NFR-002에 401 응답의 형식 조건 추가 | HseongH |
 | 1.5.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): 용어 "서비스" 추가, 시스템 구성 관점에 서비스 이름 병기, COM-NFR-006·033·034·035와 COM-CON-006 추가, COM-CON-004·COM-NFR-031·032의 실행 경로와 검증 수단 갱신. 기능에 속하지 않는 공통 요구사항의 검증은 [프로젝트 QA 체크리스트](qa-checklist.md)로 연결 | HseongH |
+| 1.6.0 | 2026-10-09 | COM-NFR-036 추가: E2E를 PR의 CI에서 실행 | HseongH |
