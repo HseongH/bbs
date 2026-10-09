@@ -1,4 +1,4 @@
-import { Component, effect, inject, input } from "@angular/core";
+import { Component, computed, effect, inject, input } from "@angular/core";
 import { Router, RouterLink } from "@angular/router";
 import { PaginationComponent } from "../components/pagination";
 import { PostListComponent } from "../components/post-list";
@@ -22,13 +22,13 @@ function 정수로(value: string | undefined, 기본값: number, 최댓값: numb
       </div>
       <app-search-form [keyword]="keyword() ?? ''" (searched)="onSearch($event)" />
       <app-post-list
-        [page]="store.list.value()"
+        [page]="result()"
         [isLoading]="store.list.isLoading()"
         [hasError]="store.list.error() !== undefined"
       />
       <app-pagination
         [page]="currentPage()"
-        [totalPages]="store.list.value()?.totalPages ?? 0"
+        [totalPages]="result()?.totalPages ?? 0"
         (changed)="onPage($event)"
       />
     </div>
@@ -41,6 +41,11 @@ export class PostListPage {
   readonly page = input<string>();
   readonly size = input<string>();
   readonly keyword = input<string>();
+
+  /** 오류 상태에서 value()를 읽으면 예외가 나서 오류 안내까지 그리지 못한다. */
+  protected readonly result = computed(() =>
+    this.store.list.hasValue() ? this.store.list.value() : undefined,
+  );
 
   constructor() {
     // URL이 상태의 출처다. 값이 바뀌면 스토어에 반영하고 스토어가 다시 불러온다.
