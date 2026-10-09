@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
@@ -34,17 +35,32 @@ public class BbsOidcUserService extends OidcUserService {
   public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
     OidcUser oidcUser = super.loadUser(userRequest);
 
-    String subject = Objects.requireNonNull(oidcUser.getSubject(), "OIDC 토큰에는 sub가 반드시 있다.");
-    String nickname = Objects.requireNonNullElse(oidcUser.getPreferredUsername(), subject);
-    String email = Objects.requireNonNullElse(oidcUser.getEmail(), subject + "@unknown.local");
-
-    memberService.provision(subject, nickname, email);
+    memberService.provision(subjectOf(oidcUser), nicknameOf(oidcUser), emailOf(oidcUser));
 
     Set<GrantedAuthority> authorities = new LinkedHashSet<>(oidcUser.getAuthorities());
     authorities.addAll(realmRoles(oidcUser));
 
     return new DefaultOidcUser(
         authorities, oidcUser.getIdToken(), oidcUser.getUserInfo(), USER_NAME_ATTRIBUTE);
+  }
+
+  private static String subjectOf(OidcUser oidcUser) {
+    return Objects.requireNonNull(oidcUser.getSubject(), "OIDC 토큰에는 sub가 반드시 있다.");
+  }
+
+  /** 사용자 이름은 IdP에서 비워 둘 수 있다. 그 때문에 로그인이 막히지 않도록 subject로 대신한다. */
+  static String nicknameOf(OidcUser oidcUser) {
+    return Objects.requireNonNullElse(
+        nonBlankOrNull(oidcUser.getPreferredUsername()), subjectOf(oidcUser));
+  }
+
+  static String emailOf(OidcUser oidcUser) {
+    return Objects.requireNonNullElse(
+        nonBlankOrNull(oidcUser.getEmail()), subjectOf(oidcUser) + "@unknown.local");
+  }
+
+  private static @Nullable String nonBlankOrNull(@Nullable String value) {
+    return value == null || value.isBlank() ? null : value;
   }
 
   /** Keycloak의 realm_access.roles를 스프링 시큐리티의 역할 권한으로 옮긴다. */

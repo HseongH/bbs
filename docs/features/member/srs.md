@@ -1,7 +1,7 @@
 ---
 doc_id: MEM-SRS
 title: 회원·인증 요구사항 명세서
-version: 1.1.0
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
@@ -36,8 +36,8 @@ related: [PRJ-SRS 1.2.0, MEM-SDS 1.3.0, MEM-QA 1.3.0]
 | 항목 | 규칙 | 출처 |
 |---|---|---|
 | 사용자 식별자 (`subject`) | 필수, 회원마다 고유, 바뀌지 않음 | Keycloak `sub` |
-| 닉네임 | 필수. 앞뒤 공백을 제거한 뒤 1~50자 | Keycloak `preferred_username`. 없으면 `sub`. 50자를 넘으면 50자로 잘라 저장한다 (문자를 가운데에서 자르지 않는다) |
-| 이메일 | 필수 | Keycloak `email`. 없으면 `{sub}@unknown.local` |
+| 닉네임 | 필수. 앞뒤 공백을 제거한 뒤 1~50자 | Keycloak `preferred_username`. 없거나 공백뿐이면 `sub`. 50자를 넘으면 50자로 잘라 저장한다 (문자를 가운데에서 자르지 않는다) |
+| 이메일 | 필수 | Keycloak `email`. 없거나 공백뿐이면 `{sub}@unknown.local` |
 
 ## 3. 기능 요구사항
 
@@ -97,3 +97,4 @@ related: [PRJ-SRS 1.2.0, MEM-SDS 1.3.0, MEM-QA 1.3.0]
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (구현 완료 시점 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | MEM-OPEN-02, 03 해결: 긴 닉네임은 잘라서 저장, 동시 최초 로그인이 모두 성공하도록 MEM-NFR-001 강화 | HseongH |
+| 1.2.0 | 2026-10-09 | 닉네임·이메일 규칙: Keycloak 값이 공백뿐인 경우도 없는 경우와 같이 대체값을 쓰도록 명시 (공백 사용자 이름으로 로그인이 실패하던 결함 수정) | HseongH |
