@@ -1,14 +1,14 @@
-import { Component, input, output } from "@angular/core";
+import { Component, input, linkedSignal, output } from "@angular/core";
+import { form, FormField, FormRoot } from "@angular/forms/signals";
 import { ButtonComponent } from "@/shared/ui/button";
 
 @Component({
   selector: "app-search-form",
-  imports: [ButtonComponent],
+  imports: [FormRoot, FormField, ButtonComponent],
   template: `
-    <form class="flex gap-2" (submit)="submit($event)">
+    <form [formRoot]="form" class="flex gap-2">
       <input
-        name="keyword"
-        [value]="keyword()"
+        [formField]="form.keyword"
         placeholder="제목이나 본문으로 검색"
         aria-label="검색어"
         class="flex-1 rounded border border-slate-300 px-3 py-2"
@@ -21,9 +21,14 @@ export class SearchFormComponent {
   readonly keyword = input("");
   readonly searched = output<string>();
 
-  protected submit(event: Event): void {
-    event.preventDefault();
-    const data = new FormData(event.target as HTMLFormElement);
-    this.searched.emit(String(data.get("keyword") ?? ""));
-  }
+  /** URL의 검색어가 바뀌면(뒤로 가기 등) 입력란도 따라간다. */
+  private readonly model = linkedSignal(() => ({ keyword: this.keyword() }));
+
+  protected readonly form = form(this.model, {
+    submission: {
+      action: async () => {
+        this.searched.emit(this.model().keyword);
+      },
+    },
+  });
 }

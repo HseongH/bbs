@@ -33,6 +33,18 @@ module.exports = defineConfig([
       // 안정 API만 쓴다. 업그레이드 때 깨질 수 있는 코드를 들이지 않는다.
       "@angular-eslint/no-developer-preview": "error",
       "@angular-eslint/no-experimental": "error",
+      // 폼은 Signal Forms만 쓴다 (CS-F10). Reactive Forms와 템플릿 기반 폼은 @angular/forms에 있다.
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@angular/forms",
+              message: "폼은 @angular/forms/signals의 Signal Forms로 만든다 (CS-F10).",
+            },
+          ],
+        },
+      ],
       "@angular-eslint/directive-selector": [
         "error",
         {

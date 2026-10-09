@@ -1,7 +1,7 @@
 ---
 doc_id: CMT-QA
 title: 댓글 QA 체크리스트
-version: 1.4.0
+version: 1.4.1
 status: In Review
 owner: HseongH
 reviewers: []
@@ -21,7 +21,7 @@ related: [PRJ-QA 1.4.0, CMT-SRS 1.4.0, CMT-SDS 1.5.1]
 | 대상 커밋 | `fix/review-defects` 브랜치 끝, 이 문서를 고친 커밋과 같은 코드 (이전 수행: e96a878, f46a99c, 85cce67, `feature/comment-threads`) |
 | 수행일 | 2026-10-09 |
 | 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
-| 화면 자동 검증 | `fix/resource-error-state`에서 `pnpm verify` 성공 (린트, 타입 검사, 빌드 통과, 테스트 파일 12개·테스트 44개 통과). 화면만 바뀌어 백엔드는 다시 실행하지 않았다. 이전 수행의 `pnpm gen:api` 후 생성 타입 변화 없음 |
+| 화면 자동 검증 | `refactor/web-signal-forms`에서 `pnpm verify` 성공 (린트, 타입 검사, 빌드 통과, 테스트 파일 13개·테스트 51개 통과). 같은 코드로 컨테이너와 `bootRun`을 띄우고 `pnpm e2e` 4개 통과. 화면만 바뀌어 백엔드는 다시 실행하지 않았다. 이전 수행의 `pnpm gen:api` 후 생성 타입 변화 없음 |
 | E2E | `pnpm e2e` 성공 (Chromium, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 1fa1827에 E2E 브라우저를 Chromium으로 바꾸는 설정을 적용하고, `deploy/compose.yaml`의 컨테이너와 `./gradlew :services:board:bootRun`을 띄운 뒤 2026-10-09 수행 (이전 수행: Firefox, `main` 05a00c4) |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
@@ -131,3 +131,4 @@ related: [PRJ-QA 1.4.0, CMT-SRS 1.4.0, CMT-SDS 1.5.1]
 | 1.3.1 | 2026-10-09 | `main` 05a00c4에서 E2E 수행. TC-CMT-034 N/T → Pass | HseongH |
 | 1.3.2 | 2026-10-09 | E2E 브라우저를 Chromium으로 바꾸고 재수행. TC-CMT-034 판정 변화 없음 (Pass) | HseongH |
 | 1.4.0 | 2026-10-10 | 회귀 항목 TC-CMT-046(댓글 조회 오류 시 화면이 깨지던 결함) 추가 (CMT-SRS 1.4.0) | HseongH |
+| 1.4.1 | 2026-10-10 | 폼을 Signal Forms로 옮긴 뒤 재수행. 댓글 수정·답글 전송 내용 테스트 추가. 판정 변화 없음 | HseongH |
