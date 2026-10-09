@@ -1,14 +1,19 @@
 package com.board.bbs.common.config;
 
 import com.board.bbs.common.error.ErrorCode;
+import com.board.bbs.common.error.ProblemDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
+import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -20,6 +25,10 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+  /** 필터 단계에는 MVC의 메시지 변환이 없으므로, 같은 변환기로 직접 직렬화해서 문자열 조립을 피한다. */
+  private static final JacksonJsonHttpMessageConverter PROBLEM_WRITER =
+      new JacksonJsonHttpMessageConverter();
 
   private final OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService;
 
@@ -88,21 +97,13 @@ public class SecurityConfig {
 
   /** API 클라이언트에게 로그인 페이지로의 리다이렉트는 의미가 없으므로 ProblemDetail을 직접 쓴다. */
   private static void writeUnauthenticated(
-      HttpServletRequest request,
-      HttpServletResponse response,
-      org.springframework.security.core.AuthenticationException exception)
-      throws java.io.IOException {
+      HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
+      throws IOException {
 
     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-    response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-    response.setCharacterEncoding("UTF-8");
-    String body =
-        ("{\"type\":\"urn:bbs:error:unauthenticated\",\"title\":\"Unauthorized\","
-                + "\"status\":401,\"detail\":\"%s\",\"instance\":\"%s\",\"code\":\"%s\"}")
-            .formatted(
-                ErrorCode.UNAUTHENTICATED.getDefaultMessage(),
-                request.getRequestURI(),
-                ErrorCode.UNAUTHENTICATED.name());
-    response.getWriter().write(body);
+    PROBLEM_WRITER.write(
+        ProblemDetails.of(ErrorCode.UNAUTHENTICATED, request.getRequestURI()),
+        MediaType.APPLICATION_PROBLEM_JSON,
+        new ServletServerHttpResponse(response));
   }
 }

@@ -1,9 +1,7 @@
 package com.board.bbs.common.error;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URI;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -39,31 +37,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-  private static final String CODE_PROPERTY = "code";
-
   @ExceptionHandler(BusinessException.class)
   ProblemDetail handleBusiness(BusinessException e, HttpServletRequest request) {
     String detail =
         Objects.requireNonNullElse(e.getMessage(), e.getErrorCode().getDefaultMessage());
-    return toProblemDetail(e.getErrorCode(), detail, request.getRequestURI());
+    return ProblemDetails.of(e.getErrorCode(), detail, request.getRequestURI());
   }
 
   @ExceptionHandler(AccessDeniedException.class)
   ProblemDetail handleAccessDenied(AccessDeniedException e, HttpServletRequest request) {
-    return toProblemDetail(
-        ErrorCode.ACCESS_DENIED,
-        ErrorCode.ACCESS_DENIED.getDefaultMessage(),
-        request.getRequestURI());
+    return ProblemDetails.of(ErrorCode.ACCESS_DENIED, request.getRequestURI());
   }
 
   /** 예상하지 못한 예외만 스택트레이스를 남긴다. 응답에는 내부 정보를 노출하지 않는다. */
   @ExceptionHandler(Exception.class)
   ProblemDetail handleUnexpected(Exception e, HttpServletRequest request) {
     log.error("처리되지 않은 예외가 발생했습니다. uri={}", request.getRequestURI(), e);
-    return toProblemDetail(
-        ErrorCode.INTERNAL_ERROR,
-        ErrorCode.INTERNAL_ERROR.getDefaultMessage(),
-        request.getRequestURI());
+    return ProblemDetails.of(ErrorCode.INTERNAL_ERROR, request.getRequestURI());
   }
 
   @Override
@@ -82,11 +72,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                     GlobalExceptionHandler::messageOf,
                     (first, second) -> first));
 
-    ProblemDetail problem =
-        toProblemDetail(
-            ErrorCode.INVALID_REQUEST,
-            ErrorCode.INVALID_REQUEST.getDefaultMessage(),
-            requestUri(request));
+    ProblemDetail problem = ProblemDetails.of(ErrorCode.INVALID_REQUEST, requestUri(request));
     problem.setProperty("errors", fieldErrors);
 
     return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
@@ -114,11 +100,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       }
     }
 
-    ProblemDetail problem =
-        toProblemDetail(
-            ErrorCode.INVALID_REQUEST,
-            ErrorCode.INVALID_REQUEST.getDefaultMessage(),
-            requestUri(request));
+    ProblemDetail problem = ProblemDetails.of(ErrorCode.INVALID_REQUEST, requestUri(request));
     problem.setProperty("errors", errors);
 
     return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
@@ -136,10 +118,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     if (body instanceof ProblemDetail problem) {
       if (problem.getInstance() == null) {
-        problem.setInstance(URI.create(requestUri(request)));
+        problem.setInstance(ProblemDetails.instanceOf(requestUri(request)));
       }
-      if (problem.getProperties() == null || !problem.getProperties().containsKey(CODE_PROPERTY)) {
-        problem.setProperty(CODE_PROPERTY, HttpStatus.valueOf(statusCode.value()).name());
+      if (problem.getProperties() == null
+          || !problem.getProperties().containsKey(ProblemDetails.CODE_PROPERTY)) {
+        problem.setProperty(
+            ProblemDetails.CODE_PROPERTY, HttpStatus.valueOf(statusCode.value()).name());
       }
     }
     return super.handleExceptionInternal(ex, body, headers, statusCode, request);
@@ -147,16 +131,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   private static String messageOf(MessageSourceResolvable error) {
     return Objects.requireNonNullElse(error.getDefaultMessage(), "올바르지 않은 값");
-  }
-
-  private ProblemDetail toProblemDetail(ErrorCode errorCode, String detail, String requestUri) {
-    HttpStatus status = errorCode.getStatus();
-    ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-    problem.setTitle(status.getReasonPhrase());
-    problem.setType(URI.create("urn:bbs:error:" + errorCode.name().toLowerCase(Locale.ROOT)));
-    problem.setInstance(URI.create(requestUri));
-    problem.setProperty(CODE_PROPERTY, errorCode.name());
-    return problem;
   }
 
   private String requestUri(WebRequest request) {

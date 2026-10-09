@@ -105,7 +105,7 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | ID | 요구사항 | 검증 |
 |---|---|---|
 | COM-NFR-001 | 인증은 외부 IdP(Keycloak, OIDC)에 위임한다. 시스템은 비밀번호를 저장하거나 처리하지 않는다. | 설계 검토 ([ADR-0008](adr/0008-oidc-bff-and-redis-session.md)) |
-| COM-NFR-002 | 인증이 필요한 API에 미인증 요청이 오면 로그인 페이지로 리다이렉트하지 않고 `401` ProblemDetail을 반환한다. | `MemberControllerTest#미인증_요청은_401을_반환한다`, `SpaForwardingTest#미인증_API_요청은_여전히_401이다` |
+| COM-NFR-002 | 인증이 필요한 API에 미인증 요청이 오면 로그인 페이지로 리다이렉트하지 않고 `401` ProblemDetail을 반환한다. 이 응답도 다른 오류 응답과 같은 필드(COM-IF-003)를 갖고, 요청 경로에 어떤 문자가 있어도 올바른 JSON이어야 한다. | `MemberControllerTest#미인증_요청은_401을_반환한다`, `SpaForwardingTest#미인증_API_요청은_여전히_401이다`, `UnauthenticatedResponseTest` |
 | COM-NFR-003 | 상태를 바꾸는 요청(POST, PATCH, DELETE)은 CSRF 토큰이 없으면 거부한다. 조회 요청은 토큰 없이 허용하고 토큰 쿠키를 발급한다. | `SecurityCsrfTest#토큰_없는_변경_요청은_거부된다`, `CsrfCookieIssuanceTest#조회_요청은_토큰이_필요없고_토큰_쿠키를_내려준다` |
 | COM-NFR-004 | 오류 응답에 스택트레이스, 예외 클래스명, SQL 같은 내부 정보를 담지 않는다. 예상하지 못한 예외는 `500 INTERNAL_ERROR`로 변환하고 서버 로그에만 기록한다. | `GlobalExceptionHandlerTest` |
 | COM-NFR-005 | 소유권(작성자 여부) 검사는 도메인 객체 안에서 수행해서, 어떤 호출 경로로도 우회할 수 없어야 한다. | `PostTest`, `CommentTest`의 권한 테스트 ([ADR-0003](adr/0003-authorization-in-domain.md)) |
