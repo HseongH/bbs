@@ -41,7 +41,7 @@ Valkey는 Redis 프로토콜과 호환되는 BSD 라이선스 포크다. 애플�
 ### 프론트엔드
 
 ```bash
-cd frontend
+cd services/web
 pnpm install
 pnpm dev
 ```
@@ -51,7 +51,7 @@ pnpm dev
 백엔드 API가 바뀌면 타입을 다시 생성한다.
 
 ```bash
-cd frontend && pnpm gen:api
+cd services/web && pnpm gen:api
 ```
 
 ### 다른 기기에서 접속할 때
@@ -63,7 +63,7 @@ export BBS_HOST=<서버 주소>
 
 docker compose up -d
 ./gradlew :services:board:bootRun
-cd frontend && pnpm dev
+cd services/web && pnpm dev
 ```
 
 `BBS_HOST`는 Keycloak의 공개 주소와 허용 리다이렉트 URI, 그리고 백엔드가 참조하는 issuer를 한꺼번에 결정한다. 지정하지 않으면 `localhost`로 동작한다.
@@ -95,9 +95,9 @@ docker compose rm -sf keycloak && docker compose up -d keycloak
 
 GitHub Actions(`.github/workflows/backend.yml`)가 push와 PR마다 같은 `./gradlew check`를 실행한다.
 
-프론트엔드는 `cd frontend && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다. E2E 브라우저는 Firefox이며, 처음 한 번 `pnpm exec playwright install firefox`로 Playwright 전용 Firefox를 내려받아야 한다 (설치된 Firefox는 쓰지 않는다).
+프론트엔드는 `cd services/web && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다. E2E 브라우저는 Firefox이며, 처음 한 번 `pnpm exec playwright install firefox`로 Playwright 전용 Firefox를 내려받아야 한다 (설치된 Firefox는 쓰지 않는다).
 
-`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, Git이 저장소의 `hooks/`를 훅 경로(`core.hooksPath`)로 쓰게 한다. 커밋 전에는 포맷과 정적 분석을 검사하고, 커밋 메시지가 Angular 형식(`type(scope): subject`)을 따르는지 검사한다. 훅을 복사하지 않으므로 고친 내용이 바로 반영되고 워크트리에서도 동작한다. `frontend/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
+`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, Git이 저장소의 `hooks/`를 훅 경로(`core.hooksPath`)로 쓰게 한다. 커밋 전에는 포맷과 정적 분석을 검사하고, 커밋 메시지가 Angular 형식(`type(scope): subject`)을 따르는지 검사한다. 훅을 복사하지 않으므로 고친 내용이 바로 반영되고 워크트리에서도 동작한다. `services/web/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
 
 ### 의존성 버전
 
@@ -156,10 +156,10 @@ post/
 - **도메인 모델과 JPA 엔티티는 분리를 유지한다.** 매퍼 비용이 들지만, 도메인이 `final` 필드와 값 객체를 JPA 제약 없이 쓸 수 있고 프레임워크 없이 테스트된다. 조회와 저장이 한 트랜잭션 안에서 일어나므로 저장할 때 추가 SELECT는 생기지 않는다.
 - **Lombok을 쓰지 않는다.** 컴파일러 내부에 의존해서 JDK가 올라갈 때마다 깨질 위험이 있고, 실제로 `sun.misc.Unsafe` 제거 예고 경고를 냈다. 생성자와 getter는 직접 쓰고, 스프링이 호출하는 생성자와 같은 패키지의 매퍼만 쓰는 엔티티 getter는 package-private으로 둔다.
 
-프론트엔드는 `frontend/`에 있으며 백엔드와 같은 기능별 분리를 따른다.
+프론트엔드는 `services/web/`에 있으며 백엔드와 같은 기능별 분리를 따른다.
 
 ```
-frontend/src/app/
+services/web/src/app/
 ├── core/
 │   ├── api/      생성된 타입과 ProblemDetail 파싱
 │   └── auth/     인증 인터셉터, 라우트 가드, 현재 회원 스토어
@@ -243,6 +243,6 @@ frontend/src/app/
 | 게시글 | [SRS](docs/features/post/srs.md) · [SDS](docs/features/post/sds.md) · [QA](docs/features/post/qa-checklist.md) |
 | 댓글 | [SRS](docs/features/comment/srs.md) · [SDS](docs/features/comment/sds.md) · [QA](docs/features/comment/qa-checklist.md) |
 | 템플릿 | [docs/templates/](docs/templates/README.md) |
-| 프론트엔드 안내 | [frontend/README.md](frontend/README.md) |
+| 프론트엔드 안내 | [services/web/README.md](services/web/README.md) |
 
 개발 과정에서 AI 협업 도구가 만든 설계 기록과 구현 계획은 [docs/superpowers/](docs/superpowers/)에 남아 있다.

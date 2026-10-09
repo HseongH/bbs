@@ -43,10 +43,10 @@ related: [PRJ-SDS 1.6.0, PRJ-QA 1.3.0]
 
 | 영역 | 도구 | 설정 위치 | 요지 | 이유 |
 |---|---|---|---|---|
-| 서식 | Prettier | `frontend/.prettierrc` | 한 줄 100자, 큰따옴표 | 백엔드와 같은 이유 |
-| 린트 | ESLint (typescript-eslint recommended·stylistic, angular-eslint) | `frontend/eslint.config.js` | 컴포넌트 선택자는 `app-` 접두사의 kebab-case, 지시자는 `app` 접두사의 camelCase. 템플릿 접근성 규칙 포함 | 접근성 위반을 리뷰가 아니라 린트에서 잡는다 |
-| 타입 | TypeScript 6 | `frontend/tsconfig.json` | 엄격 모드(TypeScript 6의 기본값)에 더해 `noUncheckedIndexedAccess`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `noFallthroughCasesInSwitch` | 배열 접근과 인덱스 시그니처에서 생기는 `undefined`를 타입으로 드러낸다 |
-| API 계약 | openapi-typescript | `frontend/package.json`의 `gen:api` | 백엔드 OpenAPI에서 생성한 타입만 사용 | 백엔드가 바뀌면 프론트엔드 타입 검사가 실패한다 |
+| 서식 | Prettier | `services/web/.prettierrc` | 한 줄 100자, 큰따옴표 | 백엔드와 같은 이유 |
+| 린트 | ESLint (typescript-eslint recommended·stylistic, angular-eslint) | `services/web/eslint.config.js` | 컴포넌트 선택자는 `app-` 접두사의 kebab-case, 지시자는 `app` 접두사의 camelCase. 템플릿 접근성 규칙 포함 | 접근성 위반을 리뷰가 아니라 린트에서 잡는다 |
+| 타입 | TypeScript 6 | `services/web/tsconfig.json` | 엄격 모드(TypeScript 6의 기본값)에 더해 `noUncheckedIndexedAccess`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `noFallthroughCasesInSwitch` | 배열 접근과 인덱스 시그니처에서 생기는 `undefined`를 타입으로 드러낸다 |
+| API 계약 | openapi-typescript | `services/web/package.json`의 `gen:api` | 백엔드 OpenAPI에서 생성한 타입만 사용 | 백엔드가 바뀌면 프론트엔드 타입 검사가 실패한다 |
 
 `tsconfig.json`에는 `strict`가 적혀 있지 않다. TypeScript 6부터 엄격 모드가 기본값이기 때문이다. 이 사실이 설정 파일만 봐서는 드러나지 않으므로 여기에 적어 둔다.
 
@@ -55,7 +55,7 @@ related: [PRJ-SDS 1.6.0, PRJ-QA 1.3.0]
 | 영역 | 도구 | 설정 위치 | 요지 |
 |---|---|---|---|
 | 커밋 메시지 | Git 훅 | `hooks/commit-msg` | `type(scope): subject`. type은 `feat fix docs style refactor perf test build ci chore revert` |
-| 커밋 전 검사 | Git 훅 | `hooks/pre-commit` | 포맷, Checkstyle. `frontend/`가 바뀌면 프론트엔드 검사도 실행 |
+| 커밋 전 검사 | Git 훅 | `hooks/pre-commit` | 포맷, Checkstyle. `services/web/`이 바뀌면 프론트엔드 검사도 실행 |
 | 줄바꿈 | `.gitattributes`, CI | `.github/workflows/line-endings.yml` | 저장소에 CRLF로 저장된 파일이 있으면 실패 |
 
 훅은 `./gradlew build`가 `core.hooksPath`를 설정해서 연결한다.
@@ -198,4 +198,4 @@ post.updateBy(requester, new Title(title), new Content(content));
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` 2c1659d의 도구 설정과 코드 관례를 기준으로 정리) | HseongH |
-| 1.1.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): Java 품질 도구의 설정 위치를 `build-logic`의 컨벤션 플러그인으로 변경 | HseongH |
+| 1.1.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): Java 품질 도구의 설정 위치를 `build-logic`의 컨벤션 플러그인으로, 프론트엔드 설정 위치를 `services/web/`으로 변경 | HseongH |
