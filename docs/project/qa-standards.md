@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-QA
 title: 게시판(bbs) 공통 QA 기준
-version: 1.3.0
+version: 1.4.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.5.0, PRJ-SDS 1.6.0, PRJ-QC 1.2.0]
+related: [PRJ-SRS 1.6.0, PRJ-SDS 1.7.0, PRJ-QC 1.3.0]
 ---
 
 # 게시판(bbs) 공통 QA 기준
@@ -24,7 +24,7 @@ related: [PRJ-SRS 1.5.0, PRJ-SDS 1.6.0, PRJ-QC 1.2.0]
 | DoD-2 | 모든 `TC`의 판정이 `Pass`이거나, `Fail`·`Blocked`라면 사유와 후속 조치가 기록되어 있다 | 체크리스트 확인 |
 | DoD-3 | 저장소 루트에서 `./gradlew check`가 성공한다 (모든 Java 서비스) | 명령 실행 결과 (종료 코드 0), PR의 서비스별 CI |
 | DoD-4 | 화면 변경이 있으면 `services/web`에서 `pnpm verify`가 성공한다 | 명령 실행 결과, PR의 `web` CI |
-| DoD-5 | 화면 흐름이 바뀌면 `pnpm e2e`가 성공한다 | 명령 실행 결과 |
+| DoD-5 | 화면 흐름이 바뀌면 `pnpm e2e`가 성공한다 | 명령 실행 결과, PR의 `e2e` CI |
 | DoD-6 | API가 바뀌었으면 `pnpm gen:api`로 타입을 다시 생성했고 타입 검사가 통과한다 | 생성 파일의 diff, `pnpm typecheck` |
 | DoD-7 | 기능 SRS·SDS·QA 체크리스트의 버전과 `related`가 서로 맞는다. 공통 요구사항을 바꿨으면 프로젝트 SRS·SDS·QA 체크리스트도 같다 | 문서 머리말 확인 |
 | DoD-8 | 새 설계 결정이 프로젝트 전체에 영향을 주면 ADR이 추가되었다 | `docs/project/adr/` 확인 |
@@ -105,3 +105,4 @@ related: [PRJ-SRS 1.5.0, PRJ-SDS 1.6.0, PRJ-QC 1.2.0]
 | 1.1.0 | 2026-10-09 | 정적 분석 기준(Checkstyle 범위, Error Prone)과 테스트 이미지 출처 갱신 (PR #8) | HseongH |
 | 1.2.0 | 2026-10-09 | 테스트 환경을 Valkey로 갱신 (PR #15) | HseongH |
 | 1.3.0 | 2026-10-09 | 모노레포 전환 반영: 프로젝트 QA 체크리스트(`TC-COM`)의 범위 추가, DoD-3·4·7의 실행 위치와 CI, 테스트 환경의 compose 경로와 시험 계정 출처 갱신 (PRJ-SRS 1.5.0) | HseongH |
+| 1.4.0 | 2026-10-09 | DoD-5의 확인 방법에 `e2e` CI 추가 (PRJ-SRS 1.6.0) | HseongH |

@@ -11,9 +11,12 @@ export default defineConfig({
   // 모든 시나리오가 같은 데이터베이스를 공유하므로 병렬로 돌리면 서로의 데이터를 밟는다.
   workers: 1,
   reporter: "list",
+  // CI에서는 test.only가 남아 나머지 시나리오를 건너뛰는 일을 막는다.
+  forbidOnly: !!process.env.CI,
   use: {
     baseURL: `http://${host}:5173`,
-    trace: "on-first-retry",
+    // CI는 재시도하지 않으므로 실패한 시나리오의 trace를 남겨 원인을 확인한다.
+    trace: process.env.CI ? "retain-on-failure" : "on-first-retry",
   },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/, use: { ...devices["Desktop Chrome"] } },

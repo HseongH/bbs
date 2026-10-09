@@ -1,0 +1,81 @@
+name: e2e
+
+# 화면, board, 실행 환경 중 하나라도 바뀌면 사용자 시나리오를 실제 구성으로 실행한다 (COM-NFR-036).
+# 여러 서비스를 함께 띄워야 하므로 서비스별 워크플로와 따로 둔다.
+on:
+  push:
+    branches: [main]
+    paths: &e2e-paths
+      - "services/board/**"
+      - "services/web/**"
+      - "deploy/**"
+      - "build-logic/**"
+      - "gradle/**"
+      - "settings.gradle.kts"
+      - "build.gradle.kts"
+      - ".github/workflows/e2e.yml"
+  pull_request:
+    paths: *e2e-paths
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: services/web/package.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: services/web/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: services/web
+
+      - run: pnpm exec playwright install --with-deps chromium
+        working-directory: services/web
+
+      # Keycloak의 상태 검사는 realm 가져오기까지 끝나야 통과하므로, --wait 뒤에는 로그인할 수 있다.
+      - run: docker compose -f deploy/compose.yaml up -d --wait
+
+      # 개발 환경과 같은 방식(bootRun의 compose 연동)으로 띄운다. 실행 중인 컨테이너를 그대로 쓴다.
+      - name: board 시작
+        run: |
+          nohup ./gradlew :services:board:bootRun > board.log 2>&1 &
+          timeout 180 bash -c 'until curl -sf http://localhost:8080/actuator/health > /dev/null; do sleep 2; done'
+
+      # 화면 개발 서버는 Playwright 설정의 webServer가 띄운다.
+      - run: pnpm e2e
+        working-directory: services/web
+
+      - if: failure()
+        run: docker compose -f deploy/compose.yaml logs --no-color > compose.log
+
+      - if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: e2e-logs
+          path: |
+            board.log
+            compose.log
+            services/web/test-results/
+          retention-days: 7

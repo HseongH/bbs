@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-SDS
 title: 게시판(bbs) 프로젝트 설계 명세서
-version: 1.6.0
+version: 1.7.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.5.0, PRJ-QA 1.3.0, PRJ-QC 1.2.0, PRJ-CS 1.1.0]
+related: [PRJ-SRS 1.6.0, PRJ-QA 1.4.0, PRJ-QC 1.3.0, PRJ-CS 1.3.0]
 ---
 
 # 게시판(bbs) 프로젝트 설계 명세서
@@ -323,10 +323,12 @@ gradle/            Gradle 래퍼, 버전 카탈로그
 |---|---|---|
 | `board` | board 디렉터리, Java 공통 빌드 파일(`build-logic/`, `gradle/`, `config/`, 루트 Gradle 파일), 통합 테스트가 이미지를 읽는 `deploy/compose.yaml`, 워크플로 자신 | `./gradlew :services:board:check :spotlessCheck` (Gradle 스크립트 포맷 포함) |
 | `web` | web 디렉터리, 워크플로 자신 | `pnpm verify` |
+| `e2e` | board·web 디렉터리, `deploy/`, board의 실행 결과를 바꾸는 공통 빌드 파일, 워크플로 자신 | compose 컨테이너와 `bootRun`으로 board를 띄우고 `pnpm e2e` (Chromium) |
 | `line-endings` | 모든 변경 | 저장소에 CRLF가 없는지 |
 
 - 실행 조건은 제외 목록이 아니라 **포함 목록**으로 둔다. 서비스가 늘어도 새 서비스의 변경이 관계없는 워크플로를 실행하지 않는다 (COM-NFR-033).
 - Java 공통 빌드 파일은 모든 Java 서비스의 워크플로 실행 조건에 들어간다. 공통 파일을 새로 만들면 각 워크플로의 목록에도 추가해야 한다.
+- `e2e`는 여러 서비스를 함께 띄워야 하므로 서비스별 워크플로와 따로 둔다. 개발 환경과 같은 방식(`compose up --wait` 후 `bootRun`의 compose 연동)으로 띄워, CI에서만 쓰는 실행 경로를 만들지 않는다. 시험 계정은 개발용 사용자 파일에서 가져온다 (COM-NFR-036).
 
 ### 10.3 의존성 갱신
 
@@ -343,3 +345,4 @@ Dependabot이 매주 Gradle(루트 카탈로그), npm(`services/web`), GitHub Ac
 | 1.4.0 | 2026-10-09 | 댓글 목록을 원댓글 단위로 조회하기 위한 부분 인덱스 두 개 반영 (CMT-SDS 1.4.0) | HseongH |
 | 1.5.0 | 2026-10-09 | 오류 처리(§7.4): 메서드 검증 실패 변환 추가, 오류 응답 본문 생성 지점을 하나로 모은 결정 기록 (PRJ-SRS 1.4.0) | HseongH |
 | 1.6.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): §10 저장소와 빌드 구성(Java 빌드, CI, 의존성 갱신) 추가, §9 실행 환경을 `deploy/` 기준으로 갱신(환경 변수, 루프백 바인딩, Keycloak 가져오기 파일 분리), 화면 경로 갱신 (PRJ-SRS 1.5.0) | HseongH |
+| 1.7.0 | 2026-10-09 | §10.2에 `e2e` 워크플로 추가 (PRJ-SRS 1.6.0) | HseongH |
