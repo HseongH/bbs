@@ -1,7 +1,7 @@
 ---
 doc_id: PRJ-CS
 title: 게시판(bbs) 코딩 표준
-version: 1.2.0
+version: 1.3.0
 status: In Review
 owner: HseongH
 reviewers: []
@@ -44,7 +44,7 @@ related: [PRJ-SDS 1.6.0, PRJ-QA 1.3.0]
 | 영역 | 도구 | 설정 위치 | 요지 | 이유 |
 |---|---|---|---|---|
 | 서식 | Prettier | `services/web/.prettierrc` | 한 줄 100자, 큰따옴표 | 백엔드와 같은 이유 |
-| 린트 | ESLint (typescript-eslint recommended·stylistic, angular-eslint) | `services/web/eslint.config.js` | 컴포넌트 선택자는 `app-` 접두사의 kebab-case, 지시자는 `app` 접두사의 camelCase. 템플릿 접근성 규칙 포함 | 접근성 위반을 리뷰가 아니라 린트에서 잡는다 |
+| 린트 | ESLint (typescript-eslint recommended·stylistic, angular-eslint), 타입 정보 사용 | `services/web/eslint.config.js` | 컴포넌트 선택자는 `app-` 접두사의 kebab-case, 지시자는 `app` 접두사의 camelCase. 템플릿 접근성 규칙 포함. §5에서 "린트"로 표시한 규칙을 강제 | 접근성 위반과 예전 방식의 Angular 코드를 리뷰가 아니라 린트에서 잡는다 ([ADR-0015](adr/0015-keep-angular-for-frontend.md)) |
 | 타입 | TypeScript 6 | `services/web/tsconfig.json` | 엄격 모드(TypeScript 6의 기본값)에 더해 `noUncheckedIndexedAccess`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `noFallthroughCasesInSwitch` | 배열 접근과 인덱스 시그니처에서 생기는 `undefined`를 타입으로 드러낸다 |
 | API 계약 | openapi-typescript | `services/web/package.json`의 `gen:api` | 백엔드 OpenAPI에서 생성한 타입만 사용 | 백엔드가 바뀌면 프론트엔드 타입 검사가 실패한다 |
 | 템플릿 검사 | Angular 컴파일러 (`ng build`) | `services/web/angular.json`, `services/web/tsconfig.json` | 엄격한 템플릿 타입 검사(Angular 22의 기본값), 번들 크기 예산 초과 시 실패 | `tsc`는 템플릿을 읽지 않는다. 템플릿의 바인딩 오류는 빌드에서만 드러난다 |
@@ -175,12 +175,15 @@ post.updateBy(requester, new Title(title), new Content(content));
 |---|---|---|
 | CS-F01 | 기능은 `features/<기능>/` 아래에 `*-api.service.ts`(HTTP 호출만), `*.store.ts`(상태와 재조회 범위), `pages/`, `components/`로 나눈다. 컴포넌트는 스토어만 주입받고 API 서비스를 직접 쓰지 않는다. | 재조회 범위를 스토어 한 곳이 소유해야 화면 사이의 상태가 어긋나지 않는다 |
 | CS-F02 | API 요청·응답 타입은 `core/api/schema.d.ts`(생성 파일)에서만 가져온다. 직접 타입을 정의하지 않고, 생성 파일을 손으로 고치지 않는다. 백엔드 API가 바뀌면 `pnpm gen:api`를 실행한다. | 백엔드와 계약이 어긋나면 컴파일이 실패해야 한다 |
-| CS-F03 | 의존성은 `inject()`로 받는다. 생성자는 `effect` 등록처럼 주입 외의 초기화에만 쓴다. | 주입 방식을 하나로 통일한다 |
-| CS-F04 | 모든 컴포넌트는 `ChangeDetectionStrategy.OnPush`를 쓰고, 상태는 signal로 둔다. 서버 상태는 스토어의 `httpResource`로 읽는다. | 변경 감지 범위를 좁히고, 상태가 어디서 바뀌는지 추적할 수 있게 한다 |
+| CS-F03 | 의존성은 `inject()`로 받고, 주입하는 필드는 클래스 맨 위에 둔다. 생성자는 `effect` 등록처럼 주입 외의 초기화에만 쓴다. 앱 전체에서 하나인 서비스는 `@Service()`로 선언한다 (`@Injectable({ providedIn: "root" })`를 쓰지 않는다). 린트: `prefer-inject`, `inject-at-top`, `prefer-service-decorator` | 주입 방식을 하나로 통일한다. 필드는 적힌 순서대로 초기화되므로, 주입이 위에 있어야 다른 필드가 안전하게 쓸 수 있다 |
+| CS-F04 | 변경 감지는 Angular 22의 기본값(`OnPush`)을 쓰고, `changeDetection`을 적지 않는다. 기본값을 끄는 설정(`Eager`)은 쓰지 않는다. 상태는 signal로 두고, 서버 상태는 스토어의 `httpResource`로 읽는다. 린트: `prefer-on-push-component-change-detection`, `no-uncalled-signals`, `computed-must-return`, `reactive-context-must-read-signal` | 변경 감지 범위를 좁히고, 상태가 어디서 바뀌는지 추적할 수 있게 한다. 기본값을 다시 적으면 AI가 만든 코드와 사람이 쓴 코드가 섞여 보인다 |
 | CS-F05 | 새로고침과 링크 공유에서 유지되어야 하는 상태(검색어, 페이지)는 URL 쿼리에 두고, 라우터 입력 바인딩으로 컴포넌트 입력에 받는다. | 상태를 잃지 않는다 (PST-FR-020) |
 | CS-F06 | 서버 오류는 `core/api/problem.ts`로 ProblemDetail을 해석해서 다룬다. 응답 본문의 형태를 컴포넌트마다 직접 검사하지 않는다. | 오류 규약(COM-IF-003)의 해석을 한 곳에 모은다 |
 | CS-F07 | 단위 테스트의 API 목은 MSW로 만들고, 응답 데이터에는 생성된 API 타입을 붙인다. | 백엔드 계약이 바뀌면 목도 컴파일 오류가 나야 한다 |
 | CS-F08 | 사용자에게 보이는 문구와 테스트 이름은 한국어로 쓴다. | 화면 언어와 테스트 언어를 맞춘다 |
+| CS-F09 | 컴포넌트의 입력·출력은 `input()`, `output()`, `model()` 함수로, 호스트 바인딩은 데코레이터의 `host` 객체로 선언한다. 템플릿은 내장 제어 흐름(`@if`, `@for`, `@switch`)과 `class`·`style` 바인딩을 쓴다 (`*ngIf`, `ngClass`, `ngStyle`을 쓰지 않는다). 린트: `prefer-signals`, `prefer-output-emitter-ref`, `prefer-host-metadata-property`, `template/prefer-control-flow`, `template/prefer-class-binding`, `template/prefer-style-binding` | Angular 22의 현재 방식으로 통일한다. 예전 방식은 AI가 자주 생성하므로 리뷰가 아니라 린트에서 막는다 |
+| CS-F10 | 새 폼은 Signal Forms(`@angular/forms/signals`)로 만든다. 기존 Reactive Forms는 그 폼의 동작을 바꿀 때 함께 옮긴다. | Angular 22부터 Signal Forms가 안정 API이고, 상태를 signal로 둔다는 CS-F04와 맞는다. 옮기기만 하는 변경은 검증 비용에 비해 얻는 것이 없다 |
+| CS-F11 | 안정 API만 쓴다. 실험(`@experimental`)·개발자 미리보기(`@developerPreview`) API를 쓰지 않는다. 린트: `no-experimental`, `no-developer-preview` | 메이저 업그레이드(`ng update`) 때 깨질 수 있는 코드를 들이지 않는다 ([ADR-0015](adr/0015-keep-angular-for-frontend.md)) |
 
 ## 6. 버전 관리 규칙
 
@@ -203,3 +206,4 @@ post.updateBy(requester, new Title(title), new Content(content));
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` 2c1659d의 도구 설정과 코드 관례를 기준으로 정리) | HseongH |
 | 1.1.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): Java 품질 도구의 설정 위치를 `build-logic`의 컨벤션 플러그인으로, 프론트엔드 설정 위치를 `services/web/`으로 변경 | HseongH |
 | 1.2.0 | 2026-10-09 | 프론트엔드 품질 게이트에 `ng build`의 템플릿 검사와 번들 예산 추가 (`pnpm verify`에 포함) | HseongH |
+| 1.3.0 | 2026-10-09 | Angular 22 기준으로 프론트엔드 규칙 개정 ([ADR-0015](adr/0015-keep-angular-for-frontend.md)): CS-F03에 `@Service()`와 주입 위치 추가, CS-F04를 기본 `OnPush` 기준으로 변경, CS-F09(컴포넌트 API와 템플릿 문법)·CS-F10(Signal Forms)·CS-F11(안정 API) 추가. 규칙마다 강제하는 린트 규칙을 표시하고 타입 정보 린트를 켬 | HseongH |
