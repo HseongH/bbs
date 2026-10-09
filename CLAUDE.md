@@ -4,7 +4,8 @@
 
 이 저장소의 정식 문서는 `docs/`에 있으며 규칙은 [docs/README.md](docs/README.md)를 따른다. 코드를 바꾸기 전에 관련 문서를 먼저 읽는다.
 
-- 프로젝트 공통: `docs/project/` (charter, srs, sds, qa-standards, adr/)
+- 프로젝트 공통: `docs/project/` (charter, srs, sds, qa-standards, coding-standards, adr/)
+- 코드를 쓸 때는 [코딩 표준](docs/project/coding-standards.md)을 따른다. 리뷰에서는 규칙 번호(`CS-B20` 등)로 지적한다.
 - 기능별: `docs/features/<기능>/` (srs, sds, qa-checklist)
 - 템플릿: `docs/templates/`
 
@@ -17,8 +18,9 @@
 3. 계획의 Global Constraints에는 프로젝트 SRS의 공통 요구사항(`COM-*`) 중 해당하는 것을 옮겨 적는다.
 4. 구현을 마치면 QA 체크리스트의 판정을 **실제로 실행한 명령의 결과**로 채운다. 실행하지 않은 항목은 `N/T`다.
 5. 프로젝트 전체에 영향을 주는 결정은 `docs/project/adr/`에 새 ADR로 추가한다. 승인된 ADR은 고치지 않는다.
-6. 구조가 바뀌면 `docs/project/diagrams/`의 다이어그램과 문서 안의 Mermaid 다이어그램도 함께 고치고, 렌더링 결과를 확인한다 (`docs/README.md` §3).
-7. 새 오류 코드는 `ErrorCode`와 `docs/project/srs.md` §5.1에 함께 추가한다.
+6. SDS는 [문서 체계 §8](docs/README.md#8-sds-작성-기준)의 기준대로 책임·흐름·결정만 적는다. 메서드 시그니처, 필드 목록, 세부 버전, 테스트 목록은 적지 않는다.
+7. 구조가 바뀌면 `docs/project/diagrams/`의 다이어그램과 문서 안의 Mermaid 다이어그램도 함께 고치고, 렌더링 결과를 확인한다 (`docs/README.md` §3).
+8. 새 오류 코드는 `ErrorCode`와 `docs/project/srs.md` §5.1에 함께 추가한다.
 
 ### 식별자
 
