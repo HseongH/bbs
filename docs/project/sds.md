@@ -413,14 +413,15 @@ gradle/            Gradle 래퍼, 버전 카탈로그
 
 | 워크플로 | 실행 조건 | 검증 |
 |---|---|---|
-| `auth` | auth 디렉터리, Java 공통 빌드 파일, 통합 테스트가 이미지를 읽는 `deploy/compose.yaml`, 워크플로 자신 | `./gradlew :services:auth:check :spotlessCheck` |
-| `board` | board 디렉터리, Java 공통 빌드 파일(`build-logic/`, `gradle/`, `config/`, 루트 Gradle 파일), 통합 테스트가 이미지를 읽는 `deploy/compose.yaml`, 워크플로 자신 | `./gradlew :services:board:check :spotlessCheck` (Gradle 스크립트 포맷 포함) |
+| `auth` | auth 디렉터리, 공유 라이브러리(`libs/`), Java 공통 빌드 파일, 통합 테스트가 이미지를 읽는 `deploy/compose.yaml`, 워크플로 자신 | `./gradlew :libs:internal-token:check :services:auth:check :spotlessCheck` |
+| `board` | board 디렉터리, 공유 라이브러리(`libs/`), Java 공통 빌드 파일(`build-logic/`, `gradle/`, `config/`, 루트 Gradle 파일), 통합 테스트가 이미지를 읽는 `deploy/compose.yaml`, 워크플로 자신 | `./gradlew :libs:internal-token:check :services:board:check :spotlessCheck` (Gradle 스크립트 포맷 포함) |
 | `web` | web 디렉터리, 워크플로 자신 | `pnpm verify` |
-| `e2e` | auth·board·web 디렉터리, `deploy/`, Java 서비스의 실행 결과를 바꾸는 공통 빌드 파일, 워크플로 자신 | compose 컨테이너(진입점 포함)와 `bootRun`으로 auth와 board를 띄우고, 진입점 주소로 `pnpm e2e` |
+| `e2e` | auth·board·web 디렉터리, 공유 라이브러리(`libs/`), `deploy/`, Java 서비스의 실행 결과를 바꾸는 공통 빌드 파일, 워크플로 자신 | compose 컨테이너(진입점 포함)와 `bootRun`으로 auth와 board를 띄우고, 진입점 주소로 `pnpm e2e` |
 | `line-endings` | 모든 변경 | 저장소에 CRLF가 없는지 |
 
 - 실행 조건은 제외 목록이 아니라 **포함 목록**으로 둔다. 서비스가 늘어도 새 서비스의 변경이 관계없는 워크플로를 실행하지 않는다 (COM-NFR-033).
 - Java 공통 빌드 파일은 모든 Java 서비스의 워크플로 실행 조건에 들어간다. 공통 파일을 새로 만들면 각 워크플로의 목록에도 추가해야 한다.
+- 공유 라이브러리는 그것을 쓰는 서비스의 워크플로가 함께 검증한다. 서비스의 `check`는 라이브러리를 컴파일만 하므로, 라이브러리의 `check`(계약 테스트)를 명령에 따로 넣는다.
 - `e2e`는 여러 서비스를 함께 띄워야 하므로 서비스별 워크플로와 따로 둔다. 개발 환경과 같은 방식(`compose up --wait` 후 `bootRun`의 compose 연동)으로 띄워, CI에서만 쓰는 실행 경로를 만들지 않는다. 시험 계정은 개발용 사용자 파일에서 가져온다 (COM-NFR-036).
 
 ### 10.3 의존성 갱신
