@@ -7,6 +7,7 @@ import { authInterceptor } from "@/core/auth/auth.interceptor";
 import { 로그인회원 } from "@test/handlers";
 import { server } from "@test/setup";
 import { App } from "./app";
+import { appConfig } from "./app.config";
 import { routes } from "./app.routes";
 
 async function 화면을_그린다() {
@@ -57,5 +58,25 @@ describe("App", () => {
     await 화면을_그린다();
 
     expect(await screen.findByRole("link", { name: "로그인" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["/", "게시글 목록 | 게시판"],
+    ["/posts/new", "글쓰기 | 게시판"],
+    ["/posts/1", "게시글 | 게시판"],
+    ["/posts/1/edit", "게시글 수정 | 게시판"],
+    ["/없는경로", "페이지를 찾을 수 없음 | 게시판"],
+  ])("%s 화면의 브라우저 제목은 %s이다", async (경로, 제목) => {
+    server.use(
+      http.get("/api/posts/:postId", () =>
+        HttpResponse.json({ status: 404, code: "POST_NOT_FOUND" }, { status: 404 }),
+      ),
+    );
+    // 제목 전략과 라우터 입력 바인딩까지 실제 앱 설정을 그대로 쓴다.
+    await render(App, { providers: appConfig.providers });
+
+    await TestBed.inject(Router).navigateByUrl(경로);
+
+    await vi.waitFor(() => expect(document.title).toBe(제목));
   });
 });

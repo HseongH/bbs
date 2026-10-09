@@ -1,13 +1,13 @@
 ---
 doc_id: PST-QA
 title: 게시글 QA 체크리스트
-version: 1.3.2
+version: 1.4.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.3.1]
+related: [PRJ-QA 1.4.0, PST-SRS 1.3.0, PST-SDS 1.3.1]
 ---
 
 # 게시글 QA 체크리스트
@@ -21,7 +21,7 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.3.1]
 | 대상 커밋 | `fix/review-defects` 브랜치 끝, 이 문서를 고친 커밋과 같은 코드 (이전 수행: e96a878, f46a99c, 85cce67) |
 | 수행일 | 2026-10-09 |
 | 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
-| 화면 자동 검증 | `refactor/web-signal-forms`에서 `pnpm verify` 성공 (린트, 타입 검사, 빌드 통과, 테스트 파일 13개·테스트 51개 통과). 같은 코드로 컨테이너와 `bootRun`을 띄우고 `pnpm e2e` 4개 통과. 화면만 바뀌어 백엔드는 다시 실행하지 않았다. 이전 수행의 `pnpm gen:api` 후 생성 타입 변화 없음 |
+| 화면 자동 검증 | `feat/web-route-titles`에서 `pnpm verify` 성공 (린트, 타입 검사, 빌드 통과, 테스트 파일 13개·테스트 56개 통과). 화면만 바뀌어 백엔드는 다시 실행하지 않았다. 이전 수행의 `pnpm gen:api` 후 생성 타입 변화 없음 |
 | E2E | `pnpm e2e` 성공 (Chromium, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 1fa1827에 E2E 브라우저를 Chromium으로 바꾸는 설정을 적용하고, `deploy/compose.yaml`의 컨테이너와 `./gradlew :services:board:bootRun`을 띄운 뒤 2026-10-09 수행 (이전 수행: Firefox, `main` 0b719d8) |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
@@ -102,6 +102,7 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.3.1]
 | TC-PST-049 | PST-FR-023 | 서버 검증 오류 | 필드 아래 메시지, 전체 메시지 중복 없음 | `post-form.spec: 서버 검증 오류를…`, `…겹쳐 보여주지 않는다`, `post-edit-page.spec: 저장이 검증 오류로 실패하면 입력란 아래에 서버 메시지를 보여준다` | Pass |
 | TC-PST-050 | PST-FR-024 | 좋아요 버튼 클릭 | 숫자 증가, 중복이면 안내 | `like-button.spec` 2건 | Pass |
 | TC-PST-051 | PST-FR-001, 021, 024 | 글 작성 → 상세 → 좋아요 | 전체 흐름 성공 | E2E `board.spec: 글을 쓰고 댓글과 좋아요를 남긴다` | Pass |
+| TC-PST-055 | PST-FR-025 | 목록·작성·상세·수정·없는 경로로 이동 | 화면마다 `<화면 이름> \| 게시판` 형식의 제목 | `app.spec: / 화면의 브라우저 제목은 게시글 목록 \| 게시판이다` 외 4건 (경로별) | Pass |
 
 ## 3. 추적 요약
 
@@ -118,14 +119,14 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.3.1]
 | PST-FR-009 | 015~017, 019 | 부분 (대소문자 무시 미검증) |
 | PST-FR-010 | 018 | 완전 |
 | PST-FR-011 | 029, 030 | 완전 |
-| PST-FR-020~024 | 040~051, 054 | 화면 단위 테스트 완전, E2E 2건 |
+| PST-FR-020~025 | 040~051, 054, 055 | 화면 단위 테스트 완전, E2E 2건 |
 | PST-NFR-001 | 033, 034 | 완전 |
 | PST-NFR-002 | - | 설계 검토로만 확인. 쿼리 횟수 테스트 없음 |
 
 ## 4. 결과 요약과 후속 조치
 
 - 판정 근거: 2026-10-09에 `fix/review-defects`에서 `./gradlew check`와 `pnpm verify`를 실행한 결과 (§1).
-- 집계: 전체 51건 중 Pass 47, Fail 0, N/T 4 (자동 테스트 없음 4).
+- 집계: 전체 52건 중 Pass 48, Fail 0, N/T 4 (자동 테스트 없음 4).
 - E2E 2건(TC-PST-043, 051)은 1.0.x까지 N/T였다. E2E 브라우저를 Firefox로 바꾸고 실행해 Pass로 판정했다.
 - **자동 테스트가 없는 항목**(TC-PST-019, 022, 035, 036)은 테스트를 추가할 후보다. 특히 TC-PST-022는 "관리자도 수정할 수 없다"는 규칙을 명시적으로 고정하는 회귀 테스트로 가치가 크다.
 - PST-NFR-002(목록 쿼리 횟수)는 쿼리 횟수를 세는 테스트를 추가하면 자동 검증으로 바꿀 수 있다.
@@ -143,3 +144,4 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.3.1]
 | 1.3.0 | 2026-10-10 | 회귀 항목 TC-PST-054(목록 조회 오류 시 화면이 깨지던 결함) 추가 (PST-SRS 1.2.0) | HseongH |
 | 1.3.1 | 2026-10-10 | 오류 해석을 `problem.ts`로 모은 리팩터링 후 재수행. TC-PST-049에 화면 수준 근거(수정 화면의 저장 실패) 추가. 판정 변화 없음 | HseongH |
 | 1.3.2 | 2026-10-10 | 폼을 Signal Forms로 옮긴 뒤 재수행. 검색 폼 단위 테스트(`search-form.spec`) 추가. 판정 변화 없음 | HseongH |
+| 1.4.0 | 2026-10-10 | TC-PST-055(화면별 브라우저 제목) 추가 (PST-SRS 1.3.0) | HseongH |
