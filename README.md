@@ -62,7 +62,7 @@ cd services/web && pnpm gen:api
 
 ```bash
 export BBS_HOST=<서버 주소>
-export BIND_ADDRESS=0.0.0.0   # 다른 기기에서 컨테이너 포트에 닿게 한다
+export KEYCLOAK_BIND_ADDRESS=0.0.0.0   # 다른 기기의 브라우저가 Keycloak에 닿게 한다 (DB와 Valkey는 열지 않는다)
 
 docker compose -f deploy/compose.yaml up -d
 ./gradlew :services:board:bootRun
@@ -96,7 +96,7 @@ docker compose -f deploy/compose.yaml rm -sf keycloak && docker compose -f deplo
 
 통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다. 이미지는 `deploy/compose.yaml`에서 읽으므로 개발 환경과 테스트가 같은 버전을 쓴다.
 
-GitHub Actions는 서비스마다 워크플로를 하나씩 두고, 그 서비스에 관계된 파일이 바뀐 push와 PR에서만 실행한다. `board.yml`은 `./gradlew :services:board:check`를 실행하며 공통 빌드 파일(`build-logic/`, `gradle/`, `config/`, 루트 Gradle 파일)이나 `deploy/compose.yaml`이 바뀌어도 실행된다. `web.yml`은 `services/web`에서 `pnpm verify`를 실행한다.
+GitHub Actions는 서비스마다 워크플로를 하나씩 두고, 그 서비스에 관계된 파일이 바뀐 push와 PR에서만 실행한다. `board.yml`은 `./gradlew :services:board:check :spotlessCheck`(board 검증과 Gradle 스크립트 포맷)를 실행하며 공통 빌드 파일(`build-logic/`, `gradle/`, `config/`, 루트 Gradle 파일)이나 `deploy/compose.yaml`이 바뀌어도 실행된다. `web.yml`은 `services/web`에서 `pnpm verify`를 실행한다.
 
 프론트엔드는 `cd services/web && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다. E2E 브라우저는 Firefox이며, 처음 한 번 `pnpm exec playwright install firefox`로 Playwright 전용 Firefox를 내려받아야 한다 (설치된 Firefox는 쓰지 않는다).
 

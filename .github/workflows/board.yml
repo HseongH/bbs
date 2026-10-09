@@ -40,7 +40,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       # 포맷, Checkstyle, Error Prone·NullAway 컴파일, ArchUnit을 포함한 전체 테스트, 커버리지 기준
-      - run: ./gradlew :services:board:check
+      # board의 전체 검증에 더해, 루트가 맡는 Gradle 스크립트(build-logic 포함) 포맷 검사를 함께 실행한다.
+      - run: ./gradlew :services:board:check :spotlessCheck
 
       - if: failure()
         uses: actions/upload-artifact@v6
