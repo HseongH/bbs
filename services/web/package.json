@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "e2e": "playwright test",
     "gen:api": "openapi-typescript http://localhost:8080/v3/api-docs -o src/app/core/api/schema.d.ts",
-    "verify": "pnpm lint && pnpm typecheck && pnpm test"
+    "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test"
   },
   "private": true,
   "packageManager": "pnpm@11.25.0",

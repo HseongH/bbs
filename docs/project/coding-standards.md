@@ -1,7 +1,7 @@
 ---
 doc_id: PRJ-CS
 title: 게시판(bbs) 코딩 표준
-version: 1.1.0
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
@@ -47,8 +47,11 @@ related: [PRJ-SDS 1.6.0, PRJ-QA 1.3.0]
 | 린트 | ESLint (typescript-eslint recommended·stylistic, angular-eslint) | `services/web/eslint.config.js` | 컴포넌트 선택자는 `app-` 접두사의 kebab-case, 지시자는 `app` 접두사의 camelCase. 템플릿 접근성 규칙 포함 | 접근성 위반을 리뷰가 아니라 린트에서 잡는다 |
 | 타입 | TypeScript 6 | `services/web/tsconfig.json` | 엄격 모드(TypeScript 6의 기본값)에 더해 `noUncheckedIndexedAccess`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `noFallthroughCasesInSwitch` | 배열 접근과 인덱스 시그니처에서 생기는 `undefined`를 타입으로 드러낸다 |
 | API 계약 | openapi-typescript | `services/web/package.json`의 `gen:api` | 백엔드 OpenAPI에서 생성한 타입만 사용 | 백엔드가 바뀌면 프론트엔드 타입 검사가 실패한다 |
+| 템플릿 검사 | Angular 컴파일러 (`ng build`) | `services/web/angular.json`, `services/web/tsconfig.json` | 엄격한 템플릿 타입 검사(Angular 22의 기본값), 번들 크기 예산 초과 시 실패 | `tsc`는 템플릿을 읽지 않는다. 템플릿의 바인딩 오류는 빌드에서만 드러난다 |
 
-`tsconfig.json`에는 `strict`가 적혀 있지 않다. TypeScript 6부터 엄격 모드가 기본값이기 때문이다. 이 사실이 설정 파일만 봐서는 드러나지 않으므로 여기에 적어 둔다.
+`tsconfig.json`에는 `strict`가 적혀 있지 않다. TypeScript 6부터 엄격 모드가 기본값이기 때문이다. 같은 이유로 `strictTemplates`도 적혀 있지 않다(Angular 22의 기본값). 이 사실이 설정 파일만 봐서는 드러나지 않으므로 여기에 적어 둔다.
+
+`pnpm verify`는 린트 → 타입 검사 → 빌드 → 단위 테스트 순서로 실행하고, 화면 CI(`web.yml`)도 같은 명령을 쓴다. 타입 검사(`tsc`)는 빌드보다 빨라서 커밋 전 검사에 쓰고, 빌드는 템플릿 오류를 테스트 전에 잡는다.
 
 ### 2.3 저장소
 
@@ -199,3 +202,4 @@ post.updateBy(requester, new Title(title), new Content(content));
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` 2c1659d의 도구 설정과 코드 관례를 기준으로 정리) | HseongH |
 | 1.1.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): Java 품질 도구의 설정 위치를 `build-logic`의 컨벤션 플러그인으로, 프론트엔드 설정 위치를 `services/web/`으로 변경 | HseongH |
+| 1.2.0 | 2026-10-09 | 프론트엔드 품질 게이트에 `ng build`의 템플릿 검사와 번들 예산 추가 (`pnpm verify`에 포함) | HseongH |
