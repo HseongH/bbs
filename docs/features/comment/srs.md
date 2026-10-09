@@ -1,13 +1,13 @@
 ---
 doc_id: CMT-SRS
 title: 댓글 요구사항 명세서
-version: 1.2.0
+version: 1.3.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.3.0, CMT-SDS 1.4.0, CMT-QA 1.2.0, PST-SRS 1.0.0]
+related: [PRJ-SRS 1.3.0, CMT-SDS 1.5.0, CMT-QA 1.2.0, PST-SRS 1.1.0]
 ---
 
 # 댓글 요구사항 명세서
@@ -52,7 +52,7 @@ related: [PRJ-SRS 1.3.0, CMT-SDS 1.4.0, CMT-QA 1.2.0, PST-SRS 1.0.0]
 
 | ID | 요구사항 | 수용 기준 |
 |---|---|---|
-| CMT-FR-001 | 회원은 게시글에 댓글을 작성할 수 있다. | 성공하면 `201`과 `Location: /api/comments/{id}`를 반환하고 깊이는 0이다. 존재하지 않거나 삭제된 게시글이면 `404 POST_NOT_FOUND`이다. 비회원은 `401`, 본문 규칙 위반은 `400 INVALID_REQUEST`이다. |
+| CMT-FR-001 | 회원은 게시글에 댓글을 작성할 수 있다. | 성공하면 `201`과 `Location: /api/comments/{id}`를 반환하고 깊이는 0이다. 존재하지 않거나 삭제된 게시글이면 `404 POST_NOT_FOUND`이다. 게시글 삭제와 동시에 작성해도 삭제된 게시글에 살아 있는 댓글이 남지 않는다: 작성이 `404 POST_NOT_FOUND`로 실패하거나, 작성된 댓글이 게시글과 함께 삭제된다. 비회원은 `401`, 본문 규칙 위반은 `400 INVALID_REQUEST`이다. |
 | CMT-FR-002 | 회원은 원댓글에 답글(대댓글)을 작성할 수 있다. | 부모 댓글을 지정하면 깊이 1로 기록된다. 부모 댓글이 없거나 삭제되었으면 `404 COMMENT_NOT_FOUND`이다. |
 | CMT-FR-003 | 대댓글에는 답글을 달 수 없다. | 깊이 1인 댓글을 부모로 지정하면 `400 COMMENT_DEPTH_EXCEEDED`이다. 데이터베이스에도 깊이 0~1만 저장할 수 있다. |
 | CMT-FR-008 | 대댓글의 부모 댓글은 같은 게시글에 속해야 한다. | 다른 게시글의 댓글을 부모로 지정하면 `404 COMMENT_NOT_FOUND`이다. 다른 게시글의 댓글은 이 게시글에서 없는 댓글과 같게 취급한다. |
@@ -111,3 +111,4 @@ related: [PRJ-SRS 1.3.0, CMT-SDS 1.4.0, CMT-QA 1.2.0, PST-SRS 1.0.0]
 | 1.0.0 | 2026-10-09 | 최초 작성 (구현 완료 시점 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | CMT-OPEN-01, 05 해결: CMT-FR-008 구현, CMT-FR-004에 게시글 부재 시 `404` 추가 | HseongH |
 | 1.2.0 | 2026-10-09 | CMT-OPEN-02, 03 해결: 목록을 원댓글 단위 묶음으로 변경(CMT-FR-004), 삭제된 원댓글 자리 표시 추가(CMT-FR-009), 화면 표시 기준 갱신(CMT-FR-020) | HseongH |
+| 1.3.0 | 2026-10-09 | CMT-FR-001: 게시글 삭제와 동시에 작성해도 삭제된 게시글에 살아 있는 댓글이 남지 않는다는 조건 추가 (경쟁 결함 수정) | HseongH |

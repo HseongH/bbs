@@ -37,6 +37,13 @@ public class PostPersistenceAdapter implements PostRepository {
   }
 
   @Override
+  public void lockAlive(PostId id) {
+    if (repository.lockAliveId(id.value()).isEmpty()) {
+      throw new BusinessException(ErrorCode.POST_NOT_FOUND);
+    }
+  }
+
+  @Override
   public Page<PostSummary> search(PostSearchCondition condition, Pageable pageable) {
     return queryRepository.search(condition, pageable);
   }
