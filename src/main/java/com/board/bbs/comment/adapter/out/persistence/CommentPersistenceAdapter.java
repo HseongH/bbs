@@ -7,7 +7,9 @@ import com.board.bbs.common.error.BusinessException;
 import com.board.bbs.common.error.ErrorCode;
 import com.board.bbs.post.domain.PostId;
 import java.time.Instant;
+import java.util.List;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -39,6 +41,25 @@ public class CommentPersistenceAdapter implements CommentRepository {
     return repository
         .findByPostIdAndDeletedAtIsNullOrderByCreatedAtAscIdAsc(postId.value(), pageable)
         .map(CommentMapper::toDomain);
+  }
+
+  @Override
+  public Page<Comment> listRoots(PostId postId, Pageable pageable) {
+    Pageable withoutSort = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+    return repository.findRootsForListing(postId.value(), withoutSort).map(CommentMapper::toDomain);
+  }
+
+  @Override
+  public List<Comment> listRepliesOf(List<CommentId> rootIds) {
+    if (rootIds.isEmpty()) {
+      return List.of();
+    }
+    List<Long> ids = rootIds.stream().map(CommentId::value).toList();
+    return repository
+        .findByParentCommentIdInAndDeletedAtIsNullOrderByCreatedAtAscIdAsc(ids)
+        .stream()
+        .map(CommentMapper::toDomain)
+        .toList();
   }
 
   @Override
