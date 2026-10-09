@@ -151,7 +151,7 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | COM-IF-001 | API는 `/api` 아래에 JSON으로 제공한다. 요청·응답 본문의 시각은 ISO-8601 UTC 문자열이다. | 컨트롤러 테스트 |
 | COM-IF-002 | 자원을 만들면 `201 Created`와 `Location` 헤더를, 수정·삭제·좋아요는 `204 No Content`를 반환한다. | `PostControllerTest#게시글을_작성하면_201과_위치를_반환한다` |
 | COM-IF-003 | 모든 오류는 RFC 9457 ProblemDetail 형식(`application/problem+json`)으로 반환한다. 표준 필드에 더해 `code` 확장 필드를 포함한다. `type`은 `urn:bbs:error:<code 소문자>`이다. | `GlobalExceptionHandlerTest#비즈니스_예외는_ProblemDetail_형식으로_변환된다` |
-| COM-IF-004 | 요청 값 검증에 실패하면 `400 INVALID_REQUEST`와 함께 `errors` 확장 필드에 `{필드명: 메시지}`를 담는다. 경로 변수의 식별자가 1보다 작은 경우도 같은 형식으로 응답한다. | `PostControllerTest#제목이_비면_400과_필드_오류를_반환한다`, `PostControllerTest#식별자가_1보다_작으면_400이다`, `CommentControllerTest#식별자가_1보다_작으면_400이다` |
+| COM-IF-004 | 요청 값 검증에 실패하면 `400 INVALID_REQUEST`와 함께 `errors` 확장 필드에 `{필드명: 메시지}`를 담는다. 경로 변수나 요청 본문의 식별자가 1보다 작은 경우도 같은 형식으로 응답한다. | `PostControllerTest#제목이_비면_400과_필드_오류를_반환한다`, `PostControllerTest#식별자가_1보다_작으면_400이다`, `CommentControllerTest#식별자가_1보다_작으면_400이다`, `CommentControllerTest#부모_댓글_식별자가_1보다_작으면_400이다` |
 | COM-IF-005 | 목록 API는 오프셋 페이징을 사용한다. 요청은 `page`(0부터), `size`(기본 20) 쿼리 파라미터이고, 응답은 `{content, page, size, totalElements, totalPages, last}`이다. | `OpenApiDocumentTest#페이지_정보는_개별_파라미터로_평탄화된다` |
 | COM-IF-006 | OpenAPI 문서(`/v3/api-docs`, `/swagger-ui.html`)를 제공한다. 응답 필드 중 null이 될 수 없는 필드는 `required`로 표시하고, 서버가 채우는 인자(현재 회원 등)는 문서에 노출하지 않는다. | `OpenApiDocumentTest` |
 | COM-IF-007 | 로그인은 `/oauth2/authorization/keycloak`에서 시작하고, 로그아웃은 `POST /logout`(CSRF 토큰 필요)이며 `204`를 반환한다. | `SecurityCsrfTest#로그아웃은_토큰과_함께_POST하면_성공한다` |
@@ -201,4 +201,4 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | 1.1.0 | 2026-10-09 | OPEN-04 해결: 지표를 비롯한 나머지 액추에이터 경로를 관리자 전용으로 제한하고 COM-NFR-021 갱신 | HseongH |
 | 1.2.0 | 2026-10-09 | Valkey 전환 반영 (COM-CON-002, COM-NFR-020, PR #15) | HseongH |
 | 1.3.0 | 2026-10-09 | 원댓글 단위 댓글 목록 반영: COM-NFR-012에 삭제된 원댓글 자리 표시 예외(CMT-FR-009) 추가, COM-NFR-014의 검증 테스트를 원댓글 목록 테스트로 교체 | HseongH |
-| 1.4.0 | 2026-10-09 | 코드 리뷰 결함 수정 반영: COM-IF-004에 1보다 작은 경로 식별자 추가, COM-NFR-002에 401 응답의 형식 조건 추가 | HseongH |
+| 1.4.0 | 2026-10-09 | 코드 리뷰 결함 수정 반영: COM-IF-004에 1보다 작은 식별자(경로 변수, 요청 본문) 추가, COM-NFR-002에 401 응답의 형식 조건 추가 | HseongH |

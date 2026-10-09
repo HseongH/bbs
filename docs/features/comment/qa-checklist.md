@@ -20,7 +20,7 @@ related: [PRJ-QA 1.2.0, CMT-SRS 1.3.0, CMT-SDS 1.5.0]
 |---|---|
 | 대상 커밋 | `fix/review-defects` 브랜치 끝, 이 문서를 고친 커밋과 같은 코드 (이전 수행: e96a878, f46a99c, 85cce67, `feature/comment-threads`) |
 | 수행일 | 2026-10-09 |
-| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 139개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
+| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
 | E2E, 수동 검증 | 실행하지 않음 (N/T). 이번 수행 환경에 Playwright 브라우저가 설치되어 있지 않음 |
 
@@ -37,7 +37,7 @@ related: [PRJ-QA 1.2.0, CMT-SRS 1.3.0, CMT-SDS 1.5.0]
 | TC-CMT-005 | CMT-FR-001 | 본문 경계값: 공백, 1,001자 | 거부 | `CommentTest#본문은_비어있을_수_없다`, `#본문은_1000자를_넘을_수_없다` | Pass |
 | TC-CMT-006 | CMT-FR-001 | 삭제된 게시글에 작성 | `404 POST_NOT_FOUND` | 자동 테스트 없음 | N/T |
 | TC-CMT-044 | CMT-FR-001, COM-NFR-012 | 게시글 삭제가 커밋되기 전에 댓글 작성 시작 (회귀) | 작성은 `404 POST_NOT_FOUND`, 삭제된 게시글에 살아 있는 댓글 없음 | `CommentWriteRaceTest#삭제가_커밋되기_전에_시작한_댓글_작성은_실패하고_살아_있는_댓글이_남지_않는다` | Pass |
-| TC-CMT-045 | COM-IF-004 | 식별자가 0인 게시글의 댓글 목록, 식별자가 0인 댓글 삭제 (회귀) | `400 INVALID_REQUEST` | `CommentControllerTest#식별자가_1보다_작으면_400이다` | Pass |
+| TC-CMT-045 | COM-IF-004 | 식별자가 0인 게시글의 댓글 목록, 식별자가 0인 댓글 삭제, 부모 댓글 식별자가 -1인 답글 작성 (회귀) | `400 INVALID_REQUEST`와 `errors` | `CommentControllerTest#식별자가_1보다_작으면_400이다`, `#부모_댓글_식별자가_1보다_작으면_400이다` | Pass |
 | TC-CMT-007 | CMT-FR-002 | 원댓글에 답글 작성 | 깊이 1, 부모 식별자 기록 | `CommentTest#원댓글에_달린_답글의_깊이는_1이다`, `CommentControllerTest#대댓글은_깊이_1로_기록된다`, `CommentPersistenceAdapterTest#대댓글은_부모_식별자와_깊이를_유지한다` | Pass |
 | TC-CMT-008 | CMT-FR-002, 009 | 삭제된 댓글에 답글 작성 | `404 COMMENT_NOT_FOUND` | `CommentControllerTest#삭제된_원댓글에는_답글을_달_수_없다` | Pass |
 | TC-CMT-009 | CMT-FR-003 | 대댓글에 답글 작성 | `400 COMMENT_DEPTH_EXCEEDED` | `CommentTest#대댓글에는_답글을_달_수_없다`, `CommentControllerTest#대댓글에는_답글을_달_수_없다` | Pass |
