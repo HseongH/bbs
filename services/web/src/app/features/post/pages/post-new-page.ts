@@ -33,9 +33,8 @@ export class PostNewPage {
       const id = await this.store.create(input);
       await this.router.navigate(["/posts", id]);
     } catch (error) {
-      const body = (error as { error?: unknown }).error ?? error;
-      this.errors.set(fieldErrors(body));
-      this.message.set(toProblem(body)?.detail ?? "저장하지 못했습니다.");
+      this.errors.set(fieldErrors(error));
+      this.message.set(toProblem(error)?.detail ?? "저장하지 못했습니다.");
     } finally {
       this.submitting.set(false);
     }

@@ -1,7 +1,7 @@
 ---
 doc_id: PST-QA
 title: 게시글 QA 체크리스트
-version: 1.3.0
+version: 1.3.1
 status: In Review
 owner: HseongH
 reviewers: []
@@ -21,7 +21,7 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.3.1]
 | 대상 커밋 | `fix/review-defects` 브랜치 끝, 이 문서를 고친 커밋과 같은 코드 (이전 수행: e96a878, f46a99c, 85cce67) |
 | 수행일 | 2026-10-09 |
 | 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
-| 화면 자동 검증 | `fix/resource-error-state`에서 `pnpm verify` 성공 (린트, 타입 검사, 빌드 통과, 테스트 파일 12개·테스트 44개 통과). 화면만 바뀌어 백엔드는 다시 실행하지 않았다. 이전 수행의 `pnpm gen:api` 후 생성 타입 변화 없음 |
+| 화면 자동 검증 | `refactor/web-problem-and-inputs`에서 `pnpm verify` 성공 (린트, 타입 검사, 빌드 통과, 테스트 파일 12개·테스트 47개 통과). 화면만 바뀌어 백엔드는 다시 실행하지 않았다. 이전 수행의 `pnpm gen:api` 후 생성 타입 변화 없음 |
 | E2E | `pnpm e2e` 성공 (Chromium, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 1fa1827에 E2E 브라우저를 Chromium으로 바꾸는 설정을 적용하고, `deploy/compose.yaml`의 컨테이너와 `./gradlew :services:board:bootRun`을 띄운 뒤 2026-10-09 수행 (이전 수행: Firefox, `main` 0b719d8) |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
@@ -99,7 +99,7 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.3.1]
 | TC-PST-054 | PST-FR-020 | 목록 API가 오류를 응답 (회귀) | 안내 문구, 화면이 깨지지 않음 | `post-list-page.spec: 목록을 불러오지 못하면 안내를 보여준다` | Pass |
 | TC-PST-047 | PST-FR-022 | 비로그인으로 작성 화면 진입 | 로그인으로 이동 | `auth.guard.spec: 미인증이면 막고 로그인으로 보낸다` | Pass |
 | TC-PST-048 | PST-FR-022 | 수정 화면 진입 | 기존 값이 채워짐 | `post-form.spec: 수정 모드에서는 기존 값이 채워진다` | Pass |
-| TC-PST-049 | PST-FR-023 | 서버 검증 오류 | 필드 아래 메시지, 전체 메시지 중복 없음 | `post-form.spec: 서버 검증 오류를…`, `…겹쳐 보여주지 않는다` | Pass |
+| TC-PST-049 | PST-FR-023 | 서버 검증 오류 | 필드 아래 메시지, 전체 메시지 중복 없음 | `post-form.spec: 서버 검증 오류를…`, `…겹쳐 보여주지 않는다`, `post-edit-page.spec: 저장이 검증 오류로 실패하면 입력란 아래에 서버 메시지를 보여준다` | Pass |
 | TC-PST-050 | PST-FR-024 | 좋아요 버튼 클릭 | 숫자 증가, 중복이면 안내 | `like-button.spec` 2건 | Pass |
 | TC-PST-051 | PST-FR-001, 021, 024 | 글 작성 → 상세 → 좋아요 | 전체 흐름 성공 | E2E `board.spec: 글을 쓰고 댓글과 좋아요를 남긴다` | Pass |
 
@@ -141,3 +141,4 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.3.1]
 | 1.2.0 | 2026-10-09 | `fix/review-defects`에서 수행. 회귀 항목 TC-PST-052(조회수 롤백), 053(1보다 작은 식별자) 추가, TC-PST-010 N/T → Pass | HseongH |
 | 1.2.1 | 2026-10-09 | E2E 브라우저를 Chromium으로 바꾸고 재수행. TC-PST-043, 051 판정 변화 없음 (Pass) | HseongH |
 | 1.3.0 | 2026-10-10 | 회귀 항목 TC-PST-054(목록 조회 오류 시 화면이 깨지던 결함) 추가 (PST-SRS 1.2.0) | HseongH |
+| 1.3.1 | 2026-10-10 | 오류 해석을 `problem.ts`로 모은 리팩터링 후 재수행. TC-PST-049에 화면 수준 근거(수정 화면의 저장 실패) 추가. 판정 변화 없음 | HseongH |

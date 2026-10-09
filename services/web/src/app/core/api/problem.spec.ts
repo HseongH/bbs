@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from "@angular/common/http";
 import { describe, expect, it } from "vitest";
 import { fieldErrors, isProblemCode, toProblem } from "./problem";
 
@@ -23,6 +24,19 @@ const 검증오류 = {
 describe("toProblem", () => {
   it("ProblemDetail 형태를 인식한다", () => {
     expect(toProblem(권한오류)?.code).toBe("ACCESS_DENIED");
+  });
+
+  it("HTTP 오류 응답이면 응답 본문을 해석한다", () => {
+    const 응답 = new HttpErrorResponse({ status: 403, error: 권한오류 });
+
+    expect(toProblem(응답)?.code).toBe("ACCESS_DENIED");
+    expect(fieldErrors(new HttpErrorResponse({ status: 400, error: 검증오류 }))).toEqual({
+      title: "제목은 필수입니다.",
+    });
+  });
+
+  it("HTTP 오류 응답의 본문이 규약을 따르지 않으면 null을 반환한다", () => {
+    expect(toProblem(new HttpErrorResponse({ status: 502, error: "Bad Gateway" }))).toBeNull();
   });
 
   it("형태가 다르면 null을 반환한다", () => {

@@ -36,8 +36,7 @@ export class LikeButtonComponent {
     void this.store
       .like(this.postId())
       .catch((error: unknown) => {
-        const body = (error as { error?: unknown }).error ?? error;
-        this.message.set(toProblem(body)?.detail ?? "좋아요에 실패했습니다.");
+        this.message.set(toProblem(error)?.detail ?? "좋아요에 실패했습니다.");
       })
       .finally(() => this.pending.set(0));
   }

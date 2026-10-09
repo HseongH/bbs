@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input } from "@angular/core";
+import { Component, computed, effect, inject, input, numberAttribute } from "@angular/core";
 import { Router } from "@angular/router";
 import { isProblemCode, toProblem } from "@/core/api/problem";
 import { CurrentMemberStore } from "@/core/auth/current-member.store";
@@ -20,14 +20,14 @@ import { PostStore } from "../post.store";
         @if (memberStore.member()) {
           <app-like-button
             like
-            [postId]="+postId()"
+            [postId]="postId()"
             [likeCount]="store.detail.value()?.likeCount ?? 0"
           />
         } @else {
           <span like>좋아요 {{ store.detail.value()?.likeCount ?? 0 }}</span>
         }
       </app-post-detail>
-      <app-comment-section [postId]="+postId()" />
+      <app-comment-section [postId]="postId()" />
     }
   `,
 })
@@ -36,19 +36,18 @@ export class PostDetailPage {
   protected readonly memberStore = inject(CurrentMemberStore);
   private readonly router = inject(Router);
 
-  readonly postId = input.required<string>();
+  /** 경로 파라미터는 문자열로 들어온다. 숫자가 아니면 NaN이 되어 서버가 400으로 거부한다. */
+  readonly postId = input.required({ transform: numberAttribute });
 
   protected readonly errorMessage = computed(() => {
     const error = this.store.detail.error();
     if (!error) {
       return null;
     }
-    // HttpErrorResponse는 응답 본문을 error 속성에 담는다.
-    const body = (error as { error?: unknown }).error ?? error;
-    if (isProblemCode(body, "POST_NOT_FOUND")) {
+    if (isProblemCode(error, "POST_NOT_FOUND")) {
       return "게시글을 찾을 수 없습니다.";
     }
-    return toProblem(body)?.detail ?? "게시글을 불러오지 못했습니다.";
+    return toProblem(error)?.detail ?? "게시글을 불러오지 못했습니다.";
   });
 
   protected readonly canEdit = computed(() => {
@@ -59,7 +58,7 @@ export class PostDetailPage {
 
   constructor() {
     effect(() => {
-      this.store.select(Number(this.postId()));
+      this.store.select(this.postId());
     });
   }
 
@@ -67,6 +66,6 @@ export class PostDetailPage {
     if (!window.confirm("게시글을 삭제할까요?")) {
       return;
     }
-    void this.store.remove(Number(this.postId())).then(() => this.router.navigate(["/"]));
+    void this.store.remove(this.postId()).then(() => this.router.navigate(["/"]));
   }
 }

@@ -7,7 +7,7 @@ owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.6.0, PST-SDS 1.3.1, PST-QA 1.3.0]
+related: [PRJ-SRS 1.6.0, PST-SDS 1.3.1, PST-QA 1.3.1]
 ---
 
 # 게시글 요구사항 명세서
