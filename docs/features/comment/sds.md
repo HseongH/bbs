@@ -7,7 +7,7 @@ owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.4.0, CMT-SRS 1.3.0, CMT-QA 1.2.0, PRJ-CS 1.0.0]
+related: [PRJ-SDS 1.4.0, CMT-SRS 1.3.0, CMT-QA 1.3.0, PRJ-CS 1.0.0]
 ---
 
 # 댓글 설계 명세서

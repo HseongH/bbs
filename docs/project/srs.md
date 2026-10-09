@@ -1,7 +1,7 @@
 ---
 doc_id: PRJ-SRS
 title: 게시판(bbs) 프로젝트 요구사항 명세서
-version: 1.3.0
+version: 1.4.0
 status: In Review
 owner: HseongH
 reviewers: []
@@ -201,3 +201,4 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | 1.1.0 | 2026-10-09 | OPEN-04 해결: 지표를 비롯한 나머지 액추에이터 경로를 관리자 전용으로 제한하고 COM-NFR-021 갱신 | HseongH |
 | 1.2.0 | 2026-10-09 | Valkey 전환 반영 (COM-CON-002, COM-NFR-020, PR #15) | HseongH |
 | 1.3.0 | 2026-10-09 | 원댓글 단위 댓글 목록 반영: COM-NFR-012에 삭제된 원댓글 자리 표시 예외(CMT-FR-009) 추가, COM-NFR-014의 검증 테스트를 원댓글 목록 테스트로 교체 | HseongH |
+| 1.4.0 | 2026-10-09 | 코드 리뷰 결함 수정 반영: COM-IF-004에 1보다 작은 경로 식별자 추가, COM-NFR-002에 401 응답의 형식 조건 추가 | HseongH |

@@ -1,13 +1,13 @@
 ---
 doc_id: MEM-QA
 title: 회원·인증 QA 체크리스트
-version: 1.3.0
+version: 1.4.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.2.0, MEM-SRS 1.1.0, MEM-SDS 1.3.0]
+related: [PRJ-QA 1.2.0, MEM-SRS 1.2.0, MEM-SDS 1.4.0]
 ---
 
 # 회원·인증 QA 체크리스트
@@ -18,11 +18,11 @@ related: [PRJ-QA 1.2.0, MEM-SRS 1.1.0, MEM-SDS 1.3.0]
 
 | 항목 | 값 |
 |---|---|
-| 대상 커밋 | `main` 85cce67 (이전 수행: e96a878, f46a99c) |
+| 대상 커밋 | `fix/review-defects` 브랜치 끝, 이 문서를 고친 커밋과 같은 코드 (이전 수행: e96a878, f46a99c, 85cce67) |
 | 수행일 | 2026-10-09 |
-| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 115개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
-| 화면 자동 검증 | `pnpm verify` 성공 (테스트 39개 통과) |
-| E2E | `pnpm e2e` 성공 (Firefox, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 0b719d8에 Firefox 설정을 적용해 2026-10-09 수행 |
+| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 135개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
+| 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
+| E2E | 이번 수행에서는 실행하지 않음. E2E 근거 항목(TC-MEM-001, 039)의 판정은 이전 수행 결과다: `pnpm e2e` 성공 (Firefox, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 0b719d8에 Firefox 설정을 적용해 2026-10-09 수행 |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
 ## 2. 테스트 항목
@@ -48,6 +48,8 @@ related: [PRJ-QA 1.2.0, MEM-SRS 1.1.0, MEM-SDS 1.3.0]
 | TC-MEM-015 | COM-NFR-021 | 비로그인으로 `/actuator/metrics` 조회 (회귀, OPEN-04) | `401` | `ActuatorAccessTest#지표는_인증_없이_볼_수_없다` | Pass |
 | TC-MEM-016 | COM-NFR-021 | 일반 회원이 `/actuator/metrics` 조회 (회귀, OPEN-04) | `403` | `ActuatorAccessTest#지표는_일반_회원이_볼_수_없다` | Pass |
 | TC-MEM-017 | COM-NFR-021 | 관리자가 `/actuator/metrics` 조회 | `200` | `ActuatorAccessTest#지표는_관리자가_볼_수_있다` | Pass |
+| TC-MEM-018 | MEM-FR-002 | Keycloak 사용자 이름·이메일이 공백뿐인 사용자로 처음 로그인 (회귀) | 닉네임은 `sub`, 이메일은 `{sub}@unknown.local` | `BbsOidcUserServiceTest#사용자_이름이나_이메일이_공백뿐이면_subject로_대신한다`, `#사용자_이름이나_이메일이_없으면_subject로_대신한다` | Pass |
+| TC-MEM-019 | COM-NFR-002, COM-IF-003 | 미인증 API 요청, 경로에 따옴표가 있는 미인증 요청 (회귀) | `401`, ProblemDetail 필드가 모두 있고 올바른 JSON | `UnauthenticatedResponseTest` | Pass |
 
 ### 2.2 회원 정보와 현재 회원
 
@@ -79,7 +81,7 @@ related: [PRJ-QA 1.2.0, MEM-SRS 1.1.0, MEM-SDS 1.3.0]
 | 요구사항 | TC | 자동화 |
 |---|---|---|
 | MEM-FR-001 | 001 | E2E |
-| MEM-FR-002 | 002~007, 012 | 완전 |
+| MEM-FR-002 | 002~007, 012, 018 | 완전 |
 | MEM-FR-003 | 008 | **없음** |
 | MEM-FR-004 | 009 | 완전 |
 | MEM-FR-005 | 020, 021 | 완전 |
@@ -87,10 +89,11 @@ related: [PRJ-QA 1.2.0, MEM-SRS 1.1.0, MEM-SDS 1.3.0]
 | MEM-FR-020~023 | 030~039 | 화면 단위 테스트 대부분, 로그아웃 흐름은 E2E. 로그인 후 원래 경로 복귀(038)는 자동 테스트 없음 |
 | MEM-NFR-001 | 013 | 완전 |
 | COM-NFR-021 | 014~017 | 완전 |
+| COM-NFR-002 | 019 | 완전 |
 
 ## 4. 결과 요약과 후속 조치
 
-- 집계: 전체 32건 중 Pass 29, Fail 0, N/T 3 (자동 테스트 없음 3).
+- 집계: 전체 34건 중 Pass 31, Fail 0, N/T 3 (자동 테스트 없음 3).
 - E2E 2건(TC-MEM-001, 039)은 1.2.x까지 N/T였다. E2E 브라우저를 Firefox로 바꾸고 실행해 Pass로 판정했다.
 - **MEM-FR-003(역할 매핑)에 자동 테스트가 없다.** 관리자 기능 전체가 이 매핑에 의존하므로 우선순위가 가장 높은 테스트 추가 후보다. `BbsOidcUserService`의 `realmRoles`를 가짜 `OidcUser`로 검증하는 단위 테스트를 제안한다.
 - [SRS 미결 사항](srs.md#6-미결-사항) 중 MEM-OPEN-02, 03은 로그인 실패로 이어지는 결함으로 다시 분류해 1.1.0에서 고쳤고, 회귀 항목 TC-MEM-012, 013을 추가했다. MEM-OPEN-01, 04는 미정의 동작이므로 판정 대상에서 제외한다.
@@ -104,3 +107,4 @@ related: [PRJ-QA 1.2.0, MEM-SRS 1.1.0, MEM-SDS 1.3.0]
 | 1.1.0 | 2026-10-09 | MEM-OPEN-02, 03 해결에 따라 회귀 항목 TC-MEM-012, 013 추가 | HseongH |
 | 1.2.0 | 2026-10-09 | 공통 보안 항목에 액추에이터 접근 회귀 항목 TC-MEM-014~017 추가 (OPEN-04 해결, PR #18). 수행 정보를 `main` 85cce67 재수행 결과로 정정 | HseongH |
 | 1.3.0 | 2026-10-09 | E2E를 Firefox로 실행해 TC-MEM-001, 039를 N/T → Pass로 판정 | HseongH |
+| 1.4.0 | 2026-10-09 | `fix/review-defects`에서 수행. 회귀 항목 TC-MEM-018(공백 사용자 이름), 019(401 응답 형식) 추가 | HseongH |
