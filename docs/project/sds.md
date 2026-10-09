@@ -7,7 +7,7 @@ owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.6.0, PRJ-QA 1.4.0, PRJ-QC 1.4.0, PRJ-CS 1.3.0]
+related: [PRJ-SRS 1.6.0, PRJ-QA 1.4.0, PRJ-QC 1.4.0, PRJ-CS 1.4.0]
 ---
 
 # 게시판(bbs) 프로젝트 설계 명세서

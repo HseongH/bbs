@@ -24,7 +24,7 @@ import { CommentItemComponent } from "./comment-item";
       }
 
       <ul class="divide-y divide-slate-100">
-        @for (thread of store.list.value()?.content ?? []; track thread.root.id) {
+        @for (thread of threads(); track thread.root.id) {
           <app-comment-item [comment]="thread.root" />
           @for (reply of thread.replies; track reply.id) {
             <app-comment-item [comment]="reply" />
@@ -40,9 +40,14 @@ export class CommentSectionComponent {
 
   readonly postId = input.required<number>();
 
+  /** 오류 상태에서 value()를 읽으면 예외가 나서 오류 안내까지 그리지 못한다. */
+  protected readonly threads = computed(() =>
+    this.store.list.hasValue() ? this.store.list.value().content : [],
+  );
+
   /** 서버의 전체 건수는 원댓글 수다. 화면에 보이는 댓글(삭제되지 않은 원댓글과 대댓글)을 센다. */
   protected readonly visibleCount = computed(() =>
-    (this.store.list.value()?.content ?? []).reduce(
+    this.threads().reduce(
       (count, thread) => count + (thread.root.deleted ? 0 : 1) + thread.replies.length,
       0,
     ),

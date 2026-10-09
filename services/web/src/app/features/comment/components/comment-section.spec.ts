@@ -199,4 +199,16 @@ describe("CommentSectionComponent", () => {
 
     expect(await screen.findByRole("heading", { name: "댓글 3" })).toBeInTheDocument();
   });
+
+  it("댓글을 불러오지 못하면 안내를 보여준다", async () => {
+    server.use(
+      http.get("/api/posts/:postId/comments", () =>
+        HttpResponse.json({ status: 500, code: "INTERNAL_ERROR" }, { status: 500 }),
+      ),
+    );
+
+    await 화면을_그린다();
+
+    expect(await screen.findByText("댓글을 불러오지 못했습니다.")).toBeInTheDocument();
+  });
 });
