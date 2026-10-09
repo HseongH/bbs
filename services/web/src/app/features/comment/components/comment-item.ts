@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, signal } from "@angular/core";
+import { toProblem } from "@/core/api/problem";
 import { CurrentMemberStore } from "@/core/auth/current-member.store";
 import type { Comment } from "../comment-api.service";
 import { CommentStore } from "../comment.store";
@@ -18,6 +19,7 @@ type ViewMode = "view" | "edit" | "reply";
           label="댓글 수정"
           submitLabel="수정"
           [initial]="comment().body ?? ''"
+          [error]="error()"
           (saved)="applyEdit($event)"
         />
       } @else {
@@ -34,9 +36,18 @@ type ViewMode = "view" | "edit" | "reply";
         }
       </div>
 
+      @if (mode() === "view" && error(); as message) {
+        <p class="mt-1 text-sm text-red-600">{{ message }}</p>
+      }
+
       @if (mode() === "reply") {
         <div class="mt-2 pl-6">
-          <app-comment-form label="답글" submitLabel="등록" (saved)="applyReply($event)" />
+          <app-comment-form
+            label="답글"
+            submitLabel="등록"
+            [error]="error()"
+            (saved)="applyReply($event)"
+          />
         </div>
       }
     </li>
@@ -62,23 +73,39 @@ export class CommentItemComponent {
       this.memberStore.member() !== null && this.comment().depth === 0 && !this.comment().deleted,
   );
 
+  /** 수정·답글·삭제 중 마지막으로 실패한 작업의 이유. 실패한 자리에 보여 준다. */
+  protected readonly error = signal<string | null>(null);
+
   protected toggle(target: ViewMode): void {
+    this.error.set(null);
     this.mode.update((current) => (current === target ? "view" : target));
   }
 
   protected applyEdit(body: string): void {
-    void this.store.update(this.comment().id, body).then(() => this.mode.set("view"));
+    void this.run(() => this.store.update(this.comment().id, body), "댓글을 수정하지 못했습니다.");
   }
 
   protected applyReply(body: string): void {
-    void this.store
-      .write({ body, parentCommentId: this.comment().id })
-      .then(() => this.mode.set("view"));
+    void this.run(
+      () => this.store.write({ body, parentCommentId: this.comment().id }),
+      "답글을 등록하지 못했습니다.",
+    );
   }
 
   protected remove(): void {
     if (window.confirm("댓글을 삭제할까요?")) {
-      void this.store.remove(this.comment().id);
+      void this.run(() => this.store.remove(this.comment().id), "댓글을 삭제하지 못했습니다.");
+    }
+  }
+
+  /** 성공하면 보기 상태로 돌아가고, 실패하면 화면 상태와 입력한 내용을 그대로 두고 이유를 알린다. */
+  private async run(action: () => Promise<void>, fallback: string): Promise<void> {
+    this.error.set(null);
+    try {
+      await action();
+      this.mode.set("view");
+    } catch (error) {
+      this.error.set(toProblem(error)?.detail ?? fallback);
     }
   }
 }
