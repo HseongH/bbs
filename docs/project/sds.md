@@ -316,6 +316,8 @@ auth에는 영속 데이터와 도메인 규칙이 없다. 그래서 board의 �
 
 오류 응답 형식은 board와 같아야 하지만 코드는 공유하지 않는다. 공유할 코드가 오류 코드 세 개와 응답 작성기 하나뿐이어서, 공유 라이브러리를 만드는 비용이 더 크다. 형식이 같다는 것은 두 서비스의 오류 응답 테스트가 같은 필드를 검사해서 확인한다.
 
+반면 내부 토큰의 계약(클레임 이름, 발급자·대상, 수명, 서명·검증 방식)은 `libs/internal-token`에 한 벌만 두고 auth와 board가 함께 쓴다. 한쪽만 바뀌면 모든 인증된 요청이 실패하기 때문이다. 이 라이브러리 안의 계약 테스트가 "auth가 발급한 토큰을 board의 검증기로 검증한다"를 실제 코드로 확인한다.
+
 ### 7.7 오류 처리
 
 board의 `GlobalExceptionHandler`가 모든 예외를 ProblemDetail로 변환한다.
@@ -384,13 +386,14 @@ services/web/src/app/
 services/auth/     인증 서비스 (Spring Boot): 로그인, ForwardAuth 판정, 내부 토큰
 services/board/    게시판 서비스 (Spring Boot)
 services/web/      화면 (Angular, pnpm)
+libs/internal-token/ 내부 토큰의 발급·검증 계약 (auth와 board가 공유하는 Java 라이브러리)
 build-logic/       Java 서비스 공통 빌드 규칙 (Gradle included build)
 deploy/            개발 실행 환경 (compose, Keycloak 가져오기 파일, 진입점 라우팅 규칙)
 config/checkstyle/ Java 서비스 공통 Checkstyle 규칙
 gradle/            Gradle 래퍼, 버전 카탈로그
 ```
 
-내용이 없는 서비스나 디렉터리는 만들지 않는다. 공유 라이브러리(`libs/`)는 두 서비스 이상이 같은 코드를 실제로 필요로 할 때 만든다 (§7.6).
+내용이 없는 서비스나 디렉터리는 만들지 않는다. 공유 라이브러리(`libs/`)는 두 서비스 이상이 같은 코드를 실제로 필요로 할 때만 만든다. 지금은 내부 토큰의 계약 하나뿐이다 (§7.6).
 
 ### 10.1 Java 빌드
 
@@ -436,4 +439,4 @@ Dependabot이 매주 Gradle(루트 카탈로그), npm(`services/web`), GitHub Ac
 | 1.5.0 | 2026-10-09 | 오류 처리(§7.4): 메서드 검증 실패 변환 추가, 오류 응답 본문 생성 지점을 하나로 모은 결정 기록 (PRJ-SRS 1.4.0) | HseongH |
 | 1.6.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): §10 저장소와 빌드 구성(Java 빌드, CI, 의존성 갱신) 추가, §9 실행 환경을 `deploy/` 기준으로 갱신(환경 변수, 루프백 바인딩, Keycloak 가져오기 파일 분리), 화면 경로 갱신 (PRJ-SRS 1.5.0) | HseongH |
 | 1.7.0 | 2026-10-09 | §10.2에 `e2e` 워크플로 추가 (PRJ-SRS 1.6.0) | HseongH |
-| 1.8.0 | 2026-10-10 | auth 서비스와 진입점 도입 ([ADR-0016](adr/0016-auth-service-with-internal-token.md), PRJ-SRS 1.7.0): §7 보안 설계를 로그인·API 요청 흐름, 접근 제어 계층, CSRF, 내부 토큰과 서명 키, auth 구성으로 다시 씀. §2 기술 스택, §3 컨텍스트(구성도 포함), §5.2 세션 키의 소유, §6 현재 회원 식별, §8 개발 서버, §9 실행 환경, §10 저장소 구성과 CI 갱신 | HseongH |
+| 1.8.0 | 2026-10-10 | auth 서비스와 진입점 도입 ([ADR-0016](adr/0016-auth-service-with-internal-token.md), PRJ-SRS 1.7.0): §7 보안 설계를 로그인·API 요청 흐름, 접근 제어 계층, CSRF, 내부 토큰과 서명 키, auth 구성으로 다시 씀. §7.6에 내부 토큰 계약 라이브러리, §2 기술 스택, §3 컨텍스트(구성도 포함), §5.2 세션 키의 소유, §6 현재 회원 식별, §8 개발 서버, §9 실행 환경, §10 저장소 구성과 CI 갱신 | HseongH |
