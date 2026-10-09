@@ -3,7 +3,7 @@ package com.board.bbs.member.domain;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
-/** Keycloak 사용자에 대응하는 로컬 회원. */
+/** 외부 신원(로그인한 사용자)에 대응하는 로컬 회원. */
 public class Member {
 
   @Nullable private final MemberId id;
@@ -19,9 +19,9 @@ public class Member {
   }
 
   /**
-   * Keycloak 최초 로그인 시 신규 회원을 만든다. 아직 식별자가 없다.
+   * 처음 보는 외부 사용자의 신규 회원을 만든다. 아직 식별자가 없다.
    *
-   * @param subject Keycloak 사용자 식별자
+   * @param subject 외부 사용자 식별자
    * @param nickname 닉네임
    * @param email 이메일
    * @return 식별자가 부여되지 않은 회원
@@ -34,7 +34,7 @@ public class Member {
    * 영속화된 회원을 복원한다. 어댑터에서만 사용한다.
    *
    * @param id 회원 식별자
-   * @param subject Keycloak 사용자 식별자
+   * @param subject 외부 사용자 식별자
    * @param nickname 닉네임
    * @param email 이메일
    * @return 복원된 회원

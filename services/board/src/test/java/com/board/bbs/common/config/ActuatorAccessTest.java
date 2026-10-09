@@ -1,17 +1,19 @@
 package com.board.bbs.common.config;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.board.bbs.support.IntegrationTestBase;
+import com.board.bbs.support.TestInternalTokens;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-/** 상태 확인은 누구나, 내부 지표는 관리자만 볼 수 있다. */
+/** 상태 확인은 누구나, 내부 지표는 관리자만 볼 수 있다. 관리자 여부는 내부 토큰의 역할로 판단한다. */
 @AutoConfigureMockMvc
 class ActuatorAccessTest extends IntegrationTestBase {
 
@@ -25,20 +27,26 @@ class ActuatorAccessTest extends IntegrationTestBase {
 
   @Test
   void 지표는_인증_없이_볼_수_없다() throws Exception {
-    mockMvc.perform(get("/actuator/metrics")).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(get("/actuator/metrics"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
   }
 
   @Test
   void 지표는_일반_회원이_볼_수_없다() throws Exception {
-    mockMvc.perform(get("/actuator/metrics").with(oidcLogin())).andExpect(status().isForbidden());
+    mockMvc
+        .perform(get("/actuator/metrics").with(TestInternalTokens.bearer("sub-user", "USER")))
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
   }
 
   @Test
   void 지표는_관리자가_볼_수_있다() throws Exception {
     mockMvc
         .perform(
-            get("/actuator/metrics")
-                .with(oidcLogin().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+            get("/actuator/metrics").with(TestInternalTokens.bearer("sub-admin", "USER", "ADMIN")))
         .andExpect(status().isOk());
   }
 }

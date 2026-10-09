@@ -7,9 +7,9 @@ import java.util.Optional;
 /** 회원 저장소 포트. */
 public interface MemberRepository {
   /**
-   * Keycloak 사용자 식별자로 회원을 찾는다.
+   * 외부 사용자 식별자로 회원을 찾는다.
    *
-   * @param subject Keycloak 사용자 식별자
+   * @param subject 외부 사용자 식별자
    * @return 회원. 없으면 빈 값
    */
   Optional<Member> findBySubject(String subject);

@@ -7,21 +7,25 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.http.server.ServletServerHttpResponse;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
-/** 인증·인가 규칙. */
+/**
+ * 인증·인가 규칙.
+ *
+ * <p>board는 auth가 서명한 내부 토큰만 검증한다 (ADR-0016). 로그인, 세션, CSRF는 auth의 일이다. 인증이 필요한지는 auth가 원래 요청 기준으로
+ * 판정하므로 여기서 같은 규칙을 반복하지 않는다. 진입점을 우회한 요청은 현재 회원이 필요한 API가 {@code @CurrentMember}로 거부하고, 위조된 토큰은 서명
+ * 검증에서 거부된다 (PRJ-SDS §7.3).
+ */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -30,10 +34,10 @@ public class SecurityConfig {
   private static final JacksonJsonHttpMessageConverter PROBLEM_WRITER =
       new JacksonJsonHttpMessageConverter();
 
-  private final OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService;
+  private final Converter<Jwt, ? extends AbstractAuthenticationToken> authenticationConverter;
 
-  SecurityConfig(OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService) {
-    this.oidcUserService = oidcUserService;
+  SecurityConfig(Converter<Jwt, ? extends AbstractAuthenticationToken> authenticationConverter) {
+    this.authenticationConverter = authenticationConverter;
   }
 
   /**
@@ -49,60 +53,45 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/actuator/health", "/actuator/info")
                     .permitAll()
-                    // 나머지 액추에이터는 내부 운영 정보다. 아래의 화면용 GET 허용 규칙보다 먼저 막는다.
+                    // 나머지 액추에이터는 내부 운영 정보다.
                     .requestMatchers("/actuator/**")
                     .hasRole("ADMIN")
-                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/comments/**")
-                    .permitAll()
-                    .requestMatchers("/api/**")
-                    .authenticated()
-                    .requestMatchers(HttpMethod.GET, "/**")
-                    .permitAll()
                     .anyRequest()
-                    .authenticated())
-        .oauth2Login(login -> login.userInfoEndpoint(ui -> ui.oidcUserService(oidcUserService)))
-        // 화면이 SPA이므로 로그아웃 후 로그인 페이지로 보내는 대신 상태 코드만 돌려준다.
-        .logout(
-            logout ->
-                logout.logoutSuccessHandler(
-                    (request, response, authentication) ->
-                        response.setStatus(HttpServletResponse.SC_NO_CONTENT)))
+                    .permitAll())
+        .oauth2ResourceServer(
+            resourceServer ->
+                resourceServer
+                    .jwt(jwt -> jwt.jwtAuthenticationConverter(authenticationConverter))
+                    .authenticationEntryPoint(
+                        (request, response, exception) ->
+                            writeProblem(request, response, ErrorCode.UNAUTHENTICATED))
+                    .accessDeniedHandler(
+                        (request, response, exception) ->
+                            writeProblem(request, response, ErrorCode.ACCESS_DENIED)))
+        .sessionManagement(
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        // 세션 쿠키를 쓰지 않으므로 CSRF 공격 대상이 아니다. 브라우저 쪽 CSRF는 auth가 판정한다.
+        .csrf(AbstractHttpConfigurer::disable)
         .exceptionHandling(
-            handling -> handling.authenticationEntryPoint(SecurityConfig::writeUnauthenticated))
-        .csrf(
-            csrf ->
-                csrf.csrfTokenRepository(cookieCsrfTokenRepository())
-                    .csrfTokenRequestHandler(eagerCsrfTokenHandler()))
+            handling ->
+                handling
+                    .authenticationEntryPoint(
+                        (request, response, exception) ->
+                            writeProblem(request, response, ErrorCode.UNAUTHENTICATED))
+                    .accessDeniedHandler(
+                        (request, response, exception) ->
+                            writeProblem(request, response, ErrorCode.ACCESS_DENIED)))
         .build();
   }
 
-  /** 브라우저가 읽을 수 있어야 요청 헤더에 실어 보낼 수 있으므로 HttpOnly를 끈다. */
-  private static CookieCsrfTokenRepository cookieCsrfTokenRepository() {
-    return CookieCsrfTokenRepository.withHttpOnlyFalse();
-  }
-
-  /**
-   * 토큰을 지연 로딩하지 않고 바로 발급한다.
-   *
-   * <p>기본 동작은 토큰이 실제로 조회될 때까지 쿠키를 내려주지 않아, 화면이 첫 변경 요청에 쓸 토큰을 갖지 못한다. 요청 속성 이름을 비우면 지연 로딩을 끄게 되어 모든
-   * 응답에 쿠키가 실린다.
-   */
-  private static CsrfTokenRequestAttributeHandler eagerCsrfTokenHandler() {
-    CsrfTokenRequestAttributeHandler handler = new CsrfTokenRequestAttributeHandler();
-    handler.setCsrfRequestAttributeName(null);
-    return handler;
-  }
-
   /** API 클라이언트에게 로그인 페이지로의 리다이렉트는 의미가 없으므로 ProblemDetail을 직접 쓴다. */
-  private static void writeUnauthenticated(
-      HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
+  private static void writeProblem(
+      HttpServletRequest request, HttpServletResponse response, ErrorCode errorCode)
       throws IOException {
 
-    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    response.setStatus(errorCode.getStatus().value());
     PROBLEM_WRITER.write(
-        ProblemDetails.of(ErrorCode.UNAUTHENTICATED, request.getRequestURI()),
+        ProblemDetails.of(errorCode, request.getRequestURI()),
         MediaType.APPLICATION_PROBLEM_JSON,
         new ServletServerHttpResponse(response));
   }
