@@ -1,15 +1,15 @@
-import { Component, ElementRef, input, output, viewChild } from "@angular/core";
+import { Component, input, linkedSignal, output } from "@angular/core";
+import { form, FormField, FormRoot } from "@angular/forms/signals";
 import { ButtonComponent } from "@/shared/ui/button";
 
 @Component({
   selector: "app-comment-form",
-  imports: [ButtonComponent],
+  imports: [FormRoot, FormField, ButtonComponent],
   template: `
-    <form #element class="space-y-1" (submit)="submit($event)">
+    <form [formRoot]="form" class="space-y-1">
       <textarea
-        name="body"
         rows="3"
-        [value]="initial()"
+        [formField]="form.body"
         [attr.aria-label]="label()"
         class="w-full rounded border border-slate-300 px-3 py-2 text-sm"
       ></textarea>
@@ -28,16 +28,19 @@ export class CommentFormComponent {
   readonly submitting = input(false);
   readonly saved = output<string>();
 
-  private readonly element = viewChild.required<ElementRef<HTMLFormElement>>("element");
+  private readonly model = linkedSignal(() => ({ body: this.initial() }));
+
+  protected readonly form = form(this.model, {
+    submission: {
+      action: async () => {
+        this.saved.emit(this.model().body);
+      },
+    },
+  });
 
   /** 등록에 성공했을 때 부모가 호출한다. 실패하면 사용자가 쓴 내용을 잃지 않도록 그대로 둔다. */
   reset(): void {
-    this.element().nativeElement.reset();
-  }
-
-  protected submit(event: Event): void {
-    event.preventDefault();
-    const data = new FormData(event.target as HTMLFormElement);
-    this.saved.emit(String(data.get("body") ?? ""));
+    this.model.set({ body: this.initial() });
+    this.form().reset();
   }
 }

@@ -1,7 +1,7 @@
 ---
 doc_id: PRJ-CS
 title: 게시판(bbs) 코딩 표준
-version: 1.4.0
+version: 1.5.0
 status: In Review
 owner: HseongH
 reviewers: []
@@ -182,7 +182,7 @@ post.updateBy(requester, new Title(title), new Content(content));
 | CS-F07 | 단위 테스트의 API 목은 MSW로 만들고, 응답 데이터에는 생성된 API 타입을 붙인다. | 백엔드 계약이 바뀌면 목도 컴파일 오류가 나야 한다 |
 | CS-F08 | 사용자에게 보이는 문구와 테스트 이름은 한국어로 쓴다. | 화면 언어와 테스트 언어를 맞춘다 |
 | CS-F09 | 컴포넌트의 입력·출력은 `input()`, `output()`, `model()` 함수로, 호스트 바인딩은 데코레이터의 `host` 객체로 선언한다. 템플릿은 내장 제어 흐름(`@if`, `@for`, `@switch`)과 `class`·`style` 바인딩을 쓴다 (`*ngIf`, `ngClass`, `ngStyle`을 쓰지 않는다). 린트: `prefer-signals`, `prefer-output-emitter-ref`, `prefer-host-metadata-property`, `template/prefer-control-flow`, `template/prefer-class-binding`, `template/prefer-style-binding` | Angular 22의 현재 방식으로 통일한다. 예전 방식은 AI가 자주 생성하므로 리뷰가 아니라 린트에서 막는다 |
-| CS-F10 | 새 폼은 Signal Forms(`@angular/forms/signals`)로 만든다. 기존 Reactive Forms는 그 폼의 동작을 바꿀 때 함께 옮긴다. | Angular 22부터 Signal Forms가 안정 API이고, 상태를 signal로 둔다는 CS-F04와 맞는다. 옮기기만 하는 변경은 검증 비용에 비해 얻는 것이 없다 |
+| CS-F10 | 폼은 Signal Forms(`@angular/forms/signals`)로 만든다. 입력값은 모델 signal에 두고(부모가 준 초기값을 따라가야 하면 `linkedSignal`), 제출은 `[formRoot]`와 `submission`으로 받는다. 입력값을 DOM에서 직접 읽지 않는다(`FormData`, `ElementRef`). 린트: `no-restricted-imports`(`@angular/forms` 금지) | Angular 22부터 Signal Forms가 안정 API이고, 상태를 signal로 둔다는 CS-F04와 맞는다. DOM에서 읽으면 화면의 값과 상태가 어긋난다 |
 | CS-F11 | 안정 API만 쓴다. 실험(`@experimental`)·개발자 미리보기(`@developerPreview`) API를 쓰지 않는다. 린트: `no-experimental`, `no-developer-preview` | 메이저 업그레이드(`ng update`) 때 깨질 수 있는 코드를 들이지 않는다 ([ADR-0015](adr/0015-keep-angular-for-frontend.md)) |
 
 ## 6. 버전 관리 규칙
@@ -208,3 +208,4 @@ post.updateBy(requester, new Title(title), new Content(content));
 | 1.2.0 | 2026-10-09 | 프론트엔드 품질 게이트에 `ng build`의 템플릿 검사와 번들 예산 추가 (`pnpm verify`에 포함) | HseongH |
 | 1.3.0 | 2026-10-09 | Angular 22 기준으로 프론트엔드 규칙 개정 ([ADR-0015](adr/0015-keep-angular-for-frontend.md)): CS-F03에 `@Service()`와 주입 위치 추가, CS-F04를 기본 `OnPush` 기준으로 변경, CS-F09(컴포넌트 API와 템플릿 문법)·CS-F10(Signal Forms)·CS-F11(안정 API) 추가. 규칙마다 강제하는 린트 규칙을 표시하고 타입 정보 린트를 켬 | HseongH |
 | 1.4.0 | 2026-10-10 | CS-F04에 리소스 `value()`를 `hasValue()`로 확인한 뒤 읽는 규칙 추가 (오류 상태에서 화면이 깨지던 결함, TC-PST-054·TC-CMT-046) | HseongH |
+| 1.5.0 | 2026-10-10 | CS-F10 개정: 모든 폼을 Signal Forms로 옮겨 경과 규정(기존 Reactive Forms 유지)을 지우고, 모델·제출 방식과 `@angular/forms` import 금지 린트 추가 | HseongH |

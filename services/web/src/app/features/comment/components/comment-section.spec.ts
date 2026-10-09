@@ -1,5 +1,5 @@
 import { provideHttpClient } from "@angular/common/http";
-import { render, screen } from "@testing-library/angular";
+import { render, screen, within } from "@testing-library/angular";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { components } from "@/core/api/schema";
@@ -210,5 +210,51 @@ describe("CommentSectionComponent", () => {
     await 화면을_그린다();
 
     expect(await screen.findByText("댓글을 불러오지 못했습니다.")).toBeInTheDocument();
+  });
+
+  it("댓글을 수정하면 기존 본문을 채우고 고친 본문을 전송한다", async () => {
+    let 받은본문: unknown = null;
+    server.use(
+      http.get("/api/posts/:postId/comments", () =>
+        HttpResponse.json(댓글페이지([묶음(댓글({ id: 7, body: "원래 본문" }))])),
+      ),
+      http.patch("/api/comments/:id", async ({ request }) => {
+        받은본문 = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    await 화면을_그린다();
+
+    await userEvent.click(await screen.findByRole("button", { name: "수정" }));
+    const 입력란 = screen.getByLabelText("댓글 수정");
+    expect(입력란).toHaveValue("원래 본문");
+    await userEvent.clear(입력란);
+    await userEvent.type(입력란, "고친 본문");
+    await userEvent.click(within(입력란.closest("form")!).getByRole("button", { name: "수정" }));
+
+    await vi.waitFor(() => expect(받은본문).toEqual({ body: "고친 본문" }));
+  });
+
+  it("답글을 등록하면 원댓글 식별자와 함께 전송한다", async () => {
+    let 받은본문: unknown = null;
+    server.use(
+      http.get("/api/posts/:postId/comments", () =>
+        HttpResponse.json(댓글페이지([묶음(댓글({ id: 7 }))])),
+      ),
+      http.post("/api/posts/:postId/comments", async ({ request }) => {
+        받은본문 = await request.json();
+        return new HttpResponse(null, { status: 201 });
+      }),
+    );
+
+    await 화면을_그린다();
+
+    await userEvent.click(await screen.findByRole("button", { name: "답글 달기" }));
+    const 답글란 = screen.getByLabelText("답글");
+    await userEvent.type(답글란, "답글입니다");
+    await userEvent.click(within(답글란.closest("form")!).getByRole("button", { name: "등록" }));
+
+    await vi.waitFor(() => expect(받은본문).toEqual({ body: "답글입니다", parentCommentId: 7 }));
   });
 });
