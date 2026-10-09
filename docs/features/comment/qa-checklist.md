@@ -1,13 +1,13 @@
 ---
 doc_id: CMT-QA
 title: 댓글 QA 체크리스트
-version: 1.2.0
+version: 1.3.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.2.0, CMT-SRS 1.2.0, CMT-SDS 1.4.0]
+related: [PRJ-QA 1.2.0, CMT-SRS 1.3.0, CMT-SDS 1.5.0]
 ---
 
 # 댓글 QA 체크리스트
@@ -18,10 +18,10 @@ related: [PRJ-QA 1.2.0, CMT-SRS 1.2.0, CMT-SDS 1.4.0]
 
 | 항목 | 값 |
 |---|---|
-| 대상 커밋 | `feature/comment-threads` 브랜치 끝, 이 문서를 고친 커밋과 같은 코드 (이전 수행: e96a878, f46a99c, 85cce67) |
+| 대상 커밋 | `fix/review-defects` 브랜치 끝, 이 문서를 고친 커밋과 같은 코드 (이전 수행: e96a878, f46a99c, 85cce67, `feature/comment-threads`) |
 | 수행일 | 2026-10-09 |
-| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 125개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
-| 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과) |
+| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
+| 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
 | E2E, 수동 검증 | 실행하지 않음 (N/T). 이번 수행 환경에 Playwright 브라우저가 설치되어 있지 않음 |
 
 ## 2. 테스트 항목
@@ -36,6 +36,8 @@ related: [PRJ-QA 1.2.0, CMT-SRS 1.2.0, CMT-SDS 1.4.0]
 | TC-CMT-004 | CMT-FR-001, COM-IF-004 | 빈 본문으로 작성 | `400` | `CommentControllerTest#본문이_비면_400이다` | Pass |
 | TC-CMT-005 | CMT-FR-001 | 본문 경계값: 공백, 1,001자 | 거부 | `CommentTest#본문은_비어있을_수_없다`, `#본문은_1000자를_넘을_수_없다` | Pass |
 | TC-CMT-006 | CMT-FR-001 | 삭제된 게시글에 작성 | `404 POST_NOT_FOUND` | 자동 테스트 없음 | N/T |
+| TC-CMT-044 | CMT-FR-001, COM-NFR-012 | 게시글 삭제가 커밋되기 전에 댓글 작성 시작 (회귀) | 작성은 `404 POST_NOT_FOUND`, 삭제된 게시글에 살아 있는 댓글 없음 | `CommentWriteRaceTest#삭제가_커밋되기_전에_시작한_댓글_작성은_실패하고_살아_있는_댓글이_남지_않는다` | Pass |
+| TC-CMT-045 | COM-IF-004 | 식별자가 0인 게시글의 댓글 목록, 식별자가 0인 댓글 삭제, 부모 댓글 식별자가 -1인 답글 작성 (회귀) | `400 INVALID_REQUEST`와 `errors` | `CommentControllerTest#식별자가_1보다_작으면_400이다`, `#부모_댓글_식별자가_1보다_작으면_400이다` | Pass |
 | TC-CMT-007 | CMT-FR-002 | 원댓글에 답글 작성 | 깊이 1, 부모 식별자 기록 | `CommentTest#원댓글에_달린_답글의_깊이는_1이다`, `CommentControllerTest#대댓글은_깊이_1로_기록된다`, `CommentPersistenceAdapterTest#대댓글은_부모_식별자와_깊이를_유지한다` | Pass |
 | TC-CMT-008 | CMT-FR-002, 009 | 삭제된 댓글에 답글 작성 | `404 COMMENT_NOT_FOUND` | `CommentControllerTest#삭제된_원댓글에는_답글을_달_수_없다` | Pass |
 | TC-CMT-009 | CMT-FR-003 | 대댓글에 답글 작성 | `400 COMMENT_DEPTH_EXCEEDED` | `CommentTest#대댓글에는_답글을_달_수_없다`, `CommentControllerTest#대댓글에는_답글을_달_수_없다` | Pass |
@@ -93,7 +95,7 @@ related: [PRJ-QA 1.2.0, CMT-SRS 1.2.0, CMT-SDS 1.4.0]
 
 | 요구사항 | TC | 자동화 |
 |---|---|---|
-| CMT-FR-001 | 001~006 | 부분 (삭제된 게시글 미검증) |
+| CMT-FR-001 | 001~006, 044 | 부분 (이미 삭제된 게시글에 작성하는 단순한 경우는 미검증. 삭제와 겹치는 경우는 044) |
 | CMT-FR-002 | 007, 008 | 완전 |
 | CMT-FR-003 | 009 | 완전 |
 | CMT-FR-004 | 001, 011~019 | 완전 |
@@ -106,7 +108,7 @@ related: [PRJ-QA 1.2.0, CMT-SRS 1.2.0, CMT-SDS 1.4.0]
 
 ## 4. 결과 요약과 후속 조치
 
-- 집계: 전체 38건 중 Pass 35, Fail 0, N/T 3 (자동 테스트 없음 2, E2E 미실행 1).
+- 집계: 전체 40건 중 Pass 37, Fail 0, N/T 3 (자동 테스트 없음 2, E2E 미실행 1).
 - TC-CMT-010은 1.0.x에서 Fail이었다. 재현 테스트를 먼저 추가하고 `Comment.write`가 부모 댓글의 게시글을 검사하도록 고쳐 Pass가 되었다. 오류 코드는 기존 `COMMENT_NOT_FOUND`를 재사용하므로 프로젝트 SRS의 오류 코드 목록은 바뀌지 않는다.
 - TC-CMT-014, 015는 CMT-OPEN-05를 해결하면서 추가한 회귀 항목이다.
 - TC-CMT-016~019, 035~037, 040~043은 원댓글 단위 목록(CMT-FR-004 변경)과 삭제된 원댓글 표시(CMT-FR-009)를 추가하면서 생긴 항목이다. TC-CMT-011은 기존 평면 목록 테스트가 없어져 원댓글 목록 테스트로 근거를 바꿨다.
@@ -122,3 +124,4 @@ related: [PRJ-QA 1.2.0, CMT-SRS 1.2.0, CMT-SDS 1.4.0]
 | 1.1.0 | 2026-10-09 | TC-CMT-010 Fail → Pass (CMT-OPEN-01 해결). 회귀 항목 TC-CMT-014, 015 추가 (CMT-OPEN-05 해결) | HseongH |
 | 1.1.1 | 2026-10-09 | 수행 정보를 `main` 85cce67 재수행 결과로 정정. 1.1.0의 Pass 판정(TC-CMT-010, 014, 015)은 f46a99c에 없던 테스트에 근거하므로, 실제 근거가 된 실행을 기록 | HseongH |
 | 1.2.0 | 2026-10-09 | `feature/comment-threads`에서 수행. 원댓글 단위 목록과 삭제된 원댓글 표시 항목 추가(TC-CMT-016~019, 035~037, 040~043), TC-CMT-008 N/T → Pass, TC-CMT-011 근거 테스트 교체 | HseongH |
+| 1.3.0 | 2026-10-09 | `fix/review-defects`에서 수행. 회귀 항목 TC-CMT-044(삭제와 작성의 경쟁), 045(1보다 작은 식별자) 추가 | HseongH |

@@ -21,7 +21,16 @@ public class RedisViewDeduplicationAdapter implements ViewDeduplicationPort {
   /** SETNX는 조회 여부 확인과 기록을 한 번에 처리하므로 경합에서도 한 번만 true를 돌려준다. */
   @Override
   public boolean markViewed(PostId postId, String viewerKey) {
-    String key = "post:view:%d:%s".formatted(postId.value(), viewerKey);
-    return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, "1", TTL));
+    return Boolean.TRUE.equals(
+        redisTemplate.opsForValue().setIfAbsent(keyOf(postId, viewerKey), "1", TTL));
+  }
+
+  @Override
+  public void unmarkViewed(PostId postId, String viewerKey) {
+    redisTemplate.delete(keyOf(postId, viewerKey));
+  }
+
+  private static String keyOf(PostId postId, String viewerKey) {
+    return "post:view:%d:%s".formatted(postId.value(), viewerKey);
   }
 }

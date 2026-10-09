@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-SRS
 title: 게시판(bbs) 프로젝트 요구사항 명세서
-version: 1.3.0
+version: 1.4.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.4.0, PRJ-QA 1.2.0]
+related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.5.0, PRJ-QA 1.2.0]
 ---
 
 # 게시판(bbs) 프로젝트 요구사항 명세서
@@ -105,7 +105,7 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | ID | 요구사항 | 검증 |
 |---|---|---|
 | COM-NFR-001 | 인증은 외부 IdP(Keycloak, OIDC)에 위임한다. 시스템은 비밀번호를 저장하거나 처리하지 않는다. | 설계 검토 ([ADR-0008](adr/0008-oidc-bff-and-redis-session.md)) |
-| COM-NFR-002 | 인증이 필요한 API에 미인증 요청이 오면 로그인 페이지로 리다이렉트하지 않고 `401` ProblemDetail을 반환한다. | `MemberControllerTest#미인증_요청은_401을_반환한다`, `SpaForwardingTest#미인증_API_요청은_여전히_401이다` |
+| COM-NFR-002 | 인증이 필요한 API에 미인증 요청이 오면 로그인 페이지로 리다이렉트하지 않고 `401` ProblemDetail을 반환한다. 이 응답도 다른 오류 응답과 같은 필드(COM-IF-003)를 갖고, 요청 경로에 어떤 문자가 있어도 올바른 JSON이어야 한다. | `MemberControllerTest#미인증_요청은_401을_반환한다`, `SpaForwardingTest#미인증_API_요청은_여전히_401이다`, `UnauthenticatedResponseTest` |
 | COM-NFR-003 | 상태를 바꾸는 요청(POST, PATCH, DELETE)은 CSRF 토큰이 없으면 거부한다. 조회 요청은 토큰 없이 허용하고 토큰 쿠키를 발급한다. | `SecurityCsrfTest#토큰_없는_변경_요청은_거부된다`, `CsrfCookieIssuanceTest#조회_요청은_토큰이_필요없고_토큰_쿠키를_내려준다` |
 | COM-NFR-004 | 오류 응답에 스택트레이스, 예외 클래스명, SQL 같은 내부 정보를 담지 않는다. 예상하지 못한 예외는 `500 INTERNAL_ERROR`로 변환하고 서버 로그에만 기록한다. | `GlobalExceptionHandlerTest` |
 | COM-NFR-005 | 소유권(작성자 여부) 검사는 도메인 객체 안에서 수행해서, 어떤 호출 경로로도 우회할 수 없어야 한다. | `PostTest`, `CommentTest`의 권한 테스트 ([ADR-0003](adr/0003-authorization-in-domain.md)) |
@@ -151,7 +151,7 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | COM-IF-001 | API는 `/api` 아래에 JSON으로 제공한다. 요청·응답 본문의 시각은 ISO-8601 UTC 문자열이다. | 컨트롤러 테스트 |
 | COM-IF-002 | 자원을 만들면 `201 Created`와 `Location` 헤더를, 수정·삭제·좋아요는 `204 No Content`를 반환한다. | `PostControllerTest#게시글을_작성하면_201과_위치를_반환한다` |
 | COM-IF-003 | 모든 오류는 RFC 9457 ProblemDetail 형식(`application/problem+json`)으로 반환한다. 표준 필드에 더해 `code` 확장 필드를 포함한다. `type`은 `urn:bbs:error:<code 소문자>`이다. | `GlobalExceptionHandlerTest#비즈니스_예외는_ProblemDetail_형식으로_변환된다` |
-| COM-IF-004 | 요청 값 검증에 실패하면 `400 INVALID_REQUEST`와 함께 `errors` 확장 필드에 `{필드명: 메시지}`를 담는다. | `PostControllerTest#제목이_비면_400과_필드_오류를_반환한다` |
+| COM-IF-004 | 요청 값 검증에 실패하면 `400 INVALID_REQUEST`와 함께 `errors` 확장 필드에 `{필드명: 메시지}`를 담는다. 경로 변수나 요청 본문의 식별자가 1보다 작은 경우도 같은 형식으로 응답한다. | `PostControllerTest#제목이_비면_400과_필드_오류를_반환한다`, `PostControllerTest#식별자가_1보다_작으면_400이다`, `CommentControllerTest#식별자가_1보다_작으면_400이다`, `CommentControllerTest#부모_댓글_식별자가_1보다_작으면_400이다` |
 | COM-IF-005 | 목록 API는 오프셋 페이징을 사용한다. 요청은 `page`(0부터), `size`(기본 20) 쿼리 파라미터이고, 응답은 `{content, page, size, totalElements, totalPages, last}`이다. | `OpenApiDocumentTest#페이지_정보는_개별_파라미터로_평탄화된다` |
 | COM-IF-006 | OpenAPI 문서(`/v3/api-docs`, `/swagger-ui.html`)를 제공한다. 응답 필드 중 null이 될 수 없는 필드는 `required`로 표시하고, 서버가 채우는 인자(현재 회원 등)는 문서에 노출하지 않는다. | `OpenApiDocumentTest` |
 | COM-IF-007 | 로그인은 `/oauth2/authorization/keycloak`에서 시작하고, 로그아웃은 `POST /logout`(CSRF 토큰 필요)이며 `204`를 반환한다. | `SecurityCsrfTest#로그아웃은_토큰과_함께_POST하면_성공한다` |
@@ -201,3 +201,4 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | 1.1.0 | 2026-10-09 | OPEN-04 해결: 지표를 비롯한 나머지 액추에이터 경로를 관리자 전용으로 제한하고 COM-NFR-021 갱신 | HseongH |
 | 1.2.0 | 2026-10-09 | Valkey 전환 반영 (COM-CON-002, COM-NFR-020, PR #15) | HseongH |
 | 1.3.0 | 2026-10-09 | 원댓글 단위 댓글 목록 반영: COM-NFR-012에 삭제된 원댓글 자리 표시 예외(CMT-FR-009) 추가, COM-NFR-014의 검증 테스트를 원댓글 목록 테스트로 교체 | HseongH |
+| 1.4.0 | 2026-10-09 | 코드 리뷰 결함 수정 반영: COM-IF-004에 1보다 작은 식별자(경로 변수, 요청 본문) 추가, COM-NFR-002에 401 응답의 형식 조건 추가 | HseongH |

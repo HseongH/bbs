@@ -27,6 +27,16 @@ public interface PostRepository {
   Post load(PostId id);
 
   /**
+   * 게시글이 삭제되지 않았는지 확인하고, 현재 트랜잭션이 끝날 때까지 삭제되지 않도록 잠근다.
+   *
+   * <p>다른 트랜잭션이 이미 삭제하고 아직 커밋하지 않았다면 그 트랜잭션이 끝날 때까지 기다린 뒤 다시 판정한다.
+   *
+   * @param id 게시글 식별자
+   * @throws com.board.bbs.common.error.BusinessException 게시글이 없으면 POST_NOT_FOUND
+   */
+  void lockAlive(PostId id);
+
+  /**
    * 조건에 맞는 게시글 요약을 페이지 단위로 조회한다.
    *
    * @param condition 검색 조건

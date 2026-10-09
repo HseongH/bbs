@@ -1,13 +1,13 @@
 ---
 doc_id: PST-QA
 title: 게시글 QA 체크리스트
-version: 1.1.0
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
+related: [PRJ-QA 1.2.0, PST-SRS 1.1.0, PST-SDS 1.3.0]
 ---
 
 # 게시글 QA 체크리스트
@@ -18,11 +18,11 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 
 | 항목 | 값 |
 |---|---|
-| 대상 커밋 | `main` 85cce67 (이전 수행: e96a878, f46a99c) |
+| 대상 커밋 | `fix/review-defects` 브랜치 끝, 이 문서를 고친 커밋과 같은 코드 (이전 수행: e96a878, f46a99c, 85cce67) |
 | 수행일 | 2026-10-09 |
-| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 115개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
-| 화면 자동 검증 | `pnpm verify` 성공 (린트 통과, 타입 검사 통과, 테스트 파일 12개·테스트 39개 통과) |
-| E2E | `pnpm e2e` 성공 (Firefox, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 0b719d8에 Firefox 설정을 적용해 2026-10-09 수행 |
+| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
+| 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
+| E2E | 이번 수행에서는 실행하지 않음. E2E 근거 항목(TC-PST-043, 051)의 판정은 이전 수행 결과다: `pnpm e2e` 성공 (Firefox, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 0b719d8에 Firefox 설정을 적용해 2026-10-09 수행 |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
 ## 2. 테스트 항목
@@ -40,7 +40,9 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 | TC-PST-007 | PST-FR-002 | 존재하지 않는 게시글 조회 | `404 POST_NOT_FOUND` | `PostControllerTest#존재하지_않는_게시글은_404다` | Pass |
 | TC-PST-008 | PST-FR-002, COM-NFR-012 | 삭제된 게시글 조회 | `404` | `PostPersistenceAdapterTest#삭제된_게시글은_읽을_수_없다` | Pass |
 | TC-PST-009 | PST-FR-003 | 게시글을 조회한 뒤 다시 조회 | 두 번째 응답의 조회수가 1 올라 있음 | `PostControllerTest#게시글을_조회하면_조회수가_올라간다` | Pass |
-| TC-PST-010 | PST-FR-003 | 같은 회원이 24시간 안에 다시 조회 | 조회수가 더 오르지 않음 | 수동 | N/T |
+| TC-PST-010 | PST-FR-003 | 같은 회원이 24시간 안에 다시 조회 | 조회수가 더 오르지 않음 | `PostViewCountRollbackTest#같은_조회자의_두_번째_조회는_세지_않는다` (24시간 만료 자체는 Valkey TTL 설정 검토) | Pass |
+| TC-PST-052 | PST-FR-003 | 조회수 반영이 실패해 롤백된 뒤 같은 회원이 다시 조회 (회귀) | 다시 조회할 때 조회수가 1 오름 | `PostViewCountRollbackTest#조회수_증가가_실패해서_롤백되면_다음_조회에서_다시_센다` | Pass |
+| TC-PST-053 | COM-IF-004 | 식별자가 0인 게시글 조회, 음수 식별자로 좋아요 (회귀) | `400 INVALID_REQUEST` | `PostControllerTest#식별자가_1보다_작으면_400이다` | Pass |
 
 ### 2.2 목록과 검색
 
@@ -106,7 +108,7 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 |---|---|---|
 | PST-FR-001 | 001~006 | 완전 |
 | PST-FR-002 | 007, 008 | 완전 |
-| PST-FR-003 | 009, 010 | 부분 (24시간 중복 방지는 수동) |
+| PST-FR-003 | 009, 010, 052 | 완전 (24시간 만료는 설정 검토) |
 | PST-FR-004 | 011~014 | 완전 |
 | PST-FR-005 | 020~023 | 부분 (관리자 수정 불가는 구조로 보장, 테스트 없음) |
 | PST-FR-006 | 024~028 | 완전 |
@@ -121,10 +123,10 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 
 ## 4. 결과 요약과 후속 조치
 
-- 판정 근거: 2026-10-09에 `main` 85cce67에서 `./gradlew check`와 `pnpm verify`를 실행한 결과 (§1).
-- 집계: 전체 48건 중 Pass 43, Fail 0, N/T 5 (자동 테스트 없음 5).
+- 판정 근거: 2026-10-09에 `fix/review-defects`에서 `./gradlew check`와 `pnpm verify`를 실행한 결과 (§1).
+- 집계: 전체 50건 중 Pass 46, Fail 0, N/T 4 (자동 테스트 없음 4).
 - E2E 2건(TC-PST-043, 051)은 1.0.x까지 N/T였다. E2E 브라우저를 Firefox로 바꾸고 실행해 Pass로 판정했다.
-- **자동 테스트가 없는 항목**(TC-PST-010, 019, 022, 035, 036)은 테스트를 추가할 후보다. 특히 TC-PST-022는 "관리자도 수정할 수 없다"는 규칙을 명시적으로 고정하는 회귀 테스트로 가치가 크다.
+- **자동 테스트가 없는 항목**(TC-PST-019, 022, 035, 036)은 테스트를 추가할 후보다. 특히 TC-PST-022는 "관리자도 수정할 수 없다"는 규칙을 명시적으로 고정하는 회귀 테스트로 가치가 크다.
 - PST-NFR-002(목록 쿼리 횟수)는 쿼리 횟수를 세는 테스트를 추가하면 자동 검증으로 바꿀 수 있다.
 
 ## 변경 이력
@@ -135,3 +137,4 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 | 1.0.1 | 2026-10-09 | `main` f46a99c(포트 정리, Lombok 제거 반영)에서 재수행. 판정 변화 없음. 참조 테스트 이름 전수 확인 | HseongH |
 | 1.0.2 | 2026-10-09 | `main` 85cce67(결함 수정 3건, Valkey 전환 반영)에서 재수행. 판정 변화 없음 | HseongH |
 | 1.1.0 | 2026-10-09 | E2E를 Firefox로 실행해 TC-PST-043, 051을 N/T → Pass로 판정 | HseongH |
+| 1.2.0 | 2026-10-09 | `fix/review-defects`에서 수행. 회귀 항목 TC-PST-052(조회수 롤백), 053(1보다 작은 식별자) 추가, TC-PST-010 N/T → Pass | HseongH |

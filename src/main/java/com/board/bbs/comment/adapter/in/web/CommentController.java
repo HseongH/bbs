@@ -13,6 +13,7 @@ import com.board.bbs.post.domain.PostId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import java.net.URI;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
@@ -58,7 +59,7 @@ public class CommentController {
   @Operation(summary = "댓글 작성")
   @PostMapping("/posts/{postId}/comments")
   public ResponseEntity<Void> write(
-      @PathVariable Long postId,
+      @PathVariable @Positive Long postId,
       @CurrentMember MemberId author,
       @Valid @RequestBody WriteCommentRequest request) {
 
@@ -78,7 +79,8 @@ public class CommentController {
   @Operation(summary = "댓글 목록 조회")
   @GetMapping("/posts/{postId}/comments")
   public PageResponse<CommentThreadResponse> list(
-      @PathVariable Long postId, @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
+      @PathVariable @Positive Long postId,
+      @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 
     return PageResponse.from(
         commentQueryService.list(new PostId(postId), pageable).map(CommentThreadResponse::from));
@@ -95,7 +97,7 @@ public class CommentController {
   @PatchMapping("/comments/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void update(
-      @PathVariable Long id,
+      @PathVariable @Positive Long id,
       @CurrentMember MemberId requester,
       @Valid @RequestBody UpdateCommentRequest request) {
 
@@ -113,7 +115,9 @@ public class CommentController {
   @DeleteMapping("/comments/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(
-      @PathVariable Long id, @CurrentMember MemberId requester, Authentication authentication) {
+      @PathVariable @Positive Long id,
+      @CurrentMember MemberId requester,
+      Authentication authentication) {
 
     boolean admin =
         authentication.getAuthorities().stream()

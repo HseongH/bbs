@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-SDS
 title: 게시판(bbs) 프로젝트 설계 명세서
-version: 1.4.0
+version: 1.5.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.3.0, PRJ-QA 1.2.0, PRJ-CS 1.0.0]
+related: [PRJ-SRS 1.4.0, PRJ-QA 1.2.0, PRJ-CS 1.0.0]
 ---
 
 # 게시판(bbs) 프로젝트 설계 명세서
@@ -240,11 +240,14 @@ sequenceDiagram
 | `BusinessException` | `ErrorCode`의 상태와 코드. 메시지는 예외 메시지 |
 | `AccessDeniedException` | `403 ACCESS_DENIED` |
 | `MethodArgumentNotValidException` | `400 INVALID_REQUEST` + `errors` 필드 |
+| `HandlerMethodValidationException` | `400 INVALID_REQUEST` + `errors` 필드. 경로 변수 같은 인자에 제약을 붙인 메서드에서 난다. 이런 메서드에서는 `@Valid` 본문의 검증 실패도 이 예외로 오므로, 본문 오류는 필드 단위로 펼쳐 같은 형태를 유지한다 |
 | 스프링 MVC 표준 예외 | 원래 상태 코드 유지, `code`는 HTTP 상태 이름 |
 | 그 밖의 모든 예외 | `500 INTERNAL_ERROR`, 서버 로그에만 상세 기록 |
-| 인증 실패 (필터 단계) | `SecurityConfig`의 진입점이 `401 UNAUTHENTICATED` ProblemDetail을 직접 작성 |
+| 인증 실패 (필터 단계) | `SecurityConfig`의 진입점이 `401 UNAUTHENTICATED` ProblemDetail을 메시지 변환기로 직렬화해 직접 쓴다 |
 
 `BusinessException`은 예상된 실패이므로 스택트레이스를 수집하지 않는다.
+
+오류 응답 본문은 예외 처리기와 보안 진입점이 같은 생성 지점(`ProblemDetails`)에서 만든다. 필터 단계에는 MVC의 응답 변환이 없어서 따로 만들기 쉬운데, 그러면 형식이 어긋나거나 문자열 조립으로 JSON이 깨진다. `instance`는 요청 경로에서 URI로 쓸 수 없는 바이트만 인코딩해서, 경로에 어떤 문자가 있어도 응답 생성이 실패하지 않게 한다.
 
 ## 8. 화면(SPA) 구성
 
@@ -290,3 +293,4 @@ Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. �
 | 1.2.0 | 2026-10-09 | `main` 85cce67 기준으로 갱신: Valkey 전환(PR #15, ADR-0013), 액추에이터 접근 규칙(PR #18)과 URL 규칙 순서표, 회원 생성의 `ON CONFLICT` 사용(PR #20) 반영. 다이어그램을 라이트 테마로 다시 내보냄 | HseongH |
 | 1.3.0 | 2026-10-09 | 세밀도 조정: 세부 버전, 테이블 컬럼 표, 품질 게이트 목록, ADR 목록 사본을 빼고 기준 문서를 가리키도록 변경. 설계상 의미 있는 제약만 남김. 컨텍스트 구성도의 버전 표기 제거. 설계 내용은 바뀌지 않음 | HseongH |
 | 1.4.0 | 2026-10-09 | 댓글 목록을 원댓글 단위로 조회하기 위한 부분 인덱스 두 개 반영 (CMT-SDS 1.4.0) | HseongH |
+| 1.5.0 | 2026-10-09 | 오류 처리(§7.4): 메서드 검증 실패 변환 추가, 오류 응답 본문 생성 지점을 하나로 모은 결정 기록 (PRJ-SRS 1.4.0) | HseongH |

@@ -38,7 +38,8 @@ public class CommentCommandService {
   public CommentId write(
       PostId postId, MemberId author, String body, @Nullable Long parentCommentId) {
 
-    postQueryService.getById(postId);
+    // 작성이 커밋될 때까지 게시글이 삭제되지 않게 한다. 삭제는 그 시점의 댓글만 함께 지우기 때문이다.
+    postQueryService.lockAlive(postId);
 
     Comment parent =
         parentCommentId == null ? null : commentRepository.load(new CommentId(parentCommentId));
