@@ -64,8 +64,7 @@
           "defaultConfiguration": "development",
           "options": {
             "port": 5173,
-            "host": "0.0.0.0",
-            "proxyConfig": "proxy.conf.json"
+            "host": "0.0.0.0"
           }
         },
         "test": {

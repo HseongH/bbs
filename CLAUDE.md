@@ -35,6 +35,7 @@
 
 ## 검증 명령
 
-- 백엔드: `./gradlew check` (Docker 필요)
+- 백엔드: `./gradlew check` (Docker 필요. auth, board, 공유 라이브러리를 모두 검증한다. 하나만 볼 때는 `./gradlew :services:auth:check`)
+- E2E: 컨테이너, auth, board를 띄운 뒤 `cd services/web && pnpm e2e` (진입점 `localhost:8000`으로 접속)
 - 프론트엔드: `cd services/web && pnpm verify`
 - API가 바뀌면: `cd services/web && pnpm gen:api` 후 `pnpm typecheck`

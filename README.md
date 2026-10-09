@@ -1,6 +1,6 @@
 # 게시판 (bbs)
 
-Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 REST 게시판 API와, Angular 22로 만든 화면.
+Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 REST 게시판 API와, Angular 22로 만든 화면. 인증은 별도 서비스(auth)가 맡고, 진입점(Traefik)이 요청을 나눈다.
 
 기능을 채우는 것보다 **설계 의도가 코드와 빌드로 강제되는지**에 무게를 둔 참고 구현이다.
 
@@ -11,6 +11,7 @@ Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 RE
 - **null 계약이 컴파일러에게 검사된다.** 모든 패키지가 JSpecify `@NullMarked`이고 NullAway가 위반 시 컴파일을 실패시킨다.
 - **API 계약이 프론트엔드 컴파일로 강제된다.** OpenAPI 스키마에서 타입을 생성하므로 백엔드가 바뀌면 프론트엔드 타입 검사가 깨진다. 테스트의 API 목도 같은 타입을 쓴다.
 - **앞뒤가 같은 방식으로 읽힌다.** 백엔드는 헥사고날, 프론트엔드는 Angular의 의존성 주입과 서비스 계층으로 같은 종류의 경계를 만든다.
+- **IdP는 한 서비스에만 묶인다.** Keycloak과 연결하는 것은 auth 하나다. 진입점이 API 요청마다 auth에 판정을 맡기고, auth는 직접 서명한 짧은 수명의 내부 토큰을 게시판 서비스에 붙인다. 게시판은 Keycloak을 모른다 ([ADR-0016](docs/project/adr/0016-auth-service-with-internal-token.md)).
 - **동시성이 데이터베이스 수준에서 처리된다.** 카운터는 원자적 `UPDATE`, 중복 좋아요는 유니크 제약과 `ON CONFLICT`, 조회수 중복은 Redis `SETNX`로 판정한다. 가상 스레드로 동시 요청을 보내 검증한다.
 
 ## 요구 환경
@@ -23,10 +24,22 @@ Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 RE
 
 ```bash
 docker compose -f deploy/compose.yaml up -d
+./gradlew :services:auth:bootRun
 ./gradlew :services:board:bootRun
+cd services/web && pnpm install && pnpm dev
 ```
 
-`deploy/compose.yaml`이 PostgreSQL · Valkey · Keycloak을 띄운다. `bootRun`은 컨테이너가 없으면 같은 파일로 직접 띄우므로 첫 줄을 생략해도 된다. Keycloak realm은 `deploy/keycloak/bbs-realm.json`(구조)과 `deploy/keycloak/dev/bbs-users-0.json`(개발용 시험 사용자)에서 자동으로 구성되므로, 별도 수작업 없이 바로 로그인을 시험할 수 있다.
+브라우저는 **http://localhost:8000**(진입점) 하나로 접속한다. 진입점이 경로에 따라 요청을 나눈다.
+
+| 경로 | 보내는 곳 |
+|---|---|
+| `/oauth2`, `/login`, `/logout` | auth (로그인·로그아웃) |
+| `/api` | auth의 판정을 받은 뒤 board |
+| 그 밖의 경로 | 화면 개발 서버 |
+
+`deploy/compose.yaml`이 PostgreSQL · Valkey · Keycloak · 진입점(Traefik)을 띄운다. auth나 board의 `bootRun`은 컨테이너가 없으면 같은 파일로 직접 띄우므로 첫 줄을 생략해도 된다. auth, board, 화면 개발 서버는 호스트에서 실행하고, 진입점 컨테이너가 `host.docker.internal`로 접근한다. Keycloak realm은 `deploy/keycloak/bbs-realm.json`(구조)과 `deploy/keycloak/dev/bbs-users-0.json`(개발용 시험 사용자)에서 자동으로 구성되므로, 별도 수작업 없이 바로 로그인을 시험할 수 있다.
+
+auth는 내부 토큰의 서명 키를 `bbs.auth.signing-key-location`(PKCS#8 PEM)에서 읽는다. 개발 프로필(`local`)에서는 설정이 없으면 시작할 때 임시 키를 만든다. 다른 프로필에서는 키가 없으면 시작하지 않는다.
 
 접속 정보는 환경 변수로 바꿀 수 있고, 주지 않으면 개발 기본값을 쓴다. 바꿀 값만 `deploy/.env.example`을 `deploy/.env`로 복사해서 적는다. 포트는 기본적으로 이 PC(`127.0.0.1`)에만 열린다.
 
@@ -34,21 +47,11 @@ Valkey는 Redis 프로토콜과 호환되는 BSD 라이선스 포크다. 애플�
 
 | 주소 | 용도 |
 |---|---|
-| http://localhost:8080/swagger-ui.html | API 문서 |
-| http://localhost:8080/oauth2/authorization/keycloak | 로그인 시작 |
+| http://localhost:8000 | 화면 (진입점) |
+| http://localhost:8080/swagger-ui.html | API 문서 (board에 직접 접속) |
 | http://localhost:8081 | Keycloak 관리 콘솔 (`admin` / `admin`) |
 
 테스트 계정은 `tester` / `tester` (일반), `admin-user` / `admin` (관리자)이다.
-
-### 프론트엔드
-
-```bash
-cd services/web
-pnpm install
-pnpm dev
-```
-
-`http://localhost:5173`에서 화면을 연다. 개발 서버가 `/api`, `/oauth2`, `/login`, `/logout`을 백엔드로 프록시하므로 브라우저 입장에서는 동일 오리진이며 세션 쿠키가 그대로 동작한다.
 
 백엔드 API가 바뀌면 타입을 다시 생성한다.
 
@@ -62,14 +65,16 @@ cd services/web && pnpm gen:api
 
 ```bash
 export BBS_HOST=<서버 주소>
-export KEYCLOAK_BIND_ADDRESS=0.0.0.0   # 다른 기기의 브라우저가 Keycloak에 닿게 한다 (DB와 Valkey는 열지 않는다)
+export ENTRY_BIND_ADDRESS=0.0.0.0      # 다른 기기의 브라우저가 진입점에 닿게 한다
+export KEYCLOAK_BIND_ADDRESS=0.0.0.0   # 로그인 화면(Keycloak)도 연다 (DB와 Valkey는 열지 않는다)
 
 docker compose -f deploy/compose.yaml up -d
+./gradlew :services:auth:bootRun
 ./gradlew :services:board:bootRun
 cd services/web && pnpm dev
 ```
 
-`BBS_HOST`는 Keycloak의 공개 주소와 허용 리다이렉트 URI, 그리고 백엔드가 참조하는 issuer를 한꺼번에 결정한다. 지정하지 않으면 `localhost`로 동작한다.
+`BBS_HOST`는 Keycloak의 공개 주소와 허용 리다이렉트 URI(진입점 주소 기준), 그리고 auth가 참조하는 issuer를 한꺼번에 결정한다. 지정하지 않으면 `localhost`로 동작한다.
 
 한 번에 하나의 주소만 쓸 수 있다. `BBS_HOST`를 바꾸면 Keycloak을 다시 만들어야 realm의 리다이렉트 URI가 갱신된다.
 

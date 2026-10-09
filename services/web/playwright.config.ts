@@ -14,7 +14,8 @@ export default defineConfig({
   // CI에서는 test.only가 남아 나머지 시나리오를 건너뛰는 일을 막는다.
   forbidOnly: !!process.env.CI,
   use: {
-    baseURL: `http://${host}:5173`,
+    // 브라우저는 진입점(Traefik) 한 곳으로만 접속한다 (COM-CON-003).
+    baseURL: `http://${host}:8000`,
     // CI는 재시도하지 않으므로 실패한 시나리오의 trace를 남겨 원인을 확인한다.
     trace: process.env.CI ? "retain-on-failure" : "on-first-retry",
   },
@@ -23,6 +24,7 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     { name: "e2e", use: { storageState: 저장된로그인 }, dependencies: ["setup"] },
   ],
+  // 화면 개발 서버는 진입점 뒤에서 화면 경로를 맡는다.
   webServer: {
     command: "pnpm dev",
     url: `http://${host}:5173`,
