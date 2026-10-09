@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-CS
 title: 게시판(bbs) 코딩 표준
-version: 1.0.0
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.3.0, PRJ-QA 1.2.0]
+related: [PRJ-SDS 1.6.0, PRJ-QA 1.3.0]
 ---
 
 # 게시판(bbs) 코딩 표준
@@ -29,15 +29,15 @@ related: [PRJ-SDS 1.3.0, PRJ-QA 1.2.0]
 
 | 영역 | 도구 | 설정 위치 | 요지 | 이유 |
 |---|---|---|---|---|
-| 서식 | Spotless (google-java-format, ktlint) | `build.gradle.kts`의 `spotless` | 들여쓰기, 줄바꿈, import 순서, Javadoc 모양을 자동으로 맞춘다 | 서식은 사람이 판단할 가치가 없다. 리뷰에서 서식 논쟁을 없앤다 |
+| 서식 | Spotless (google-java-format, ktlint) | `build-logic`의 `bbs.java-conventions`의 `spotless` (Gradle 스크립트는 루트 `build.gradle.kts`) | 들여쓰기, 줄바꿈, import 순서, Javadoc 모양을 자동으로 맞춘다 | 서식은 사람이 판단할 가치가 없다. 리뷰에서 서식 논쟁을 없앤다 |
 | 이름·구조 | Checkstyle | `config/checkstyle/checkstyle.xml` | Google Java Style에서 서식 규칙을 뺀 이름 규칙, 구조 규칙, Javadoc 존재 여부 | 포매터가 손대지 않는 부분만 검사해서 두 도구가 충돌하지 않게 한다 |
 | 약어 | Checkstyle `AbbreviationAsWordInName` | 같은 파일 (`allowedAbbreviationLength=0`) | `JPAEntity`가 아니라 `JpaEntity`, `HTTPClient`가 아니라 `HttpClient` | 대문자 약어가 이어지면 단어 경계를 읽기 어렵다 |
 | Javadoc | Checkstyle `MissingJavadocType`, `MissingJavadocMethod` | 같은 파일 (범위 `protected` 이상) | 공개 타입과 공개 메서드에는 Javadoc이 있어야 한다. `@Override`, 테스트는 제외 | 공개 API는 다른 기능이 사용하므로 계약을 문장으로 남긴다 |
 | 테스트 예외 | Checkstyle 억제 | `config/checkstyle/checkstyle-suppressions.xml` | `src/test`에는 메서드·변수 이름 규칙과 Javadoc 규칙을 적용하지 않는다 | 테스트 이름을 한국어 문장으로 쓰기 위해서다 (CS-T01) |
-| 정적 분석 | Error Prone, `-Werror` | `build.gradle.kts`의 `tasks.withType<JavaCompile>` | 버그 패턴 검사. 컴파일러 경고도 실패로 처리 | 경고를 허용하면 쌓이고, 쌓이면 아무도 보지 않는다 |
+| 정적 분석 | Error Prone, `-Werror` | `build-logic`의 `bbs.java-conventions`의 `tasks.withType<JavaCompile>` | 버그 패턴 검사. 컴파일러 경고도 실패로 처리 | 경고를 허용하면 쌓이고, 쌓이면 아무도 보지 않는다 |
 | null 안정성 | NullAway (JSpecify 모드) | 같은 위치 | `@NullMarked` 패키지에서 null 계약 위반은 컴파일 오류 | null 오류를 실행 전에 잡는다 |
 | 아키텍처 | ArchUnit | `src/test/java/.../architecture/` | 계층 의존 방향, 기능 경계, `@Transactional`·엔티티·컨트롤러의 위치, 모든 패키지의 `@NullMarked` | [프로젝트 SDS §4.3](sds.md#43-의존-규칙)과 ADR-0001, 0009, 0010 |
-| 커버리지 | JaCoCo | `build.gradle.kts`의 `jacocoTestCoverageVerification` | 전체 80%, 도메인·애플리케이션 패키지 90% | [공통 QA 기준 §3](qa-standards.md#3-자동-품질-기준) |
+| 커버리지 | JaCoCo | `build-logic`의 `bbs.java-conventions`의 `jacocoTestCoverageVerification` | 전체 80%, 도메인·애플리케이션 패키지 90% | [공통 QA 기준 §3](qa-standards.md#3-자동-품질-기준) |
 
 ### 2.2 프론트엔드
 
@@ -198,3 +198,4 @@ post.updateBy(requester, new Title(title), new Content(content));
 | 버전 | 일자 | 변경 내용 | 작성자 |
 |---|---|---|---|
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` 2c1659d의 도구 설정과 코드 관례를 기준으로 정리) | HseongH |
+| 1.1.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): Java 품질 도구의 설정 위치를 `build-logic`의 컨벤션 플러그인으로 변경 | HseongH |
