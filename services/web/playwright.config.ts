@@ -1,4 +1,4 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
 
 const 저장된로그인 = "e2e/.auth/user.json";
 
@@ -18,13 +18,10 @@ export default defineConfig({
     // CI는 재시도하지 않으므로 실패한 시나리오의 trace를 남겨 원인을 확인한다.
     trace: process.env.CI ? "retain-on-failure" : "on-first-retry",
   },
+  // 브라우저는 Playwright의 기본값(Chromium)을 쓴다. 브라우저를 늘릴 때만 프로젝트마다 지정한다.
   projects: [
-    { name: "setup", testMatch: /auth\.setup\.ts/, use: { ...devices["Desktop Chrome"] } },
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"], storageState: 저장된로그인 },
-      dependencies: ["setup"],
-    },
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    { name: "e2e", use: { storageState: 저장된로그인 }, dependencies: ["setup"] },
   ],
   webServer: {
     command: "pnpm dev",
