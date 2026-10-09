@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from "@angular/core";
+import { Component, input, output } from "@angular/core";
 import { RouterLink } from "@angular/router";
 import { ButtonComponent } from "@/shared/ui/button";
 import type { PostDetail } from "../post-api.service";
@@ -6,7 +6,6 @@ import type { PostDetail } from "../post-api.service";
 @Component({
   selector: "app-post-detail",
   imports: [RouterLink, ButtonComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (post(); as value) {
       <article class="space-y-4">

@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, output } from "@angular/core";
+import { Component, input, output } from "@angular/core";
 import { ButtonComponent } from "@/shared/ui/button";
 
 @Component({
   selector: "app-search-form",
   imports: [ButtonComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form class="flex gap-2" (submit)="submit($event)">
       <input

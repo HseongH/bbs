@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
+import { Component, input } from "@angular/core";
 import { RouterLink } from "@angular/router";
 import type { PostPage } from "../post-api.service";
 
 @Component({
   selector: "app-post-list",
   imports: [RouterLink],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isLoading()) {
       <p class="py-8 text-center text-slate-500">불러오는 중입니다.</p>

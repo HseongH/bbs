@@ -1,17 +1,9 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  input,
-  output,
-  viewChild,
-} from "@angular/core";
+import { Component, ElementRef, input, output, viewChild } from "@angular/core";
 import { ButtonComponent } from "@/shared/ui/button";
 
 @Component({
   selector: "app-comment-form",
   imports: [ButtonComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form #element class="space-y-1" (submit)="submit($event)">
       <textarea

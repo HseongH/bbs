@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from "@angular/core";
+import { Component, computed, inject, input, signal } from "@angular/core";
 import { toProblem } from "@/core/api/problem";
 import { ButtonComponent } from "@/shared/ui/button";
 import { PostStore } from "../post.store";
@@ -6,7 +6,6 @@ import { PostStore } from "../post.store";
 @Component({
   selector: "app-like-button",
   imports: [ButtonComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span class="inline-flex items-center gap-2">
       <app-button variant="outline" size="sm" (click)="press()">
@@ -19,10 +18,11 @@ import { PostStore } from "../post.store";
   `,
 })
 export class LikeButtonComponent {
+  private readonly store = inject(PostStore);
+
   readonly postId = input.required<number>();
   readonly likeCount = input.required<number>();
 
-  private readonly store = inject(PostStore);
   private readonly pending = signal(0);
 
   protected readonly message = signal<string | null>(null);

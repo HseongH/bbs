@@ -1,5 +1,5 @@
 import { HttpClient, type HttpResponse } from "@angular/common/http";
-import { inject, Injectable } from "@angular/core";
+import { inject, Service } from "@angular/core";
 import type { Observable } from "rxjs";
 import type { components } from "@/core/api/schema";
 
@@ -7,7 +7,7 @@ export type PostSummary = components["schemas"]["PostSummaryResponse"];
 export type PostDetail = components["schemas"]["PostResponse"];
 export type PostPage = components["schemas"]["PageResponsePostSummaryResponse"];
 
-@Injectable({ providedIn: "root" })
+@Service()
 export class PostApiService {
   private readonly http = inject(HttpClient);
 

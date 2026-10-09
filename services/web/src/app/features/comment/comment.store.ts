@@ -1,10 +1,10 @@
 import { httpResource } from "@angular/common/http";
-import { inject, Injectable, signal } from "@angular/core";
+import { inject, Service, signal } from "@angular/core";
 import { firstValueFrom } from "rxjs";
 import { CommentApiService, type CommentPage } from "./comment-api.service";
 
 /** 재조회 범위를 이 서비스가 소유한다. */
-@Injectable({ providedIn: "root" })
+@Service()
 export class CommentStore {
   private readonly api = inject(CommentApiService);
   private readonly postId = signal<number | null>(null);

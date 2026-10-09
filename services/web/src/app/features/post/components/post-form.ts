@@ -1,19 +1,10 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-} from "@angular/core";
+import { Component, computed, effect, inject, input, output } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
 import { ButtonComponent } from "@/shared/ui/button";
 
 @Component({
   selector: "app-post-form",
   imports: [ReactiveFormsModule, ButtonComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form [formGroup]="form" class="space-y-4" (ngSubmit)="submit()">
       <div class="space-y-1">
@@ -50,6 +41,8 @@ import { ButtonComponent } from "@/shared/ui/button";
   `,
 })
 export class PostFormComponent {
+  private readonly formBuilder = inject(FormBuilder);
+
   readonly initial = input.required<{ title: string; content: string }>();
   readonly submitting = input(false);
   readonly fieldErrors = input<Record<string, string>>({});
@@ -61,7 +54,7 @@ export class PostFormComponent {
     Object.keys(this.fieldErrors()).length === 0 ? this.message() : null,
   );
 
-  protected readonly form = inject(FormBuilder).nonNullable.group({
+  protected readonly form = this.formBuilder.nonNullable.group({
     title: "",
     content: "",
   });
