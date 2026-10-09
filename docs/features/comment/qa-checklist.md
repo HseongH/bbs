@@ -1,7 +1,7 @@
 ---
 doc_id: CMT-QA
 title: 댓글 QA 체크리스트
-version: 1.3.0
+version: 1.3.1
 status: In Review
 owner: HseongH
 reviewers: []
@@ -22,7 +22,8 @@ related: [PRJ-QA 1.3.0, CMT-SRS 1.3.0, CMT-SDS 1.5.1]
 | 수행일 | 2026-10-09 |
 | 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 140개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
-| E2E, 수동 검증 | 실행하지 않음 (N/T). 이번 수행 환경에 Playwright 브라우저가 설치되어 있지 않음 |
+| E2E | `pnpm e2e` 성공 (Firefox, 4개 통과). `main` 05a00c4에서 `docker compose -f deploy/compose.yaml up -d --wait`, `./gradlew :services:board:bootRun` 후 2026-10-09 수행 |
+| 수동 검증 | 실행하지 않음 (N/T) |
 
 ## 2. 테스트 항목
 
@@ -80,7 +81,7 @@ related: [PRJ-QA 1.3.0, CMT-SRS 1.3.0, CMT-SDS 1.5.1]
 | TC-CMT-035 | CMT-FR-020 | 원댓글 두 개 중 첫째에만 답글 | 화면 순서가 원댓글1, 답글1, 원댓글2 | `comment-section.spec: 대댓글은 자기 원댓글 바로 아래에 보여준다` | Pass |
 | TC-CMT-036 | CMT-FR-020, 009 | 삭제된 원댓글과 그 답글 | "삭제된 댓글입니다" 표시, 답글 표시, 답글·수정·삭제 버튼 없음 | `comment-section.spec: 삭제된 원댓글은 자리만 표시하고 버튼을 보여주지 않는다` | Pass |
 | TC-CMT-037 | CMT-FR-020 | 삭제된 원댓글(답글 2개)과 살아 있는 원댓글 | 제목의 댓글 수가 3 (원댓글 묶음 수 2가 아님) | `comment-section.spec: 댓글 수는 화면에 보이는 댓글만 센다` | Pass |
-| TC-CMT-034 | CMT-FR-021 | 상세 화면에서 댓글 작성 (E2E) | 작성한 댓글 표시 | E2E `board.spec: 글을 쓰고 댓글과 좋아요를 남긴다` | N/T |
+| TC-CMT-034 | CMT-FR-021 | 상세 화면에서 댓글 작성 (E2E) | 작성한 댓글 표시 | E2E `board.spec: 글을 쓰고 댓글과 좋아요를 남긴다` | Pass |
 
 ### 2.5 삭제된 원댓글 (CMT-FR-009)
 
@@ -104,11 +105,12 @@ related: [PRJ-QA 1.3.0, CMT-SRS 1.3.0, CMT-SDS 1.5.1]
 | CMT-FR-007 | 025, 026 | 완전 |
 | CMT-FR-008 | 010 | 완전 |
 | CMT-FR-009 | 008, 036, 040~043 | 완전 |
-| CMT-FR-020~023 | 030~037 | 화면 단위 테스트 완전, E2E 미실행 |
+| CMT-FR-020~023 | 030~037 | 화면 단위 테스트 완전, E2E 1건 |
 
 ## 4. 결과 요약과 후속 조치
 
-- 집계: 전체 40건 중 Pass 37, Fail 0, N/T 3 (자동 테스트 없음 2, E2E 미실행 1).
+- 집계: 전체 40건 중 Pass 38, Fail 0, N/T 2 (자동 테스트 없음 2).
+- TC-CMT-034(E2E)는 1.3.0까지 N/T였다. 모노레포 구조의 `main`에서 E2E를 Firefox로 실행해 Pass로 판정했다.
 - TC-CMT-010은 1.0.x에서 Fail이었다. 재현 테스트를 먼저 추가하고 `Comment.write`가 부모 댓글의 게시글을 검사하도록 고쳐 Pass가 되었다. 오류 코드는 기존 `COMMENT_NOT_FOUND`를 재사용하므로 프로젝트 SRS의 오류 코드 목록은 바뀌지 않는다.
 - TC-CMT-014, 015는 CMT-OPEN-05를 해결하면서 추가한 회귀 항목이다.
 - TC-CMT-016~019, 035~037, 040~043은 원댓글 단위 목록(CMT-FR-004 변경)과 삭제된 원댓글 표시(CMT-FR-009)를 추가하면서 생긴 항목이다. TC-CMT-011은 기존 평면 목록 테스트가 없어져 원댓글 목록 테스트로 근거를 바꿨다.
@@ -125,3 +127,4 @@ related: [PRJ-QA 1.3.0, CMT-SRS 1.3.0, CMT-SDS 1.5.1]
 | 1.1.1 | 2026-10-09 | 수행 정보를 `main` 85cce67 재수행 결과로 정정. 1.1.0의 Pass 판정(TC-CMT-010, 014, 015)은 f46a99c에 없던 테스트에 근거하므로, 실제 근거가 된 실행을 기록 | HseongH |
 | 1.2.0 | 2026-10-09 | `feature/comment-threads`에서 수행. 원댓글 단위 목록과 삭제된 원댓글 표시 항목 추가(TC-CMT-016~019, 035~037, 040~043), TC-CMT-008 N/T → Pass, TC-CMT-011 근거 테스트 교체 | HseongH |
 | 1.3.0 | 2026-10-09 | `fix/review-defects`에서 수행. 회귀 항목 TC-CMT-044(삭제와 작성의 경쟁), 045(1보다 작은 식별자) 추가 | HseongH |
+| 1.3.1 | 2026-10-09 | `main` 05a00c4에서 E2E 수행. TC-CMT-034 N/T → Pass | HseongH |
