@@ -36,5 +36,5 @@
 ## 검증 명령
 
 - 백엔드: `./gradlew check` (Docker 필요)
-- 프론트엔드: `cd frontend && pnpm verify`
-- API가 바뀌면: `cd frontend && pnpm gen:api` 후 `pnpm typecheck`
+- 프론트엔드: `cd services/web && pnpm verify`
+- API가 바뀌면: `cd services/web && pnpm gen:api` 후 `pnpm typecheck`

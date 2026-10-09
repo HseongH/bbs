@@ -22,11 +22,13 @@ Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 RE
 ## 실행
 
 ```bash
-docker compose up -d
-./gradlew bootRun
+docker compose -f deploy/compose.yaml up -d
+./gradlew :services:board:bootRun
 ```
 
-`compose.yaml`이 PostgreSQL · Valkey · Keycloak을 띄우고, Keycloak realm은 `docker/keycloak/bbs-realm.json`에서 자동으로 구성된다. 별도 수작업 없이 바로 로그인을 시험할 수 있다.
+`deploy/compose.yaml`이 PostgreSQL · Valkey · Keycloak을 띄운다. `bootRun`은 컨테이너가 없으면 같은 파일로 직접 띄우므로 첫 줄을 생략해도 된다. Keycloak realm은 `deploy/keycloak/bbs-realm.json`(구조)과 `deploy/keycloak/dev/bbs-users-0.json`(개발용 시험 사용자)에서 자동으로 구성되므로, 별도 수작업 없이 바로 로그인을 시험할 수 있다.
+
+접속 정보는 환경 변수로 바꿀 수 있고, 주지 않으면 개발 기본값을 쓴다. 바꿀 값만 `deploy/.env.example`을 `deploy/.env`로 복사해서 적는다. 포트는 기본적으로 이 PC(`127.0.0.1`)에만 열린다.
 
 Valkey는 Redis 프로토콜과 호환되는 BSD 라이선스 포크다. 애플리케이션은 Spring Data Redis로 접속하므로 코드에서는 Redis라는 이름을 그대로 쓴다. Redis 8부터 바뀐 라이선스(RSALv2·SSPLv1·AGPLv3)를 따질 필요가 없도록 Valkey를 쓴다.
 
@@ -41,7 +43,7 @@ Valkey는 Redis 프로토콜과 호환되는 BSD 라이선스 포크다. 애플�
 ### 프론트엔드
 
 ```bash
-cd frontend
+cd services/web
 pnpm install
 pnpm dev
 ```
@@ -51,7 +53,7 @@ pnpm dev
 백엔드 API가 바뀌면 타입을 다시 생성한다.
 
 ```bash
-cd frontend && pnpm gen:api
+cd services/web && pnpm gen:api
 ```
 
 ### 다른 기기에서 접속할 때
@@ -60,10 +62,11 @@ cd frontend && pnpm gen:api
 
 ```bash
 export BBS_HOST=<서버 주소>
+export KEYCLOAK_BIND_ADDRESS=0.0.0.0   # 다른 기기의 브라우저가 Keycloak에 닿게 한다 (DB와 Valkey는 열지 않는다)
 
-docker compose up -d
-./gradlew bootRun
-cd frontend && pnpm dev
+docker compose -f deploy/compose.yaml up -d
+./gradlew :services:board:bootRun
+cd services/web && pnpm dev
 ```
 
 `BBS_HOST`는 Keycloak의 공개 주소와 허용 리다이렉트 URI, 그리고 백엔드가 참조하는 issuer를 한꺼번에 결정한다. 지정하지 않으면 `localhost`로 동작한다.
@@ -71,7 +74,7 @@ cd frontend && pnpm dev
 한 번에 하나의 주소만 쓸 수 있다. `BBS_HOST`를 바꾸면 Keycloak을 다시 만들어야 realm의 리다이렉트 URI가 갱신된다.
 
 ```bash
-docker compose rm -sf keycloak && docker compose up -d keycloak
+docker compose -f deploy/compose.yaml rm -sf keycloak && docker compose -f deploy/compose.yaml up -d keycloak
 ```
 
 ## 빌드와 검증
@@ -80,7 +83,7 @@ docker compose rm -sf keycloak && docker compose up -d keycloak
 ./gradlew build
 ```
 
-이 한 줄이 아래를 모두 수행하며, 하나라도 실패하면 빌드가 실패한다.
+저장소 루트에서 실행하면 모든 Java 서비스(현재 `services/board`)에 대해 아래를 수행하며, 하나라도 실패하면 빌드가 실패한다. 검사 규칙은 `build-logic`의 컨벤션 플러그인 한 곳에 있고, 각 서비스는 플러그인을 적용해 같은 기준을 얻는다. 서비스 하나만 검증하려면 `./gradlew :services:board:check`를 쓴다. 리포트는 `services/board/build/reports/`에 생긴다.
 
 | 검사 | 도구 |
 |---|---|
@@ -91,17 +94,17 @@ docker compose rm -sf keycloak && docker compose up -d keycloak
 | 아키텍처 규칙 | ArchUnit |
 | 커버리지 | JaCoCo (전체 80%, 도메인·애플리케이션 90%) |
 
-통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다. 이미지는 `compose.yaml`에서 읽으므로 개발 환경과 테스트가 같은 버전을 쓴다.
+통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다. 이미지는 `deploy/compose.yaml`에서 읽으므로 개발 환경과 테스트가 같은 버전을 쓴다.
 
-GitHub Actions(`.github/workflows/backend.yml`)가 push와 PR마다 같은 `./gradlew check`를 실행한다.
+GitHub Actions는 서비스마다 워크플로를 하나씩 두고, 그 서비스에 관계된 파일이 바뀐 push와 PR에서만 실행한다. `board.yml`은 `./gradlew :services:board:check :spotlessCheck`(board 검증과 Gradle 스크립트 포맷)를 실행하며 공통 빌드 파일(`build-logic/`, `gradle/`, `config/`, 루트 Gradle 파일)이나 `deploy/compose.yaml`이 바뀌어도 실행된다. `web.yml`은 `services/web`에서 `pnpm verify`를 실행한다.
 
-프론트엔드는 `cd frontend && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다. E2E 브라우저는 Firefox이며, 처음 한 번 `pnpm exec playwright install firefox`로 Playwright 전용 Firefox를 내려받아야 한다 (설치된 Firefox는 쓰지 않는다).
+프론트엔드는 `cd services/web && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다. E2E 브라우저는 Firefox이며, 처음 한 번 `pnpm exec playwright install firefox`로 Playwright 전용 Firefox를 내려받아야 한다 (설치된 Firefox는 쓰지 않는다).
 
-`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, Git이 저장소의 `hooks/`를 훅 경로(`core.hooksPath`)로 쓰게 한다. 커밋 전에는 포맷과 정적 분석을 검사하고, 커밋 메시지가 Angular 형식(`type(scope): subject`)을 따르는지 검사한다. 훅을 복사하지 않으므로 고친 내용이 바로 반영되고 워크트리에서도 동작한다. `frontend/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
+`installGitHooks` 태스크가 `build` 시 자동으로 실행되어, Git이 저장소의 `hooks/`를 훅 경로(`core.hooksPath`)로 쓰게 한다. 커밋 전에는 포맷과 정적 분석을 검사하고, 커밋 메시지가 Angular 형식(`type(scope): subject`)을 따르는지 검사한다. 훅을 복사하지 않으므로 고친 내용이 바로 반영되고 워크트리에서도 동작한다. `services/web/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
 
 ### 의존성 버전
 
-버전은 `gradle/libs.versions.toml` 한 곳에서 관리한다. 스프링 부트 BOM이 관리하는 의존성은 버전 없이 등록하고, 직접 정하는 버전과 도구(Checkstyle, google-java-format) 버전만 적는다. Dependabot(`.github/dependabot.yml`)이 매주 Gradle 의존성, GitHub Actions, compose 이미지의 업데이트 PR을 올리고, CI가 이를 검증한다.
+버전은 `gradle/libs.versions.toml` 한 곳에서 관리한다. 스프링 부트 BOM이 관리하는 의존성은 버전 없이 등록하고, 직접 정하는 버전과 도구(Checkstyle, google-java-format) 버전만 적는다. Dependabot(`.github/dependabot.yml`)이 매주 Gradle 의존성, 화면의 npm 의존성, GitHub Actions, compose 이미지의 업데이트 PR을 올리고, CI가 이를 검증한다.
 
 ## 구조
 
@@ -156,10 +159,10 @@ post/
 - **도메인 모델과 JPA 엔티티는 분리를 유지한다.** 매퍼 비용이 들지만, 도메인이 `final` 필드와 값 객체를 JPA 제약 없이 쓸 수 있고 프레임워크 없이 테스트된다. 조회와 저장이 한 트랜잭션 안에서 일어나므로 저장할 때 추가 SELECT는 생기지 않는다.
 - **Lombok을 쓰지 않는다.** 컴파일러 내부에 의존해서 JDK가 올라갈 때마다 깨질 위험이 있고, 실제로 `sun.misc.Unsafe` 제거 예고 경고를 냈다. 생성자와 getter는 직접 쓰고, 스프링이 호출하는 생성자와 같은 패키지의 매퍼만 쓰는 엔티티 getter는 package-private으로 둔다.
 
-프론트엔드는 `frontend/`에 있으며 백엔드와 같은 기능별 분리를 따른다.
+프론트엔드는 `services/web/`에 있으며 백엔드와 같은 기능별 분리를 따른다.
 
 ```
-frontend/src/app/
+services/web/src/app/
 ├── core/
 │   ├── api/      생성된 타입과 ProblemDetail 파싱
 │   └── auth/     인증 인터셉터, 라우트 가드, 현재 회원 스토어
@@ -243,6 +246,6 @@ frontend/src/app/
 | 게시글 | [SRS](docs/features/post/srs.md) · [SDS](docs/features/post/sds.md) · [QA](docs/features/post/qa-checklist.md) |
 | 댓글 | [SRS](docs/features/comment/srs.md) · [SDS](docs/features/comment/sds.md) · [QA](docs/features/comment/qa-checklist.md) |
 | 템플릿 | [docs/templates/](docs/templates/README.md) |
-| 프론트엔드 안내 | [frontend/README.md](frontend/README.md) |
+| 프론트엔드 안내 | [services/web/README.md](services/web/README.md) |
 
 개발 과정에서 AI 협업 도구가 만든 설계 기록과 구현 계획은 [docs/superpowers/](docs/superpowers/)에 남아 있다.

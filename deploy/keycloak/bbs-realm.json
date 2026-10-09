@@ -56,44 +56,5 @@
         }
       ]
     }
-  ],
-  "users": [
-    {
-      "username": "tester",
-      "enabled": true,
-      "emailVerified": true,
-      "email": "tester@example.com",
-      "firstName": "테스트",
-      "lastName": "사용자",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "tester",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "USER"
-      ]
-    },
-    {
-      "username": "admin-user",
-      "enabled": true,
-      "emailVerified": true,
-      "email": "admin@example.com",
-      "firstName": "관리",
-      "lastName": "사용자",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "admin",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "USER",
-        "ADMIN"
-      ]
-    }
   ]
 }

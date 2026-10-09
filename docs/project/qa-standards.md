@@ -1,18 +1,18 @@
 ---
 doc_id: PRJ-QA
 title: 게시판(bbs) 공통 QA 기준
-version: 1.2.0
+version: 1.3.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.2.0, PRJ-SDS 1.3.0]
+related: [PRJ-SRS 1.5.0, PRJ-SDS 1.6.0, PRJ-QC 1.1.0]
 ---
 
 # 게시판(bbs) 공통 QA 기준
 
-> ISO/IEC/IEEE 29119-3의 테스트 계획(Test Plan) 가운데 **모든 기능에 공통으로 적용하는 부분**만 담았다. 기능별 테스트 항목과 결과는 각 기능의 QA 체크리스트에 기록한다.
+> ISO/IEC/IEEE 29119-3의 테스트 계획(Test Plan) 가운데 **모든 기능에 공통으로 적용하는 부분**만 담았다. 기능별 테스트 항목과 결과는 각 기능의 QA 체크리스트에, 어느 기능에도 속하지 않는 공통 요구사항(빌드, CI, 개발 환경)의 항목과 결과는 [프로젝트 QA 체크리스트](qa-checklist.md)에 기록한다.
 
 ## 1. 완료 정의 (Definition of Done)
 
@@ -22,11 +22,11 @@ related: [PRJ-SRS 1.2.0, PRJ-SDS 1.3.0]
 |---|---|---|
 | DoD-1 | 기능 SRS의 모든 `FR`이 QA 체크리스트의 `TC`에 하나 이상 연결되어 있다 | 체크리스트의 추적 표 확인 |
 | DoD-2 | 모든 `TC`의 판정이 `Pass`이거나, `Fail`·`Blocked`라면 사유와 후속 조치가 기록되어 있다 | 체크리스트 확인 |
-| DoD-3 | `./gradlew check`가 성공한다 | 명령 실행 결과 (종료 코드 0) |
-| DoD-4 | 화면 변경이 있으면 `pnpm verify`가 성공한다 | 명령 실행 결과 |
+| DoD-3 | 저장소 루트에서 `./gradlew check`가 성공한다 (모든 Java 서비스) | 명령 실행 결과 (종료 코드 0), PR의 서비스별 CI |
+| DoD-4 | 화면 변경이 있으면 `services/web`에서 `pnpm verify`가 성공한다 | 명령 실행 결과, PR의 `web` CI |
 | DoD-5 | 화면 흐름이 바뀌면 `pnpm e2e`가 성공한다 | 명령 실행 결과 |
 | DoD-6 | API가 바뀌었으면 `pnpm gen:api`로 타입을 다시 생성했고 타입 검사가 통과한다 | 생성 파일의 diff, `pnpm typecheck` |
-| DoD-7 | 기능 SRS·SDS·QA 체크리스트의 버전과 `related`가 서로 맞는다 | 문서 머리말 확인 |
+| DoD-7 | 기능 SRS·SDS·QA 체크리스트의 버전과 `related`가 서로 맞는다. 공통 요구사항을 바꿨으면 프로젝트 SRS·SDS·QA 체크리스트도 같다 | 문서 머리말 확인 |
 | DoD-8 | 새 설계 결정이 프로젝트 전체에 영향을 주면 ADR이 추가되었다 | `docs/project/adr/` 확인 |
 
 **검증 원칙:** "통과할 것이다", "아마 될 것이다"는 판정이 아니다. 판정은 **이번에 실행한 명령의 출력**을 근거로 한다.
@@ -71,15 +71,15 @@ related: [PRJ-SRS 1.2.0, PRJ-SDS 1.3.0]
 
 ## 5. QA 체크리스트 작성 규칙
 
-기능별 QA 체크리스트는 다음 열을 가진다.
+기능별 QA 체크리스트와 프로젝트 QA 체크리스트는 다음 열을 가진다.
 
 | 열 | 내용 |
 |---|---|
-| TC | `TC-<기능>-NNN` |
+| TC | `TC-<기능>-NNN`. 프로젝트 QA 체크리스트는 `TC-COM-NNN` |
 | 요구사항 | 검증하는 `FR`·`NFR` 식별자 |
 | 시나리오 | 사전 조건 → 행위 |
 | 기대 결과 | 관찰할 수 있는 결과 (상태 코드, 화면, 데이터) |
-| 검증 수단 | 자동 테스트 이름, 또는 `수동` |
+| 검증 수단 | 자동 테스트 이름, 실행한 명령, 또는 `수동` |
 | 판정 | `Pass` / `Fail` / `Blocked` / `N/T`(미수행) |
 
 - 자동 테스트로 검증하는 항목은 `./gradlew check` 실행 결과로 판정한다.
@@ -93,9 +93,9 @@ related: [PRJ-SRS 1.2.0, PRJ-SDS 1.3.0]
 | JDK | Temurin 25 |
 | 데이터베이스 | Testcontainers PostgreSQL (`application-test.yml`) |
 | Valkey | Testcontainers `RedisContainer`에 Valkey 이미지 사용 |
-| 컨테이너 이미지 | 통합 테스트도 `compose.yaml`의 이미지 태그를 읽는다. 개발 환경과 테스트 환경의 버전이 같다 |
+| 컨테이너 이미지 | 통합 테스트도 `deploy/compose.yaml`의 이미지 태그를 읽는다. 개발 환경과 테스트 환경의 버전이 같다 |
 | 인증 | 테스트에서는 `oidcLogin()` 등 스프링 보안 테스트 지원으로 대체한다. 실제 Keycloak은 E2E에서만 사용한다 |
-| E2E 계정 | `tester` / `tester` (USER), `admin-user` / `admin` (USER, ADMIN) |
+| E2E 계정 | `tester` / `tester` (USER), `admin-user` / `admin` (USER, ADMIN). 개발용 사용자 파일(`deploy/keycloak/dev/`)에서 가져온다 |
 
 ## 변경 이력
 
@@ -104,3 +104,4 @@ related: [PRJ-SRS 1.2.0, PRJ-SDS 1.3.0]
 | 1.0.0 | 2026-10-09 | 최초 작성 | HseongH |
 | 1.1.0 | 2026-10-09 | 정적 분석 기준(Checkstyle 범위, Error Prone)과 테스트 이미지 출처 갱신 (PR #8) | HseongH |
 | 1.2.0 | 2026-10-09 | 테스트 환경을 Valkey로 갱신 (PR #15) | HseongH |
+| 1.3.0 | 2026-10-09 | 모노레포 전환 반영: 프로젝트 QA 체크리스트(`TC-COM`)의 범위 추가, DoD-3·4·7의 실행 위치와 CI, 테스트 환경의 compose 경로와 시험 계정 출처 갱신 (PRJ-SRS 1.5.0) | HseongH |
