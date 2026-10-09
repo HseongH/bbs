@@ -14,6 +14,7 @@
 | 프로젝트 SRS | [project/srs.md](project/srs.md) | 시스템 전체가 무엇을 해야 하는가 | ISO/IEC/IEEE 29148 |
 | 프로젝트 SDS | [project/sds.md](project/sds.md) | 시스템 전체가 어떤 구조인가 | IEEE 1016, ISO/IEC/IEEE 42010 |
 | 공통 QA 기준 | [project/qa-standards.md](project/qa-standards.md) | 무엇을 만족해야 완료인가 | ISO/IEC/IEEE 29119-3 (경량화) |
+| 코딩 표준 | [project/coding-standards.md](project/coding-standards.md) | 코드를 어떻게 쓰는가 | DO-178C Software Code Standards에 해당, 사내 코딩 규약 |
 | ADR | [project/adr/](project/adr/README.md) | 왜 그렇게 결정했는가 | Michael Nygard ADR 형식 |
 
 ### 1.2 기능별 문서
@@ -105,7 +106,7 @@ owner: HseongH             # 문서 책임자
 reviewers: []              # 검토자
 approved_date:             # Approved가 되는 날 기록
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.2.0, PST-SDS 1.1.1, PST-QA 1.0.2]
+related: [PRJ-SRS 1.2.0, PST-SDS 1.2.0, PST-QA 1.0.2]
 ---
 ```
 
@@ -133,6 +134,24 @@ related: [PRJ-SRS 1.2.0, PST-SDS 1.1.1, PST-QA 1.0.2]
 
 개인 프로젝트에서는 검토자가 본인뿐이다. 그래도 PR을 열고 **하루 뒤에 다시 읽고 승인하는 습관**을 들이면 같은 효과의 상당 부분을 얻을 수 있다.
 
+## 8. SDS 작성 기준
+
+SDS는 코드보다 오래 맞아야 한다. 그래서 **리팩터링 한 번에 바뀌는 내용은 적지 않고, 그 내용이 기준으로 있는 곳을 가리킨다.**
+
+| SDS에 적는다 | SDS에 적지 않는다 (기준이 되는 곳) |
+|---|---|
+| 구성 요소의 **책임**과 경계 (클래스 수준까지) | 메서드 시그니처, 포트의 메서드 목록 (코드) |
+| 처리 **흐름**: 순서, 트랜잭션 경계, 실패 지점 | 의사 코드, SQL 원문 (코드) |
+| 필드 목록만으로는 드러나지 않는 인터페이스의 **의미** | 요청·응답 필드 목록과 예시 (OpenAPI 문서 `/v3/api-docs`) |
+| 데이터 모델과 **설계상 의미 있는** 제약·인덱스 | 컬럼 타입과 길이 (Flyway 마이그레이션) |
+| 설계 판단에 영향을 준 **주 버전** | 세부 버전 (`gradle/libs.versions.toml`, `compose.yaml`, `frontend/package.json`) |
+| **설계 결정**과 검토한 대안, 기각 이유 | 테스트 이름과 목록 (QA 체크리스트) |
+| 요구사항 → 설계 요소 대응 | 품질 게이트와 코딩 규칙 (코딩 표준) |
+
+확인하는 방법: **"이 문장은 메서드 이름을 바꾸는 리팩터링만으로 틀려지는가?"** 그렇다면 SDS가 아니라 코드나 다른 문서에 있어야 할 내용이다.
+
+이 기준은 이번 프로젝트에서 SDS가 코드와 두 번 어긋난 경험(포트 정리, Valkey 전환)에서 나왔다. 두 번 모두 틀려진 부분은 메서드 목록과 버전 번호였고, 책임과 흐름은 그대로 맞았다.
+
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 | 작성자 |
@@ -140,3 +159,4 @@ related: [PRJ-SRS 1.2.0, PST-SDS 1.1.1, PST-QA 1.0.2]
 | 1.0.0 | 2026-10-09 | 문서 체계 최초 작성 | HseongH |
 | 1.1.0 | 2026-10-09 | 다이어그램 규칙(§3) 추가 | HseongH |
 | 1.1.1 | 2026-10-09 | draw.io 내보내기 테마 규칙 정정 | HseongH |
+| 1.2.0 | 2026-10-09 | 코딩 표준을 문서 목록에 추가. SDS 작성 기준(§8) 추가 | HseongH |

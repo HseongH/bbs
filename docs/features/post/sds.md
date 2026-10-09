@@ -1,18 +1,20 @@
 ---
 doc_id: PST-SDS
 title: 게시글 설계 명세서
-version: 1.1.1
+version: 1.2.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.2.0, PST-SRS 1.0.0, PST-QA 1.0.2]
+related: [PRJ-SDS 1.3.0, PST-SRS 1.0.0, PST-QA 1.0.2, PRJ-CS 1.0.0]
 ---
 
 # 게시글 설계 명세서
 
 > [프로젝트 SDS](../../project/sds.md)의 아키텍처와 공통 컴포넌트를 전제로 한다. 이 문서는 `com.board.bbs.post` 패키지와 화면의 `features/post`만 다룬다.
+>
+> **이 문서가 다루지 않는 것:** 메서드 시그니처(코드가 기준), 요청·응답 필드(OpenAPI 문서 `/v3/api-docs`가 기준), 테스트 목록([QA 체크리스트](qa-checklist.md)가 기준). 작성 기준은 [문서 체계 §8](../../README.md#8-sds-작성-기준)에 있다.
 
 ## 1. 설계 개요
 
@@ -24,11 +26,10 @@ related: [PRJ-SDS 1.2.0, PST-SRS 1.0.0, PST-QA 1.0.2]
 
 | 요소 | 종류 | 책임 |
 |---|---|---|
-| `Post` | 애그리게이트 루트 | 제목·본문 보유, 수정·삭제 권한과 삭제 상태 검사 |
-| `PostId` | 값 객체 | 1 이상의 식별자 |
-| `Title` | 값 객체 | 공백 제거 후 1~100자 |
-| `Content` | 값 객체 | 공백만은 불가, 최대 10,000자 (공백 제거 안 함) |
-| `PostDeleted` | 도메인 이벤트 | 게시글이 삭제되었음을 다른 기능에 알린다 (`postId`, `deletedAt`) |
+| `Post` | 애그리게이트 루트 | 제목·본문 보유. 수정·삭제 권한과 삭제 상태를 검사한다. 카운터는 읽기만 한다 |
+| `Title`, `Content` | 값 객체 | 제목과 본문의 규칙 ([SRS §2](srs.md#2-데이터-항목)) |
+| `PostId` | 값 객체 | 게시글 식별자. 다른 기능은 이 타입으로만 게시글을 참조한다 |
+| `PostDeleted` | 도메인 이벤트 | 게시글이 삭제되었음을 다른 기능에 알린다 |
 
 `Post`의 상태 전이:
 
@@ -36,85 +37,53 @@ related: [PRJ-SDS 1.2.0, PST-SRS 1.0.0, PST-QA 1.0.2]
 stateDiagram-v2
     state "활성" as Active
     state "삭제됨 (deleted_at 기록)" as Deleted
-    [*] --> Active: write()
-    Active --> Deleted: deleteBy() 작성자 또는 관리자
+    [*] --> Active: 작성
+    Active --> Deleted: 삭제 (작성자 또는 관리자)
     note right of Active
-        updateBy(): 작성자만 가능, 상태는 그대로 활성
+        수정: 작성자만 가능, 상태는 그대로 활성
     end note
     note right of Deleted
-        updateBy(), deleteBy() 모두 거부
+        수정·삭제 모두 거부
         POST_NOT_FOUND
     end note
 ```
 
-| 메서드 | 사전 조건 | 실패 |
-|---|---|---|
-| `updateBy(requester, title, content)` | 삭제되지 않음, `requester == authorId` | 삭제됨 → `POST_NOT_FOUND`, 작성자 아님 → `ACCESS_DENIED` |
-| `deleteBy(requester, admin, now)` | 삭제되지 않음, `admin` 또는 `requester == authorId` | 위와 같음 |
-
-조회수와 좋아요 수는 `Post`에 읽기 전용으로만 존재한다. `Post`에는 카운터를 바꾸는 메서드가 없다.
+권한 규칙의 핵심은 **관리자는 삭제만 할 수 있고 수정은 할 수 없다**는 것이다. 그래서 수정 메서드는 관리자 여부를 인자로 받지 않는다.
 
 ### 2.2 애플리케이션 (`post.application`)
 
-**애플리케이션 서비스 (웹 어댑터와 다른 기능에 공개)**
-
 인바운드 포트는 두지 않는다. 컨트롤러와 다른 기능은 서비스를 직접 사용한다 ([ADR-0010](../../project/adr/0010-drop-inbound-ports.md)).
 
-| 서비스 | 메서드 | 트랜잭션 |
+| 요소 | 종류 | 책임 |
 |---|---|---|
-| `PostCommandService` | `create(author, title, content) → PostId` | 쓰기 |
-| | `update(id, requester, title, content)` | 쓰기 |
-| | `delete(id, requester, admin)` | 쓰기, `PostDeleted` 발행 |
-| `PostQueryService` | `getById(id) → Post` | 읽기 전용 |
-| | `getAndCountView(id, viewerKey) → Post` | 쓰기 (조회수 증가) |
-| | `search(condition, pageable) → Page<PostSummary>` | 읽기 전용 |
-| `PostLikeService` | `like(postId, memberId)`, `unlike(postId, memberId)` | 쓰기 |
-
-`PostQueryService.getById`는 `comment` 기능이 게시글 존재를 확인하는 데에도 사용한다 ([ADR-0009](../../project/adr/0009-feature-boundaries-via-events.md)).
-
-**아웃바운드 포트 (기능 내부)**
-
-| 포트 | 메서드 | 어댑터 |
-|---|---|---|
-| `PostRepository` | `save`(카운터 제외), `load`(삭제되지 않은 글, 없으면 `POST_NOT_FOUND`), `search`, `increaseViewCount`, `increaseLikeCount`, `decreaseLikeCount`(원자적) | `PostPersistenceAdapter` (→ `PostQueryRepository`) |
-| `PostLikeRepository` | `like`, `unlike` (실제로 바뀌었는지 반환) | `PostLikePersistenceAdapter` |
-| `ViewDeduplicationPort` | `markViewed` (처음 보는 조회인지 판정하고 기록) | `RedisViewDeduplicationAdapter` |
-
-**읽기 모델**
-
-| 타입 | 용도 |
-|---|---|
-| `PostSearchCondition(keyword, authorId)` | 검색 조건. 생성 시 키워드를 정규화한다 (공백 제거, 빈 값은 `null`) |
-| `PostSummary` | 목록 항목. 본문 없음, 작성자 닉네임 포함 |
+| `PostCommandService` | 서비스 | 작성, 수정, 삭제. 삭제할 때 `PostDeleted`를 발행한다 |
+| `PostQueryService` | 서비스 | 단건 조회, 조회수 증가를 포함한 상세 조회, 목록 검색. **`comment` 기능이 게시글 존재를 확인할 때도 쓴다** |
+| `PostLikeService` | 서비스 | 좋아요와 취소. 좋아요 행과 카운터를 한 트랜잭션에서 바꾼다 |
+| `PostRepository` | 아웃바운드 포트 | 게시글 저장·조회·검색, 카운터의 원자적 증감 |
+| `PostLikeRepository` | 아웃바운드 포트 | 좋아요 행 추가·삭제. 실제로 바뀌었는지를 돌려준다 |
+| `ViewDeduplicationPort` | 아웃바운드 포트 | 처음 보는 조회인지 판정하고 기록한다 |
+| `PostSearchCondition`, `PostSummary` | 읽기 모델 | 검색 조건(키워드 정규화 포함), 본문 없는 목록 항목 |
 
 ### 2.3 어댑터 (`post.adapter`)
 
 | 요소 | 위치 | 책임 |
 |---|---|---|
-| `PostController` | `in/web` | REST 엔드포인트, 관리자 여부 판단, 조회자 키 생성 |
-| `CreatePostRequest`, `UpdatePostRequest` | `in/web/dto` | 입력 검증 (`@NotBlank`, `@Size`) |
-| `PostResponse`, `PostSummaryResponse` | `in/web/dto` | 응답 직렬화 |
-| `PostJpaEntity`, `PostLikeJpaEntity` | `out/persistence` | 테이블 매핑. 카운터 컬럼은 `updatable = false` |
-| `PostJpaRepository` | `out/persistence` | 기본 조회, 원자적 카운터 UPDATE |
-| `PostLikeJpaRepository` | `out/persistence` | `INSERT ... ON CONFLICT DO NOTHING`, `DELETE` (네이티브) |
-| `PostQueryRepository` | `out/persistence` | QueryDSL 목록 검색, `member` 조인 |
-| `PostMapper` | `out/persistence` | 도메인 ↔ 엔티티 변환 |
-| `RedisViewDeduplicationAdapter` | `out/redis` | `SETNX` + 24시간 TTL |
+| `PostController` | `in/web` | REST 엔드포인트. 관리자 여부와 조회자 키를 정해 서비스에 넘긴다 |
+| `PostPersistenceAdapter` | `out/persistence` | `PostRepository` 구현. 엔티티 매핑, 원자적 카운터 UPDATE |
+| `PostQueryRepository` | `out/persistence` | 목록 검색 쿼리. `member`를 조인해 닉네임을 함께 읽는다 (기능 경계 규칙의 허용된 예외) |
+| `PostLikePersistenceAdapter` | `out/persistence` | `PostLikeRepository` 구현. 중복은 데이터베이스가 판정한다 |
+| `RedisViewDeduplicationAdapter` | `out/redis` | `ViewDeduplicationPort` 구현. Valkey의 TTL 키로 24시간 중복을 판정한다 |
 
 ## 3. 처리 흐름
 
 ### 3.1 상세 조회와 조회수 (PST-FR-002, 003)
 
-```
-PostController.get(id, viewer?)
-  viewerKey = viewer ? "m{memberId}" : "s{sessionId}"
-  └─ PostQueryService.getAndCountView(id, viewerKey)        [트랜잭션]
-       ├─ PostRepository.load(id)                               없거나 삭제됨 → 404
-       ├─ ViewDeduplicationPort.markViewed(id, viewerKey)     Valkey SET NX EX 86400
-       │    └─ true (처음)  → PostRepository.increaseViewCount(id)
-       │                       UPDATE post SET view_count = view_count + 1
-       └─ 불러온 Post 반환 (조회수는 증가 전 값)
-```
+하나의 쓰기 트랜잭션에서 다음 순서로 처리한다.
+
+1. 컨트롤러가 조회자 키를 정한다. 회원이면 회원 식별자, 비회원이면 세션 식별자를 쓴다.
+2. 게시글을 불러온다. 없거나 삭제되었으면 `404 POST_NOT_FOUND`로 끝난다.
+3. 조회자 키로 처음 보는 조회인지 판정한다. 처음이면 조회수를 원자적으로 1 올린다.
+4. **2단계에서 불러온 게시글을 반환한다.** 그래서 응답의 조회수는 이번 조회가 반영되기 전 값이다.
 
 ### 3.2 삭제 (PST-FR-006)
 
@@ -125,110 +94,67 @@ sequenceDiagram
     participant P as Post (도메인)
     participant R as PostRepository
     participant L as PostDeletedListener (comment)
-    participant CS as CommentCommandService (comment)
-    C->>C: admin = 권한에 ROLE_ADMIN 포함 여부
-    C->>S: delete(id, requester, admin)
+    C->>C: 관리자 여부 판단
+    C->>S: 삭제 요청
     activate S
-    Note over S,CS: 하나의 트랜잭션
-    S->>R: load(id)
+    Note over S,L: 하나의 트랜잭션
+    S->>R: 불러오기
     R-->>S: Post (없거나 삭제됨이면 POST_NOT_FOUND)
-    S->>P: deleteBy(requester, admin, now)
-    Note right of P: 권한·삭제 상태 검사<br/>실패하면 ACCESS_DENIED
-    S->>R: save(post)
-    Note right of R: deleted_at 기록<br/>카운터 컬럼은 갱신 제외
-    S->>L: publishEvent(PostDeleted(id, now)) 동기 전달
-    L->>CS: deleteAllOfPost(postId, deletedAt)
-    CS->>CS: UPDATE comment SET deleted_at<br/>WHERE post_id = ? AND deleted_at IS NULL
-    S-->>C: 완료 (커밋). 중간에 실패하면 모두 롤백
+    S->>P: 삭제 규칙 검사와 삭제 시각 기록
+    Note right of P: 실패하면 ACCESS_DENIED
+    S->>R: 저장 (카운터 컬럼은 갱신 제외)
+    S->>L: PostDeleted 발행 (동기 전달)
+    L->>L: 게시글의 댓글 일괄 소프트 삭제
+    S-->>C: 완료. 중간에 실패하면 모두 롤백
     deactivate S
 ```
 
 ### 3.3 좋아요 (PST-FR-007, 008)
 
-```
-PostLikeService.like(postId, memberId)                     [트랜잭션]
-  ├─ PostRepository.load(postId)                              없거나 삭제됨 → 404
-  ├─ PostLikeRepository.like(postId, memberId)
-  │    INSERT INTO post_like ... ON CONFLICT DO NOTHING     영향 행 0 → ALREADY_LIKED (409)
-  └─ PostRepository.increaseLikeCount(postId)
-       UPDATE post SET like_count = like_count + 1
+좋아요와 취소는 각각 하나의 트랜잭션에서 다음 순서로 처리한다.
 
-PostLikeService.unlike(postId, memberId)                   [트랜잭션]
-  ├─ PostRepository.load(postId)
-  ├─ PostLikeRepository.unlike(...)  DELETE ...                  영향 행 0 → NOT_LIKED (409)
-  └─ PostRepository.decreaseLikeCount(postId)
-       UPDATE post SET like_count = like_count - 1 WHERE ... AND like_count > 0
-```
+1. 게시글을 불러온다. 없거나 삭제되었으면 `404`로 끝난다.
+2. 좋아요 행을 추가(또는 삭제)한다. 중복 판정은 데이터베이스의 유니크 제약이 하고, **실제로 바뀐 행이 없으면** `409 ALREADY_LIKED`(또는 `NOT_LIKED`)로 끝난다.
+3. 좋아요 수를 원자적으로 1 올린다(또는 내린다). 내릴 때는 0 아래로 내려가지 않게 조건을 건다.
+
+2단계에서 실패하면 3단계를 실행하지 않으므로, 동시에 여러 번 눌러도 좋아요 행과 카운터가 어긋나지 않는다.
 
 ### 3.4 목록 검색 (PST-FR-004, 009, 010)
 
-```sql
--- 데이터 쿼리
-SELECT p.id, p.title, p.author_id, m.nickname, p.view_count, p.like_count, p.created_at
-FROM post p JOIN member m ON m.id = p.author_id
-WHERE p.deleted_at IS NULL
-  [AND (lower(p.title) LIKE %kw% OR lower(p.content) LIKE %kw%)]
-  [AND p.author_id = ?]
-ORDER BY p.created_at DESC, p.id DESC
-OFFSET ? LIMIT ?
-
--- 건수 쿼리 (마지막 페이지이고 건수를 알 수 있으면 생략)
-SELECT count(*) FROM post p WHERE <같은 조건>
-```
-
-건수 쿼리는 `PageableExecutionUtils.getPage`로 필요할 때만 실행한다.
+| 설계 요소 | 내용 | 이유 |
+|---|---|---|
+| 조회 대상 | 본문을 뺀 프로젝션, `member` 조인으로 닉네임 포함 | 큰 본문을 읽지 않고, N+1 쿼리를 막는다 |
+| 조건 | 삭제되지 않은 글. 키워드는 제목 또는 본문에 대소문자 무시 포함. 작성자 조건은 선택 | SRS 수용 기준 |
+| 정렬 | 작성 시각 내림차순, 같으면 식별자 내림차순 | 페이지 경계에서 중복·누락 방지 |
+| 건수 | 별도 count 쿼리. 마지막 페이지처럼 건수를 알 수 있으면 생략 | 불필요한 count 실행 방지 |
+| 인덱스 | 삭제되지 않은 글에 대한 부분 인덱스 (작성 시각, 식별자) | 정렬과 조건을 함께 지원 |
 
 ## 4. 인터페이스 설계
 
-### 4.1 요청
+엔드포인트 목록은 [SRS §5](srs.md#5-인터페이스)에, 요청·응답 필드는 OpenAPI 문서(`/v3/api-docs`)에 있다. 이 절에는 필드 목록만으로는 드러나지 않는 의미만 적는다.
 
-| API | 본문 / 파라미터 |
-|---|---|
-| `POST /api/posts`, `PATCH /api/posts/{id}` | `{ "title": string(1..100), "content": string(1..10000) }` |
-| `GET /api/posts` | `keyword?`, `authorId?`, `page`(기본 0), `size`(기본 20) |
-
-### 4.2 응답
-
-```jsonc
-// GET /api/posts/{id} → PostResponse
-{ "id": 1, "title": "제목", "content": "본문", "authorId": 7,
-  "viewCount": 3, "likeCount": 1, "createdAt": "2026-10-09T01:23:45Z" }
-
-// GET /api/posts → PageResponse<PostSummaryResponse>
-{ "content": [ { "id": 1, "title": "제목", "authorId": 7, "authorNickname": "tester",
-                 "viewCount": 3, "likeCount": 1, "createdAt": "..." } ],
-  "page": 0, "size": 20, "totalElements": 1, "totalPages": 1, "last": true }
-```
-
-### 4.3 오류
-
-| 상황 | 상태 | code |
-|---|---|---|
-| 입력 규칙 위반 | 400 | `INVALID_REQUEST` (+ `errors`) |
-| 미인증 | 401 | `UNAUTHENTICATED` |
-| 작성자 아님 | 403 | `ACCESS_DENIED` |
-| 없거나 삭제된 게시글 | 404 | `POST_NOT_FOUND` |
-| 중복 좋아요 | 409 | `ALREADY_LIKED` |
-| 좋아요하지 않은 글 취소 | 409 | `NOT_LIKED` |
+- 목록 응답에는 본문이 없고 작성자 닉네임이 있다. 상세 응답은 그 반대다 ([SRS PST-OPEN-01](srs.md#6-미결-사항)).
+- 상세 응답의 조회수는 이번 조회가 반영되기 전 값이다 (§3.1).
+- 오류는 공통 ProblemDetail 규약을 따른다. 게시글 기능이 쓰는 오류 코드는 `INVALID_REQUEST`, `UNAUTHENTICATED`, `ACCESS_DENIED`, `POST_NOT_FOUND`, `ALREADY_LIKED`, `NOT_LIKED`다 ([프로젝트 SRS §5.1](../../project/srs.md#51-오류-코드-목록)).
 
 ## 5. 데이터 설계
 
-[프로젝트 SDS §5](../../project/sds.md#5-데이터-관점)의 `post`, `post_like` 테이블과 Valkey(Redis 호환) 키 `post:view:{postId}:{viewerKey}`를 사용한다. 게시글 기능이 소유하는 마이그레이션은 `V2__create_post.sql`, `V4__create_post_like.sql`이다.
+[프로젝트 SDS §5](../../project/sds.md#5-데이터-관점)의 `post`, `post_like` 테이블과 Valkey 키 `post:view:{postId}:{viewerKey}`를 사용한다. 이 기능에 고유한 데이터 설계는 다음과 같다.
+
+- `view_count`, `like_count`는 비정규화한 카운터다. 엔티티 저장에서 제외하고 원자적 UPDATE로만 바꾼다 ([ADR-0004](../../project/adr/0004-atomic-counter-update.md)).
+- `post_like`의 `(post_id, member_id)` 유니크 제약이 중복 좋아요를 최종 판정한다 ([ADR-0005](../../project/adr/0005-database-decides-duplicates.md)).
 
 ## 6. 화면 설계 (`frontend/src/app/features/post`)
 
+[코딩 표준 CS-F01](../../project/coding-standards.md#5-프론트엔드-규칙)의 구조(API 서비스, 스토어, 페이지, 컴포넌트)를 따른다.
+
 | 요소 | 책임 |
 |---|---|
-| `post-api.service.ts` | HTTP 호출만 담당 (생성된 API 타입 사용) |
-| `post.store.ts` | 목록·상세 자원 보유, 검색 조건 변경 시 재조회, 변경 후 무효화 |
-| `pages/post-list-page` | URL 쿼리(`keyword`, `page`)를 입력으로 받아 목록 표시 |
-| `pages/post-detail-page` | 상세, 좋아요, 댓글 영역 배치. 작성자에게만 수정·삭제 |
-| `pages/post-new-page`, `pages/post-edit-page` | 작성·수정. `authGuard`로 보호 |
-| `components/post-form` | 입력 폼, 서버 필드 오류 표시 |
-| `components/like-button` | 누르면 숫자를 먼저 올리고, 실패하면 오류 메시지 표시 |
-| `components/search-form`, `pagination`, `post-list`, `post-detail` | 표시 전용 |
-
-검색 조건을 URL에 두는 이유는 새로고침과 링크 공유에서 상태를 잃지 않기 위해서다 (PST-FR-020).
+| 스토어 (`post.store.ts`) | 목록·상세 자원을 보유하고, 검색 조건이 바뀌면 다시 불러온다. 변경 후 무효화 범위를 소유한다 |
+| 목록 페이지 | URL 쿼리(검색어, 페이지)를 입력으로 받아 목록을 보여 준다 |
+| 상세 페이지 | 상세, 좋아요, 댓글 영역을 배치한다. 수정·삭제는 작성자에게만 보인다 |
+| 작성·수정 페이지 | 로그인한 사용자만 들어갈 수 있다. 서버 검증 오류를 입력란 아래에 보여 준다 |
+| 좋아요 버튼 | 누르면 숫자를 먼저 올리고, 실패하면 오류 메시지를 보여 준다 |
 
 ## 7. 설계 결정
 
@@ -241,23 +167,23 @@ SELECT count(*) FROM post p WHERE <같은 조건>
 | 목록은 본문 없는 별도 프로젝션 | 목록에서 최대 10,000자 본문을 읽지 않는다 | 엔티티 조회 후 변환: 불필요한 데이터 전송, N+1 위험 |
 | 정렬에 식별자를 함께 사용 | 같은 시각에 작성된 행의 순서를 고정해 페이지 경계 중복·누락 방지 | 작성 시각만 사용: 순서가 비결정적 |
 | 비회원 조회자 키로 세션 ID 사용 | 별도 식별 수단 없이 중복 조회를 구분 | IP 주소: 공유 IP에서 서로 다른 사용자를 같은 사람으로 판정 |
+| 상세 조회 응답에 증가 전 조회수를 담음 | 증가 후 값을 다시 읽는 쿼리를 아낀다 | 증가 후 재조회: 쿼리 1회 추가, 동시 요청에서는 어차피 정확한 값이 아니다 |
 | 관리자 여부를 컨트롤러에서 판단해 `boolean`으로 전달 | 도메인이 스프링 보안을 모르게 한다 | [ADR-0003](../../project/adr/0003-authorization-in-domain.md) |
 
 ## 8. 요구사항 대응표
 
-| 요구사항 | 설계 요소 | 자동 테스트 |
-|---|---|---|
-| PST-FR-001 | `Post.write`, `Title`, `Content`, `CreatePostRequest` | `PostTest`, `PostControllerTest` |
-| PST-FR-002 | `PostQueryService.getAndCountView`, `PostRepository.load` | `PostControllerTest`, `PostPersistenceAdapterTest` |
-| PST-FR-003 | `ViewDeduplicationPort`, `PostRepository.increaseViewCount` | `PostControllerTest#게시글을_조회하면_조회수가_올라간다` |
-| PST-FR-004, 009, 010 | `PostQueryRepository`, `PostSearchCondition` | `PostQueryRepositoryTest` |
-| PST-FR-005 | `Post.updateBy` | `PostTest`, `PostControllerTest` |
-| PST-FR-006 | `Post.deleteBy`, `PostDeleted`, `PostDeletedListener` | `PostTest`, `PostDeletionIntegrationTest` |
-| PST-FR-007, 008 | `PostLikeService`, `PostLikeRepository`, `PostRepository` | `PostControllerTest`, `PostLikeConcurrencyTest` |
-| PST-FR-011 | `PostJpaEntity`의 `updatable = false` | `PostCounterPreservationTest` |
-| PST-FR-020~024 | `features/post` 화면 요소 | `post-list-page.spec`, `post-detail-page.spec`, `post-form.spec`, `like-button.spec`, `post.store.spec`, `auth.guard.spec`, E2E |
+요구사항을 어떤 설계 요소가 맡는지 보여 준다. 검증하는 테스트는 [QA 체크리스트](qa-checklist.md)에 있다.
 
-테스트 단위의 상세 대응은 [QA 체크리스트](qa-checklist.md)에 있다.
+| 요구사항 | 설계 요소 |
+|---|---|
+| PST-FR-001 | `Post`, `Title`, `Content`, `PostCommandService` |
+| PST-FR-002, 003 | `PostQueryService`, `ViewDeduplicationPort` (§3.1) |
+| PST-FR-004, 009, 010 | `PostQueryRepository`, `PostSearchCondition` (§3.4) |
+| PST-FR-005 | `Post` (수정 규칙) |
+| PST-FR-006 | `Post` (삭제 규칙), `PostDeleted`, `comment`의 `PostDeletedListener` (§3.2) |
+| PST-FR-007, 008 | `PostLikeService`, `PostLikeRepository` (§3.3) |
+| PST-FR-011 | 카운터 컬럼의 갱신 제외 (§5) |
+| PST-FR-020~024 | `features/post` 화면 요소 (§6) |
 
 ## 변경 이력
 
@@ -266,3 +192,4 @@ SELECT count(*) FROM post p WHERE <같은 조건>
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | 인바운드 포트 제거와 저장소 포트 통합 반영 (ADR-0010). 상태 전이와 삭제 흐름을 Mermaid 다이어그램으로 교체 | HseongH |
 | 1.1.1 | 2026-10-09 | 조회수 키 저장소 표기를 Valkey로 정정 (ADR-0013) | HseongH |
+| 1.2.0 | 2026-10-09 | 세밀도 조정: 메서드 시그니처, 응답 필드 예시, SQL 원문, 테스트 목록을 빼고 책임·흐름·결정 중심으로 재작성. 설계 내용은 바뀌지 않음 | HseongH |

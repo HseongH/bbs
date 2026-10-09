@@ -1,18 +1,20 @@
 ---
 doc_id: PRJ-SDS
 title: 게시판(bbs) 프로젝트 설계 명세서
-version: 1.2.0
+version: 1.3.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.2.0, PRJ-QA 1.2.0]
+related: [PRJ-SRS 1.2.0, PRJ-QA 1.2.0, PRJ-CS 1.0.0]
 ---
 
 # 게시판(bbs) 프로젝트 설계 명세서
 
 > IEEE 1016의 설계 관점(context, composition, dependency, information, interface, interaction) 중 **프로젝트 전체에 해당하는 부분**을 담는다. 아키텍처 기술(ISO/IEC/IEEE 42010)도 이 문서에 포함했다. 기능별 상세 설계는 각 기능 SDS에 있다.
+>
+> **이 문서가 다루지 않는 것:** 라이브러리와 이미지의 세부 버전(`gradle/libs.versions.toml`, `compose.yaml`, `frontend/package.json`이 기준), 테이블의 컬럼 정의(Flyway 마이그레이션이 기준), 품질 게이트와 코딩 규칙([코딩 표준](coding-standards.md)이 기준). 작성 기준은 [문서 체계 §8](../README.md#8-sds-작성-기준)에 있다.
 
 ## 1. 개요
 
@@ -35,28 +37,25 @@ related: [PRJ-SRS 1.2.0, PRJ-QA 1.2.0]
 | 데이터를 어디에 어떤 형태로 저장하는가 | 개발자 | §5 데이터 |
 | 기능 사이에 어떻게 협력하는가 | 개발자 | §6 기능 간 상호작용 |
 | 인증과 보안이 어떻게 동작하는가 | 개발자, 보안 검토자 | §7 보안 |
-| 어떻게 실행하고 검증하는가 | 개발자 | §8 실행 환경, §9 품질 게이트 |
+| 화면은 어떻게 구성되는가 | 개발자 | §8 화면 구성 |
+| 어떻게 실행하는가 | 개발자 | §9 실행 환경 |
 
 ## 2. 기술 스택
 
-| 영역 | 선택 | 비고 |
+설계 판단에 영향을 준 주 버전만 적는다. 세부 버전은 위에 적은 설정 파일이 기준이며, Dependabot이 매주 갱신한다 ([ADR-0012](adr/0012-version-catalog-and-dependabot.md)).
+
+| 영역 | 선택 | 설계와의 관계 |
 |---|---|---|
-| 언어·런타임 | Java 25 (Temurin) | 가상 스레드 활성화 |
-| 프레임워크 | Spring Boot 4.1.1 | Spring Framework 7, Jakarta EE 11 |
-| 빌드 | Gradle (Kotlin DSL) | 버전은 `.sdkmanrc`, wrapper로 고정 |
-| 영속성 | Spring Data JPA (Hibernate 7) | 엔티티는 어댑터 전용 ([ADR-0002](adr/0002-separate-domain-and-jpa-entity.md)) |
-| 동적 쿼리 | `io.github.openfeign.querydsl` 7.0 | [ADR-0006](adr/0006-querydsl-openfeign-fork.md) |
-| 스키마 관리 | Flyway | [ADR-0007](adr/0007-flyway-single-source-of-schema.md) |
-| DB | PostgreSQL 18 | |
-| 세션·캐시 | Valkey 9 (Redis 호환), Spring Session Data Redis | [ADR-0008](adr/0008-oidc-bff-and-redis-session.md), [ADR-0013](adr/0013-valkey-instead-of-redis.md) |
-| 인증 | Spring Security OAuth2 Client + Keycloak 26 | |
-| API 문서 | springdoc-openapi | |
-| null 안정성 | JSpecify + NullAway (Error Prone) | |
-| 화면 | Angular 22, TypeScript 6, Tailwind CSS 4 | |
-| API 타입 생성 | openapi-typescript | |
-| 테스트 | JUnit 5, AssertJ, Testcontainers, ArchUnit / Vitest, Playwright | Testcontainers 이미지는 `compose.yaml`에서 읽는다 |
-| 보일러플레이트 | Lombok 사용 안 함 | 생성자·getter 직접 작성 ([ADR-0011](adr/0011-remove-lombok.md)) |
-| 의존성 관리 | Gradle version catalog (`gradle/libs.versions.toml`), Dependabot | [ADR-0012](adr/0012-version-catalog-and-dependabot.md) |
+| 언어·런타임 | Java 25 | 가상 스레드 사용 |
+| 프레임워크 | Spring Boot 4 (Spring Framework 7, Hibernate 7) | Hibernate 7 때문에 QueryDSL 포크를 쓴다 ([ADR-0006](adr/0006-querydsl-openfeign-fork.md)) |
+| 영속성 | Spring Data JPA, QueryDSL(openfeign 포크), Flyway | 엔티티는 어댑터 전용 ([ADR-0002](adr/0002-separate-domain-and-jpa-entity.md)), 스키마는 Flyway가 기준 ([ADR-0007](adr/0007-flyway-single-source-of-schema.md)) |
+| 저장소 | PostgreSQL | `ON CONFLICT`, 부분 인덱스 등 PostgreSQL 기능에 의존한다 |
+| 세션·캐시 | Valkey (Redis 호환), Spring Session Data Redis | [ADR-0008](adr/0008-oidc-bff-and-redis-session.md), [ADR-0013](adr/0013-valkey-instead-of-redis.md) |
+| 인증 | Spring Security OAuth2 Client, Keycloak | OIDC BFF 방식 ([ADR-0008](adr/0008-oidc-bff-and-redis-session.md)) |
+| null 안정성 | JSpecify, NullAway | [코딩 표준 §2.1](coding-standards.md#21-백엔드) |
+| 화면 | Angular, TypeScript 6, Tailwind CSS | TypeScript 6은 엄격 모드가 기본값이다 |
+| API 계약 | springdoc-openapi, openapi-typescript | 백엔드 OpenAPI에서 프론트엔드 타입을 생성한다 (COM-NFR-032) |
+| 테스트 | JUnit 5, Testcontainers, ArchUnit / Vitest, MSW, Playwright | [공통 QA 기준 §2](qa-standards.md#2-테스트-수준) |
 
 ## 3. 컨텍스트 관점
 
@@ -144,14 +143,15 @@ com.board.bbs
 
 ![ERD: member, post, comment, post_like 테이블과 외래 키 관계](diagrams/erd.drawio.svg)
 
-| 테이블 | 주요 컬럼 | 제약·인덱스 | 마이그레이션 |
-|---|---|---|---|
-| `member` | `subject`, `nickname(50)`, `email` | `uk_member_subject UNIQUE(subject)` | V1 |
-| `post` | `title(100)`, `content(10000)`, `author_id`, `view_count`, `like_count`, `deleted_at` | 부분 인덱스 `idx_post_active_created_at (created_at DESC, id DESC) WHERE deleted_at IS NULL` | V2 |
-| `comment` | `post_id`, `author_id`, `body(1000)`, `parent_comment_id`, `depth`, `deleted_at` | `ck_comment_depth CHECK (depth BETWEEN 0 AND 1)`, 부분 인덱스 `idx_comment_active_by_post (post_id, created_at, id) WHERE deleted_at IS NULL` | V3 |
-| `post_like` | `post_id`, `member_id` | `uk_post_like UNIQUE(post_id, member_id)` | V4 |
+ERD의 컬럼은 이해를 돕기 위한 것이고, 정확한 정의는 마이그레이션이 기준이다. 설계상 의미가 있는 제약과 인덱스는 다음과 같다.
 
-모든 테이블은 `created_at`을 가지며, `post_like`를 제외한 테이블은 `updated_at`도 가진다. 시각은 `TIMESTAMPTZ`로 저장한다.
+| 대상 | 제약·인덱스 | 설계 의도 |
+|---|---|---|
+| `member.subject` | 유니크 | 같은 Keycloak 사용자를 한 번만 생성. 동시 최초 로그인의 중복 판정 기준 |
+| `post_like (post_id, member_id)` | 유니크 | 중복 좋아요를 데이터베이스가 최종 판정 ([ADR-0005](adr/0005-database-decides-duplicates.md)) |
+| `comment.depth` | `CHECK (0~1)` | 답글 깊이 제한을 도메인과 별도로 한 번 더 보장 |
+| `post`, `comment` | `deleted_at IS NULL` 부분 인덱스 | 소프트 삭제된 행을 빼고 정렬 순서대로 읽기 |
+| 모든 시각 | `TIMESTAMPTZ` | UTC 기준 저장 |
 
 ### 5.2 Valkey(Redis 호환) 키
 
@@ -162,14 +162,14 @@ com.board.bbs
 
 ### 5.3 도메인 모델과 영속성 모델의 분리
 
-도메인 객체와 JPA 엔티티는 별개의 클래스이며, 영속성 어댑터의 매퍼가 둘을 변환한다 ([ADR-0002](adr/0002-separate-domain-and-jpa-entity.md)). 도메인 객체는 `write()`(신규 생성, 식별자 없음)와 `restore()`(영속 상태 복원) 두 가지 팩토리 메서드만 가진다.
+도메인 객체와 JPA 엔티티는 별개의 클래스이며, 영속성 어댑터의 매퍼가 둘을 변환한다 ([ADR-0002](adr/0002-separate-domain-and-jpa-entity.md)). 도메인 객체를 만드는 경로는 신규 생성과 영속 상태 복원 두 가지뿐이다 ([코딩 표준 CS-B11](coding-standards.md#32-도메인-모델)).
 
 ## 6. 기능 간 상호작용
 
 | 상호작용 | 방식 | 트랜잭션 | 근거 |
 |---|---|---|---|
 | 게시글 삭제 시 댓글 삭제 | `post`가 `PostDeleted` 이벤트 발행 → `comment`의 `PostDeletedListener`가 동기로 수신 | 같은 트랜잭션. 게시글 삭제가 롤백되면 댓글 삭제도 롤백된다 | [ADR-0009](adr/0009-feature-boundaries-via-events.md) |
-| 댓글 작성 시 게시글 존재 확인 | `comment`가 `post`의 애플리케이션 서비스 `PostQueryService.getById` 호출 | 같은 트랜잭션 | [ADR-0009](adr/0009-feature-boundaries-via-events.md), [ADR-0010](adr/0010-drop-inbound-ports.md) |
+| 댓글 작성·목록 조회 시 게시글 존재 확인 | `comment`가 `post`의 애플리케이션 서비스 `PostQueryService` 호출 | 같은 트랜잭션 | [ADR-0009](adr/0009-feature-boundaries-via-events.md), [ADR-0010](adr/0010-drop-inbound-ports.md) |
 | 현재 회원 식별 | `member`의 `CurrentMemberArgumentResolver`가 `MemberService`를 거쳐 `@CurrentMember MemberId` 파라미터를 채운다 | 조회 전용 트랜잭션 | 기능 컨트롤러는 인증 방식을 알 필요가 없다 |
 
 ## 7. 보안 설계
@@ -191,8 +191,8 @@ sequenceDiagram
     B->>A: 인가 코드 전달
     A->>K: 인가 코드를 토큰으로 교환 (서버 간 통신)
     K-->>A: ID 토큰, 액세스 토큰
-    Note over A: BbsOidcUserService.loadUser
-    A->>M: provision(sub, nickname, email)
+    Note over A: BbsOidcUserService
+    A->>M: 회원 프로비저닝 (sub, 사용자 이름, 이메일)
     Note over M: 회원이 없을 때만 생성 (최초 1회)
     A->>A: realm 역할을 ROLE_* 권한으로 매핑
     A->>R: 세션 저장
@@ -250,30 +250,25 @@ sequenceDiagram
 ```
 frontend/src/app/
 ├── core/
-│   ├── api/       OpenAPI에서 생성한 타입(schema.d.ts), ProblemDetail 해석
-│   └── auth/      인증 인터셉터(401 → 로그인), 라우트 가드, 현재 회원 스토어
-├── features/
-│   ├── post/      post-api.service, post.store, pages, components
-│   └── comment/   comment-api.service, comment.store, components
+│   ├── api/       OpenAPI에서 생성한 타입, ProblemDetail 해석
+│   └── auth/      인증 인터셉터, 라우트 가드, 현재 회원 스토어
+├── features/      기능별 API 서비스, 스토어, 페이지, 컴포넌트
 ├── shared/ui/     공용 UI
 └── app.routes.ts
 ```
 
-- 기능마다 HTTP 호출만 담당하는 `*-api.service.ts`와 상태·무효화를 담당하는 `*.store.ts`로 나눈다. 컴포넌트는 스토어만 주입받는다.
+- 기능 내부 구조는 [코딩 표준 CS-F01](coding-standards.md#5-프론트엔드-규칙)을 따른다.
 - 개발 서버는 `/api`, `/oauth2`, `/login`, `/logout`을 백엔드로 프록시해서 동일 오리진을 만든다.
-- 백엔드 OpenAPI 문서에서 타입을 생성하므로, API 계약이 바뀌면 프론트엔드 타입 검사가 실패한다 (COM-NFR-032).
 
 | 경로 | 화면 | 인증 |
 |---|---|---|
 | `/` | 게시글 목록 (검색, 페이지) | 불필요 |
-| `/posts/new` | 게시글 작성 | 필요 (`authGuard`) |
+| `/posts/new` | 게시글 작성 | 필요 |
 | `/posts/:postId` | 게시글 상세 (댓글, 좋아요) | 불필요 |
-| `/posts/:postId/edit` | 게시글 수정 | 필요 (`authGuard`) |
+| `/posts/:postId/edit` | 게시글 수정 | 필요 |
 | `**` | 찾을 수 없음 | 불필요 |
 
-## 9. 실행 환경과 품질 게이트
-
-### 9.1 로컬 실행
+## 9. 실행 환경
 
 | 구성 요소 | 실행 방법 | 주소 |
 |---|---|---|
@@ -283,37 +278,7 @@ frontend/src/app/
 
 Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. 시험 계정은 `tester`(USER)와 `admin-user`(USER, ADMIN)이다.
 
-### 9.2 품질 게이트
-
-| 단계 | 명령 | 포함 검사 |
-|---|---|---|
-| 커밋 전 | Git hook (`hooks/pre-commit`, `core.hooksPath`로 연결) | 포맷, Checkstyle, 프론트엔드 변경 시 프론트엔드 검사 |
-| 커밋 메시지 | Git hook (`hooks/commit-msg`) | `type(scope): subject` 형식 |
-| 백엔드 빌드 | `./gradlew check` | Spotless, Checkstyle(이름·구조 규칙), Error Prone(경고도 실패)·NullAway, 단위·통합·아키텍처 테스트, JaCoCo |
-| 프론트엔드 | `pnpm verify` | ESLint, Prettier, 타입 검사, 단위 테스트 |
-| E2E | `pnpm e2e` | Playwright (백엔드와 컨테이너 필요) |
-| CI | `.github/workflows/backend.yml` | push(main), PR에서 `./gradlew check` |
-| 의존성 갱신 | `.github/dependabot.yml` | 매주 Gradle 의존성, GitHub Actions, compose 이미지 업데이트 PR 생성 |
-
-상세 기준은 [공통 QA 기준](qa-standards.md)에 있다.
-
-## 10. 아키텍처 결정 목록
-
-| ADR | 제목 |
-|---|---|
-| [0001](adr/0001-hexagonal-architecture-enforced-by-tests.md) | 헥사고날 아키텍처를 쓰고 테스트로 강제한다 |
-| [0002](adr/0002-separate-domain-and-jpa-entity.md) | 도메인 모델과 JPA 엔티티를 분리한다 |
-| [0003](adr/0003-authorization-in-domain.md) | 소유권 검사는 도메인에 둔다 |
-| [0004](adr/0004-atomic-counter-update.md) | 카운터는 원자적 UPDATE로만 바꾼다 |
-| [0005](adr/0005-database-decides-duplicates.md) | 중복 판정은 저장소에 맡긴다 |
-| [0006](adr/0006-querydsl-openfeign-fork.md) | QueryDSL은 openfeign 포크를 쓴다 |
-| [0007](adr/0007-flyway-single-source-of-schema.md) | 스키마는 Flyway가 유일한 출처다 |
-| [0008](adr/0008-oidc-bff-and-redis-session.md) | 인증은 OIDC BFF 방식, 세션은 Redis에 둔다 |
-| [0009](adr/0009-feature-boundaries-via-events.md) | 기능 사이의 의존은 이벤트와 공개 유스케이스로 한정한다 (일부 0010으로 대체) |
-| [0010](adr/0010-drop-inbound-ports.md) | 인바운드 포트를 두지 않고 아웃바운드 포트는 애그리게이트마다 하나로 한다 |
-| [0011](adr/0011-remove-lombok.md) | Lombok을 쓰지 않는다 |
-| [0012](adr/0012-version-catalog-and-dependabot.md) | 의존성 버전은 version catalog 한 곳에서 관리하고 Dependabot으로 갱신한다 |
-| [0013](adr/0013-valkey-instead-of-redis.md) | 세션과 조회수 키 저장소로 Redis 대신 Valkey를 쓴다 |
+빌드·커밋·CI 단계의 품질 게이트는 [코딩 표준 §2](coding-standards.md#2-도구가-강제하는-규칙)에, 완료 기준과 테스트 수준은 [공통 QA 기준](qa-standards.md)에 있다. 아키텍처 결정 목록은 [ADR 목록](adr/README.md)에 있다.
 
 ## 변경 이력
 
@@ -322,3 +287,4 @@ Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. �
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | `main` f46a99c 기준으로 갱신: 인바운드 포트 제거와 저장소 포트 통합(PR #5), Lombok 제거(PR #6), 의존성 관리(PR #8) 반영. 컨텍스트·계층·기능 의존·ERD 다이어그램과 로그인 시퀀스 추가 | HseongH |
 | 1.2.0 | 2026-10-09 | `main` 85cce67 기준으로 갱신: Valkey 전환(PR #15, ADR-0013), 액추에이터 접근 규칙(PR #18)과 URL 규칙 순서표, 회원 생성의 `ON CONFLICT` 사용(PR #20) 반영. 다이어그램을 라이트 테마로 다시 내보냄 | HseongH |
+| 1.3.0 | 2026-10-09 | 세밀도 조정: 세부 버전, 테이블 컬럼 표, 품질 게이트 목록, ADR 목록 사본을 빼고 기준 문서를 가리키도록 변경. 설계상 의미 있는 제약만 남김. 컨텍스트 구성도의 버전 표기 제거. 설계 내용은 바뀌지 않음 | HseongH |

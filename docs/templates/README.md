@@ -12,8 +12,9 @@
 | 2 | [project-srs.md](project-srs.md) | `docs/project/srs.md` |
 | 3 | [project-sds.md](project-sds.md) | `docs/project/sds.md` |
 | 4 | [qa-standards.md](qa-standards.md) | `docs/project/qa-standards.md` |
-| 5 | [adr.md](adr.md) | `docs/project/adr/0001-<결정-요약>.md` (결정마다 하나) |
-| 6 | 이 저장소의 [docs/README.md](../README.md) | `docs/README.md` (식별자 접두사와 문서 목록만 바꾼다) |
+| 5 | [coding-standards.md](coding-standards.md) | `docs/project/coding-standards.md` |
+| 6 | [adr.md](adr.md) | `docs/project/adr/0001-<결정-요약>.md` (결정마다 하나) |
+| 7 | 이 저장소의 [docs/README.md](../README.md) | `docs/README.md` (식별자 접두사와 문서 목록만 바꾼다) |
 
 ### 새 기능을 개발할 때
 

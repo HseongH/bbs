@@ -238,7 +238,7 @@ frontend/src/app/
 
 | 구분 | 문서 |
 |---|---|
-| 프로젝트 공통 | [Project Charter](docs/project/charter.md) · [SRS](docs/project/srs.md) · [SDS](docs/project/sds.md) · [QA 기준](docs/project/qa-standards.md) · [ADR](docs/project/adr/README.md) |
+| 프로젝트 공통 | [Project Charter](docs/project/charter.md) · [SRS](docs/project/srs.md) · [SDS](docs/project/sds.md) · [QA 기준](docs/project/qa-standards.md) · [코딩 표준](docs/project/coding-standards.md) · [ADR](docs/project/adr/README.md) |
 | 회원·인증 | [SRS](docs/features/member/srs.md) · [SDS](docs/features/member/sds.md) · [QA](docs/features/member/qa-checklist.md) |
 | 게시글 | [SRS](docs/features/post/srs.md) · [SDS](docs/features/post/sds.md) · [QA](docs/features/post/qa-checklist.md) |
 | 댓글 | [SRS](docs/features/comment/srs.md) · [SDS](docs/features/comment/sds.md) · [QA](docs/features/comment/qa-checklist.md) |
