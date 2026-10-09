@@ -1,7 +1,7 @@
 ---
 doc_id: PST-QA
 title: 게시글 QA 체크리스트
-version: 1.0.2
+version: 1.1.0
 status: In Review
 owner: HseongH
 reviewers: []
@@ -22,7 +22,7 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 | 수행일 | 2026-10-09 |
 | 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 115개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (린트 통과, 타입 검사 통과, 테스트 파일 12개·테스트 39개 통과) |
-| E2E | 실행하지 않음 (N/T) |
+| E2E | `pnpm e2e` 성공 (Firefox, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 0b719d8에 Firefox 설정을 적용해 2026-10-09 수행 |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
 ## 2. 테스트 항목
@@ -90,7 +90,7 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 | TC-PST-040 | PST-FR-020 | 목록 화면 표시 | 제목과 작성자 표시 | `post-list-page.spec: 게시글 제목과 작성자를 보여준다` | Pass |
 | TC-PST-041 | PST-FR-020 | 결과가 없는 검색 | 안내 문구 | `post-list-page.spec: 결과가 없으면 안내를 보여준다` | Pass |
 | TC-PST-042 | PST-FR-020 | 현재 페이지 버튼 | `aria-current`로 현재 위치 알림 | `post-list-page.spec: 현재 페이지 버튼을 보조기술에 알린다` | Pass |
-| TC-PST-043 | PST-FR-020 | 검색 후 새로고침 | URL에 `keyword`가 남고 같은 결과 | E2E `board.spec: 검색 결과가 URL에 남는다` | N/T |
+| TC-PST-043 | PST-FR-020 | 검색 후 새로고침 | URL에 `keyword`가 남고 같은 결과 | E2E `board.spec: 검색 결과가 URL에 남는다` | Pass |
 | TC-PST-044 | PST-FR-020 | 공백뿐인 키워드로 검색 | 키워드 없이 요청 | `post.store.spec: 공백뿐인 키워드는 조건에서 빠진다` | Pass |
 | TC-PST-045 | PST-FR-021 | 본인 글과 남의 글 상세 | 본인 글에만 수정·삭제 버튼 | `post-detail-page.spec: 작성자 본인에게만…`, `…다른 사람 글에는…` | Pass |
 | TC-PST-046 | PST-FR-021 | 없는 글 상세 | 안내 문구 | `post-detail-page.spec: 없는 글이면 안내를 보여준다` | Pass |
@@ -98,7 +98,7 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 | TC-PST-048 | PST-FR-022 | 수정 화면 진입 | 기존 값이 채워짐 | `post-form.spec: 수정 모드에서는 기존 값이 채워진다` | Pass |
 | TC-PST-049 | PST-FR-023 | 서버 검증 오류 | 필드 아래 메시지, 전체 메시지 중복 없음 | `post-form.spec: 서버 검증 오류를…`, `…겹쳐 보여주지 않는다` | Pass |
 | TC-PST-050 | PST-FR-024 | 좋아요 버튼 클릭 | 숫자 증가, 중복이면 안내 | `like-button.spec` 2건 | Pass |
-| TC-PST-051 | PST-FR-001, 021, 024 | 글 작성 → 상세 → 좋아요 | 전체 흐름 성공 | E2E `board.spec: 글을 쓰고 댓글과 좋아요를 남긴다` | N/T |
+| TC-PST-051 | PST-FR-001, 021, 024 | 글 작성 → 상세 → 좋아요 | 전체 흐름 성공 | E2E `board.spec: 글을 쓰고 댓글과 좋아요를 남긴다` | Pass |
 
 ## 3. 추적 요약
 
@@ -115,14 +115,15 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 | PST-FR-009 | 015~017, 019 | 부분 (대소문자 무시 미검증) |
 | PST-FR-010 | 018 | 완전 |
 | PST-FR-011 | 029, 030 | 완전 |
-| PST-FR-020~024 | 040~051 | 화면 단위 테스트 완전, E2E 2건은 이번 수행 미실행 |
+| PST-FR-020~024 | 040~051 | 화면 단위 테스트 완전, E2E 2건 |
 | PST-NFR-001 | 033, 034 | 완전 |
 | PST-NFR-002 | - | 설계 검토로만 확인. 쿼리 횟수 테스트 없음 |
 
 ## 4. 결과 요약과 후속 조치
 
 - 판정 근거: 2026-10-09에 `main` 85cce67에서 `./gradlew check`와 `pnpm verify`를 실행한 결과 (§1).
-- 집계: 전체 48건 중 Pass 41, Fail 0, N/T 7 (자동 테스트 없음 5, E2E 미실행 2).
+- 집계: 전체 48건 중 Pass 43, Fail 0, N/T 5 (자동 테스트 없음 5).
+- E2E 2건(TC-PST-043, 051)은 1.0.x까지 N/T였다. E2E 브라우저를 Firefox로 바꾸고 실행해 Pass로 판정했다.
 - **자동 테스트가 없는 항목**(TC-PST-010, 019, 022, 035, 036)은 테스트를 추가할 후보다. 특히 TC-PST-022는 "관리자도 수정할 수 없다"는 규칙을 명시적으로 고정하는 회귀 테스트로 가치가 크다.
 - PST-NFR-002(목록 쿼리 횟수)는 쿼리 횟수를 세는 테스트를 추가하면 자동 검증으로 바꿀 수 있다.
 
@@ -133,3 +134,4 @@ related: [PRJ-QA 1.2.0, PST-SRS 1.0.0, PST-SDS 1.2.0]
 | 1.0.0 | 2026-10-09 | 최초 작성 (`main` e96a878 기준 수행) | HseongH |
 | 1.0.1 | 2026-10-09 | `main` f46a99c(포트 정리, Lombok 제거 반영)에서 재수행. 판정 변화 없음. 참조 테스트 이름 전수 확인 | HseongH |
 | 1.0.2 | 2026-10-09 | `main` 85cce67(결함 수정 3건, Valkey 전환 반영)에서 재수행. 판정 변화 없음 | HseongH |
+| 1.1.0 | 2026-10-09 | E2E를 Firefox로 실행해 TC-PST-043, 051을 N/T → Pass로 판정 | HseongH |

@@ -95,7 +95,7 @@ docker compose rm -sf keycloak && docker compose up -d keycloak
 
 GitHub Actions(`.github/workflows/backend.yml`)가 push와 PR마다 같은 `./gradlew check`를 실행한다.
 
-프론트엔드는 `cd frontend && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다.
+프론트엔드는 `cd frontend && pnpm verify`가 ESLint, 타입 검사, 테스트를 순서대로 실행한다. E2E는 백엔드와 컨테이너가 필요하므로 `pnpm e2e`로 따로 실행한다. E2E 브라우저는 Firefox이며, 처음 한 번 `pnpm exec playwright install firefox`로 Playwright 전용 Firefox를 내려받아야 한다 (설치된 Firefox는 쓰지 않는다).
 
 `installGitHooks` 태스크가 `build` 시 자동으로 실행되어, Git이 저장소의 `hooks/`를 훅 경로(`core.hooksPath`)로 쓰게 한다. 커밋 전에는 포맷과 정적 분석을 검사하고, 커밋 메시지가 Angular 형식(`type(scope): subject`)을 따르는지 검사한다. 훅을 복사하지 않으므로 고친 내용이 바로 반영되고 워크트리에서도 동작한다. `frontend/` 아래 변경이 있으면 프론트엔드 검사도 함께 실행한다.
 

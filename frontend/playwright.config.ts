@@ -16,10 +16,10 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
-    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    { name: "setup", testMatch: /auth\.setup\.ts/, use: { ...devices["Desktop Firefox"] } },
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"], storageState: 저장된로그인 },
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"], storageState: 저장된로그인 },
       dependencies: ["setup"],
     },
   ],
