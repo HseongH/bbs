@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /** 게시글 읽기 유스케이스 구현. */
 @Service
@@ -57,8 +59,22 @@ public class PostQueryService {
   public Post getAndCountView(PostId id, String viewerKey) {
     Post post = postRepository.load(id);
     if (viewDeduplicationPort.markViewed(id, viewerKey)) {
+      forgetViewOnRollback(id, viewerKey);
       postRepository.increaseViewCount(id);
     }
     return post;
+  }
+
+  /** 조회 기록은 Redis에 있어 트랜잭션과 함께 롤백되지 않는다. 기록을 남겨 두면 그 조회자는 기록이 만료될 때까지 집계되지 않으므로, 롤백되면 기록을 지운다. */
+  private void forgetViewOnRollback(PostId id, String viewerKey) {
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCompletion(int status) {
+            if (status == STATUS_ROLLED_BACK) {
+              viewDeduplicationPort.unmarkViewed(id, viewerKey);
+            }
+          }
+        });
   }
 }
