@@ -2,7 +2,7 @@
 
 - 상태: Proposed
 - 일자: 2026-10-09
-- 관련: COM-NFR-030, COM-NFR-031, COM-NFR-032, [ADR-0012](0012-version-catalog-and-dependabot.md)
+- 관련: COM-NFR-006, COM-NFR-031~035, COM-CON-004, COM-CON-006 (PRJ-SRS 1.5.0), PRJ-SDS 1.6.0 §9·§10, [ADR-0012](0012-version-catalog-and-dependabot.md)
 
 ## 맥락
 

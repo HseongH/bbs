@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-SRS
 title: 게시판(bbs) 프로젝트 요구사항 명세서
-version: 1.4.0
+version: 1.5.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.5.0, PRJ-QA 1.2.0]
+related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.6.0, PRJ-QA 1.3.0, PRJ-QC 1.0.0]
 ---
 
 # 게시판(bbs) 프로젝트 요구사항 명세서
@@ -36,6 +36,7 @@ related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.5.0, PRJ-QA 1.2.0]
 | 대댓글 | 원댓글에 단 답글 (깊이 1) |
 | 소프트 삭제 | 행을 지우지 않고 삭제 시각(`deleted_at`)만 기록하는 삭제 방식 |
 | ProblemDetail | RFC 9457이 정의하는 HTTP API 오류 응답 형식 |
+| 서비스 | 따로 빌드하고 배포하는 단위. 저장소의 `services/` 아래에 하나씩 둔다 (현재 `board`, `web`) |
 
 ### 1.4 참고 문서
 
@@ -48,10 +49,10 @@ related: [PRJ-CHARTER 1.0.0, PRJ-SDS 1.5.0, PRJ-QA 1.2.0]
 ### 2.1 시스템 구성 관점
 
 ```
-브라우저 (Angular SPA)
+브라우저 (Angular SPA, web 서비스)
    │  동일 오리진, 세션 쿠키 + CSRF 쿠키
    ▼
-bbs 애플리케이션 (Spring Boot)  ──OIDC──▶  Keycloak
+bbs 애플리케이션 (board 서비스, Spring Boot)  ──OIDC──▶  Keycloak
    │                    │
    ▼                    ▼
 PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
@@ -109,6 +110,7 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | COM-NFR-003 | 상태를 바꾸는 요청(POST, PATCH, DELETE)은 CSRF 토큰이 없으면 거부한다. 조회 요청은 토큰 없이 허용하고 토큰 쿠키를 발급한다. | `SecurityCsrfTest#토큰_없는_변경_요청은_거부된다`, `CsrfCookieIssuanceTest#조회_요청은_토큰이_필요없고_토큰_쿠키를_내려준다` |
 | COM-NFR-004 | 오류 응답에 스택트레이스, 예외 클래스명, SQL 같은 내부 정보를 담지 않는다. 예상하지 못한 예외는 `500 INTERNAL_ERROR`로 변환하고 서버 로그에만 기록한다. | `GlobalExceptionHandlerTest` |
 | COM-NFR-005 | 소유권(작성자 여부) 검사는 도메인 객체 안에서 수행해서, 어떤 호출 경로로도 우회할 수 없어야 한다. | `PostTest`, `CommentTest`의 권한 테스트 ([ADR-0003](adr/0003-authorization-in-domain.md)) |
+| COM-NFR-006 | 개발 환경의 컨테이너 포트는 기본적으로 루프백 주소(`127.0.0.1`)에만 열린다. 접속 정보와 바인딩 주소는 저장소의 파일을 고치지 않고 환경 변수로 바꿀 수 있다. | [프로젝트 QA](qa-checklist.md) TC-COM-010, 011 |
 
 ### 4.2 데이터 무결성과 동시성
 
@@ -134,8 +136,11 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | ID | 요구사항 | 검증 |
 |---|---|---|
 | COM-NFR-030 | 계층 사이의 의존 방향과 기능 사이의 경계를 자동 테스트로 강제한다. | `HexagonalArchitectureTest`, `FeatureBoundaryTest` |
-| COM-NFR-031 | 코드 포맷, 정적 분석, null 안정성, 테스트, 커버리지 기준 중 하나라도 위반하면 빌드가 실패한다. | `./gradlew check`, CI (`.github/workflows/backend.yml`) |
-| COM-NFR-032 | 백엔드 API가 바뀌면 프론트엔드 타입 검사가 실패해야 한다 (API 계약의 컴파일 시점 검증). | `pnpm gen:api` 후 `pnpm typecheck` |
+| COM-NFR-031 | 코드 포맷, 정적 분석, null 안정성, 테스트, 커버리지 기준 중 하나라도 위반하면 빌드가 실패한다. | `./gradlew check`, 서비스별 CI (`.github/workflows/`), [프로젝트 QA](qa-checklist.md) TC-COM-001~003 |
+| COM-NFR-032 | 백엔드 API가 바뀌면 프론트엔드 타입 검사가 실패해야 한다 (API 계약의 컴파일 시점 검증). | `pnpm gen:api` 후 `pnpm typecheck`, [프로젝트 QA](qa-checklist.md) TC-COM-015 |
+| COM-NFR-033 | 모든 서비스는 변경이 PR에 올라오면 그 서비스의 검증이 자동으로 실행된다. Java 서비스 공통 빌드 파일이 바뀌면 모든 Java 서비스가 검증된다. 관계없는 서비스의 검증은 실행하지 않는다. | [프로젝트 QA](qa-checklist.md) TC-COM-005~007 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)) |
+| COM-NFR-034 | 모든 Java 서비스는 공통 빌드 규칙으로 같은 품질 기준(COM-NFR-031)을 적용받는다. 서비스의 빌드 스크립트에 품질 규칙을 복사하지 않는다. | [프로젝트 QA](qa-checklist.md) TC-COM-001~004 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)) |
+| COM-NFR-035 | 모든 서비스의 의존성(Gradle, npm, GitHub Actions, 컨테이너 이미지)은 자동 갱신 PR로 관리한다. | [프로젝트 QA](qa-checklist.md) TC-COM-008 ([ADR-0012](adr/0012-version-catalog-and-dependabot.md), [ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)) |
 
 ### 4.5 성능 (미정)
 
@@ -181,8 +186,9 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | COM-CON-001 | 백엔드는 Java 25, Spring Boot 4.1 계열을 사용한다. |
 | COM-CON-002 | 데이터 저장소는 PostgreSQL, 세션과 캐시성 데이터는 Redis 프로토콜 호환 저장소(Valkey)를 사용한다. 라이선스 검토가 필요 없는 구현을 쓴다 ([ADR-0013](adr/0013-valkey-instead-of-redis.md)). |
 | COM-CON-003 | 화면은 백엔드와 동일 오리진에서 제공한다. CORS를 허용하지 않는다. |
-| COM-CON-004 | 로컬 실행에 필요한 외부 시스템(PostgreSQL, Valkey, Keycloak)은 `docker compose up -d` 한 번으로 준비되어야 한다. |
+| COM-CON-004 | 로컬 실행에 필요한 외부 시스템(PostgreSQL, Valkey, Keycloak)은 `docker compose -f deploy/compose.yaml up -d` 한 번으로 준비되어야 한다. 환경 변수 파일(`.env`)이 없어도 개발 기본값으로 동작한다. |
 | COM-CON-005 | 데이터베이스 스키마는 Flyway 마이그레이션으로만 변경한다. |
+| COM-CON-006 | 시험용 사용자 계정은 Keycloak realm 구조와 분리해서 두고, 개발 환경에서만 가져온다. |
 
 ## 7. 미결 사항
 
@@ -202,3 +208,4 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | 1.2.0 | 2026-10-09 | Valkey 전환 반영 (COM-CON-002, COM-NFR-020, PR #15) | HseongH |
 | 1.3.0 | 2026-10-09 | 원댓글 단위 댓글 목록 반영: COM-NFR-012에 삭제된 원댓글 자리 표시 예외(CMT-FR-009) 추가, COM-NFR-014의 검증 테스트를 원댓글 목록 테스트로 교체 | HseongH |
 | 1.4.0 | 2026-10-09 | 코드 리뷰 결함 수정 반영: COM-IF-004에 1보다 작은 식별자(경로 변수, 요청 본문) 추가, COM-NFR-002에 401 응답의 형식 조건 추가 | HseongH |
+| 1.5.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): 용어 "서비스" 추가, 시스템 구성 관점에 서비스 이름 병기, COM-NFR-006·033·034·035와 COM-CON-006 추가, COM-CON-004·COM-NFR-031·032의 실행 경로와 검증 수단 갱신. 기능에 속하지 않는 공통 요구사항의 검증은 [프로젝트 QA 체크리스트](qa-checklist.md)로 연결 | HseongH |

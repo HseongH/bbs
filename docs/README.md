@@ -14,6 +14,7 @@
 | 프로젝트 SRS | [project/srs.md](project/srs.md) | 시스템 전체가 무엇을 해야 하는가 | ISO/IEC/IEEE 29148 |
 | 프로젝트 SDS | [project/sds.md](project/sds.md) | 시스템 전체가 어떤 구조인가 | IEEE 1016, ISO/IEC/IEEE 42010 |
 | 공통 QA 기준 | [project/qa-standards.md](project/qa-standards.md) | 무엇을 만족해야 완료인가 | ISO/IEC/IEEE 29119-3 (경량화) |
+| 프로젝트 QA 체크리스트 | [project/qa-checklist.md](project/qa-checklist.md) | 기능에 속하지 않는 공통 요구사항(빌드, CI, 개발 환경)을 어떻게 확인했는가 | ISO/IEC/IEEE 29119-3 (경량화) |
 | 코딩 표준 | [project/coding-standards.md](project/coding-standards.md) | 코드를 어떻게 쓰는가 | DO-178C Software Code Standards에 해당, 사내 코딩 규약 |
 | ADR | [project/adr/](project/adr/README.md) | 왜 그렇게 결정했는가 | Michael Nygard ADR 형식 |
 
@@ -43,7 +44,8 @@ Project Charter          왜, 어디까지
         ├─ 기능 SRS       기능의 상세 요구사항
         │    └─ 기능 SDS  기능의 상세 설계
         │         └─ QA 체크리스트  요구사항별 검증 결과
-        └─ 프로젝트 SDS   아키텍처 + 공통 컴포넌트 (기능 SDS가 참조)
+        ├─ 프로젝트 SDS   아키텍처 + 공통 컴포넌트 (기능 SDS가 참조)
+        └─ 프로젝트 QA 체크리스트  기능에 속하지 않는 공통 요구사항의 검증 결과
 ```
 
 1. **중복하지 않는다.** 기능 문서는 프로젝트 문서를 참조하고, 공통 기준을 반복해서 적지 않는다. 공통 기준과 **다른 점만** 적는다.
@@ -77,6 +79,7 @@ Project Charter          왜, 어디까지
 | 기능 요구사항 | `<기능>-FR-NNN` | `PST-FR-004` |
 | 기능별 비기능 요구사항 | `<기능>-NFR-NNN` | `PST-NFR-001` |
 | QA 테스트 항목 | `TC-<기능>-NNN` | `TC-CMT-007` |
+| 공통 요구사항의 QA 테스트 항목 | `TC-COM-NNN` | `TC-COM-003` |
 | 아키텍처 결정 | `ADR-NNNN` | `ADR-0004` |
 
 기능 접두사는 `MEM`(회원·인증), `PST`(게시글), `CMT`(댓글)이다.
@@ -160,3 +163,4 @@ SDS는 코드보다 오래 맞아야 한다. 그래서 **리팩터링 한 번에
 | 1.1.0 | 2026-10-09 | 다이어그램 규칙(§3) 추가 | HseongH |
 | 1.1.1 | 2026-10-09 | draw.io 내보내기 테마 규칙 정정 | HseongH |
 | 1.2.0 | 2026-10-09 | 코딩 표준을 문서 목록에 추가. SDS 작성 기준(§8) 추가 | HseongH |
+| 1.3.0 | 2026-10-09 | 프로젝트 QA 체크리스트(`TC-COM`)를 문서 목록, 계층 구조, 식별자 규칙에 추가 (ADR-0014) | HseongH |

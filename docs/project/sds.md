@@ -1,20 +1,20 @@
 ---
 doc_id: PRJ-SDS
 title: 게시판(bbs) 프로젝트 설계 명세서
-version: 1.5.0
+version: 1.6.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.4.0, PRJ-QA 1.2.0, PRJ-CS 1.0.0]
+related: [PRJ-SRS 1.5.0, PRJ-QA 1.3.0, PRJ-QC 1.0.0, PRJ-CS 1.0.0]
 ---
 
 # 게시판(bbs) 프로젝트 설계 명세서
 
 > IEEE 1016의 설계 관점(context, composition, dependency, information, interface, interaction) 중 **프로젝트 전체에 해당하는 부분**을 담는다. 아키텍처 기술(ISO/IEC/IEEE 42010)도 이 문서에 포함했다. 기능별 상세 설계는 각 기능 SDS에 있다.
 >
-> **이 문서가 다루지 않는 것:** 라이브러리와 이미지의 세부 버전(`gradle/libs.versions.toml`, `compose.yaml`, `frontend/package.json`이 기준), 테이블의 컬럼 정의(Flyway 마이그레이션이 기준), 품질 게이트와 코딩 규칙([코딩 표준](coding-standards.md)이 기준). 작성 기준은 [문서 체계 §8](../README.md#8-sds-작성-기준)에 있다.
+> **이 문서가 다루지 않는 것:** 라이브러리와 이미지의 세부 버전(`gradle/libs.versions.toml`, `deploy/compose.yaml`, `services/web/package.json`이 기준), 테이블의 컬럼 정의(Flyway 마이그레이션이 기준), 품질 게이트와 코딩 규칙([코딩 표준](coding-standards.md)이 기준). 작성 기준은 [문서 체계 §8](../README.md#8-sds-작성-기준)에 있다.
 
 ## 1. 개요
 
@@ -39,6 +39,7 @@ related: [PRJ-SRS 1.4.0, PRJ-QA 1.2.0, PRJ-CS 1.0.0]
 | 인증과 보안이 어떻게 동작하는가 | 개발자, 보안 검토자 | §7 보안 |
 | 화면은 어떻게 구성되는가 | 개발자 | §8 화면 구성 |
 | 어떻게 실행하는가 | 개발자 | §9 실행 환경 |
+| 저장소와 빌드를 어떻게 나누고 무엇이 검증하는가 | 개발자 | §10 저장소와 빌드 구성 |
 
 ## 2. 기술 스택
 
@@ -252,7 +253,7 @@ sequenceDiagram
 ## 8. 화면(SPA) 구성
 
 ```
-frontend/src/app/
+services/web/src/app/
 ├── core/
 │   ├── api/       OpenAPI에서 생성한 타입, ProblemDetail 해석
 │   └── auth/      인증 인터셉터, 라우트 가드, 현재 회원 스토어
@@ -276,13 +277,59 @@ frontend/src/app/
 
 | 구성 요소 | 실행 방법 | 주소 |
 |---|---|---|
-| PostgreSQL, Valkey, Keycloak | `docker compose up -d` | Keycloak 콘솔 `localhost:8081` |
-| 백엔드 | `./gradlew bootRun` | `localhost:8080` |
-| 화면 | `cd frontend && pnpm dev` | `localhost:5173` |
+| PostgreSQL, Valkey, Keycloak | `docker compose -f deploy/compose.yaml up -d` (board를 `bootRun`으로 실행하면 자동으로 띄운다) | Keycloak 콘솔 `localhost:8081` |
+| board | `./gradlew :services:board:bootRun` | `localhost:8080` |
+| web | `cd services/web && pnpm dev` | `localhost:5173` |
 
-Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. 시험 계정은 `tester`(USER)와 `admin-user`(USER, ADMIN)이다.
+- **접속 정보와 포트.** compose 파일의 접속 정보와 바인딩 주소는 `${변수:-개발 기본값}` 형태다. `.env` 없이 바로 실행되고, 바꿀 값만 `deploy/.env`에 적는다(변수 목록은 `deploy/.env.example`). 포트는 기본적으로 `127.0.0.1`에만 열어 같은 네트워크의 다른 기기에 개발용 DB와 Keycloak이 노출되지 않게 한다. 다른 기기(휴대폰 등)에서 화면을 확인해야 할 때만 바인딩 주소와 호스트 이름을 바꾼다 (COM-NFR-006).
+- **Keycloak 가져오기.** realm 구조(클라이언트, 역할)는 `deploy/keycloak/bbs-realm.json`에, 개발용 시험 사용자는 `deploy/keycloak/dev/bbs-users-0.json`에 둔다. Keycloak은 가져오기 디렉터리의 `<realm>-users-<n>.json`을 같은 realm의 사용자로 가져온다. 개발 환경만 두 파일을 함께 넣으므로, 다른 환경은 사용자 파일을 빼는 것만으로 시험 계정 없이 시작한다 (COM-CON-006). 시험 계정은 `tester`(USER)와 `admin-user`(USER, ADMIN)이다.
+- **compose 파일을 찾는 방법.** board의 개발 실행은 서비스 디렉터리 기준 상대 경로로 compose 파일을 찾는다(Gradle `bootRun`과 IDE의 기본 작업 디렉터리가 모두 서비스 디렉터리다). 통합 테스트는 작업 디렉터리에 기대지 않도록 빌드가 넘겨주는 절대 경로로 같은 파일을 읽어 컨테이너 이미지를 정한다.
 
 빌드·커밋·CI 단계의 품질 게이트는 [코딩 표준 §2](coding-standards.md#2-도구가-강제하는-규칙)에, 완료 기준과 테스트 수준은 [공통 QA 기준](qa-standards.md)에 있다. 아키텍처 결정 목록은 [ADR 목록](adr/README.md)에 있다.
+
+## 10. 저장소와 빌드 구성
+
+저장소는 배포 단위(서비스)로 나눈 모노레포다 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)).
+
+```
+services/board/    게시판 서비스 (Spring Boot)
+services/web/      화면 (Angular, pnpm)
+build-logic/       Java 서비스 공통 빌드 규칙 (Gradle included build)
+deploy/            개발 실행 환경 (compose, Keycloak 가져오기 파일)
+config/checkstyle/ Java 서비스 공통 Checkstyle 규칙
+gradle/            Gradle 래퍼, 버전 카탈로그
+```
+
+내용이 없는 서비스나 디렉터리는 만들지 않는다. 다음 서비스(인증 `auth`, 진입점 프록시)와 공유 라이브러리는 첫 코드와 함께 추가한다.
+
+### 10.1 Java 빌드
+
+| 요소 | 책임 |
+|---|---|
+| 루트 `settings.gradle.kts` | `build-logic` 포함, Java 서비스 등록, 의존성 저장소 선언 |
+| 루트 `build.gradle.kts` | 저장소 전체의 작업만: Git 훅 설치, Gradle 스크립트 포맷 검사 |
+| `bbs.java-conventions` | 모든 Java 모듈의 품질 기준: 툴체인, 컴파일 옵션, Error Prone·NullAway, Checkstyle, 포맷, 커버리지 기준 |
+| `bbs.spring-boot-conventions` | Spring Boot 서비스 공통: 위 규칙, Spring Boot와 의존성 관리 플러그인, 공통 테스트 의존성 |
+| 서비스의 `build.gradle.kts` | 그 서비스만의 의존성과 설정 |
+
+- 품질 규칙은 컨벤션 플러그인에만 있다. 서비스는 플러그인을 적용해 같은 기준을 얻고, 규칙을 복사하지 않는다 (COM-NFR-034).
+- 버전은 루트의 버전 카탈로그 한 곳에서 관리하고 `build-logic`도 같은 카탈로그를 읽는다. 컨벤션 플러그인이 쓰는 외부 플러그인은 `build-logic`의 의존성으로 선언하므로 서비스의 빌드 스크립트에는 플러그인 버전이 없다.
+- 커버리지 기준의 패키지 패턴은 서비스 이름과 무관하게(`*.domain`, `*.application.*`) 둔다.
+
+### 10.2 CI
+
+| 워크플로 | 실행 조건 | 검증 |
+|---|---|---|
+| `board` | board 디렉터리, Java 공통 빌드 파일(`build-logic/`, `gradle/`, `config/`, 루트 Gradle 파일), 통합 테스트가 이미지를 읽는 `deploy/compose.yaml`, 워크플로 자신 | `./gradlew :services:board:check` |
+| `web` | web 디렉터리, 워크플로 자신 | `pnpm verify` |
+| `line-endings` | 모든 변경 | 저장소에 CRLF가 없는지 |
+
+- 실행 조건은 제외 목록이 아니라 **포함 목록**으로 둔다. 서비스가 늘어도 새 서비스의 변경이 관계없는 워크플로를 실행하지 않는다 (COM-NFR-033).
+- Java 공통 빌드 파일은 모든 Java 서비스의 워크플로 실행 조건에 들어간다. 공통 파일을 새로 만들면 각 워크플로의 목록에도 추가해야 한다.
+
+### 10.3 의존성 갱신
+
+Dependabot이 매주 Gradle(루트 카탈로그), npm(`services/web`), GitHub Actions, compose 이미지(`deploy/`)의 갱신 PR을 올린다. minor·patch는 생태계마다 한 PR로 묶는다. 갱신 PR도 위의 서비스별 CI가 검증한다 (COM-NFR-035).
 
 ## 변경 이력
 
@@ -294,3 +341,4 @@ Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. �
 | 1.3.0 | 2026-10-09 | 세밀도 조정: 세부 버전, 테이블 컬럼 표, 품질 게이트 목록, ADR 목록 사본을 빼고 기준 문서를 가리키도록 변경. 설계상 의미 있는 제약만 남김. 컨텍스트 구성도의 버전 표기 제거. 설계 내용은 바뀌지 않음 | HseongH |
 | 1.4.0 | 2026-10-09 | 댓글 목록을 원댓글 단위로 조회하기 위한 부분 인덱스 두 개 반영 (CMT-SDS 1.4.0) | HseongH |
 | 1.5.0 | 2026-10-09 | 오류 처리(§7.4): 메서드 검증 실패 변환 추가, 오류 응답 본문 생성 지점을 하나로 모은 결정 기록 (PRJ-SRS 1.4.0) | HseongH |
+| 1.6.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): §10 저장소와 빌드 구성(Java 빌드, CI, 의존성 갱신) 추가, §9 실행 환경을 `deploy/` 기준으로 갱신(환경 변수, 루프백 바인딩, Keycloak 가져오기 파일 분리), 화면 경로 갱신 (PRJ-SRS 1.5.0) | HseongH |
