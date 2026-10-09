@@ -182,7 +182,7 @@ ERD의 컬럼은 이해를 돕기 위한 것이고, 정확한 정의는 마이�
 
 ## 7. 보안 설계
 
-인증은 auth 서비스가 맡고, 업무 서비스(board)에는 auth가 서명한 내부 토큰으로 사용자를 전달한다 ([ADR-0016](adr/0016-auth-service-with-internal-token.md)). 브라우저 쪽에서 보면 지금까지와 같은 BFF 방식이다 ([ADR-0008](adr/0008-oidc-bff-and-redis-session.md)).
+인증은 auth 서비스가 맡고, 업무 서비스(board)에는 auth가 서명한 내부 토큰으로 사용자를 전달한다 ([ADR-0016](adr/0016-auth-service-with-internal-token.md)). Keycloak에 연결하는 서비스는 auth 하나뿐이다. board가 연결하는 곳은 auth의 공개키 주소뿐이므로, board는 Keycloak의 주소도 토큰 형식도 모른다. 브라우저 쪽에서 보면 지금까지와 같은 BFF 방식이다 ([ADR-0008](adr/0008-oidc-bff-and-redis-session.md)).
 
 ### 7.1 로그인 흐름
 
