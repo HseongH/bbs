@@ -8,6 +8,8 @@ spring:
       enabled: true
   docker:
     compose:
+      # 서비스 디렉터리 기준 경로. Gradle bootRun과 IDE의 기본 작업 디렉터리가 모두 서비스 디렉터리다.
+      file: ../../deploy/compose.yaml
       lifecycle-management: start_only
   jpa:
     hibernate:

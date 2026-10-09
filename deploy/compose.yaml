@@ -1,0 +1,72 @@
+# 개발용 외부 시스템. 접속 정보와 바인딩 주소는 환경 변수로 바꿀 수 있고(deploy/.env.example),
+# 값을 주지 않으면 개발 기본값을 쓴다. 포트는 기본적으로 이 PC(127.0.0.1)에만 연다.
+# 저장소 이름으로 고정한다. 정하지 않으면 디렉터리 이름(deploy)이 쓰인다.
+name: bbs
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bbs}
+      POSTGRES_USER: ${POSTGRES_USER:-bbs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bbs}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:5432:5432"
+    healthcheck:
+      # $$는 compose가 아니라 컨테이너 셸이 변수를 해석하게 한다.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Redis 프로토콜과 호환되는 BSD 라이선스 포크. 스프링 부트는 이미지 이름으로 Valkey를 알아보지 못하므로
+  # 레이블로 Redis 연결임을 알려 준다.
+  valkey:
+    image: valkey/valkey:9-alpine
+    labels:
+      org.springframework.boot.service-connection: redis
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # realm 구조(bbs-realm.json)와 개발용 시험 사용자(dev/bbs-users-0.json)를 함께 가져온다.
+  # 다른 환경은 사용자 파일을 빼고 시작한다.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >
+        mkdir -p /opt/keycloak/data/import &&
+        sed "s|__BBS_HOST__|${BBS_HOST:-localhost}|g"
+        /opt/keycloak/data/import-template/bbs-realm.json
+        > /opt/keycloak/data/import/bbs-realm.json &&
+        cp /opt/keycloak/data/import-template/dev/bbs-users-0.json /opt/keycloak/data/import/ &&
+        exec /opt/keycloak/bin/kc.sh start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: http://${BBS_HOST:-localhost}:8081
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import-template:ro
+    ports:
+      # 다른 기기의 브라우저가 로그인하려면 Keycloak만 열면 된다. DB와 Valkey는 계속 이 PC에만 둔다.
+      - "${KEYCLOAK_BIND_ADDRESS:-${BIND_ADDRESS:-127.0.0.1}}:8081:8080"
+    # realm 가져오기까지 끝나야 준비된 것이다. 이 검사가 없으면 `up --wait`와 board의 compose 연동이
+    # 컨테이너가 뜨자마자 다음 단계로 넘어가서, board가 issuer 정보를 조회하다 실패한다.
+    # 이미지에 curl이 없으므로 bash의 /dev/tcp로 관리 포트(9000)의 준비 상태를 묻는다.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '"status": "UP"' <&3
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s

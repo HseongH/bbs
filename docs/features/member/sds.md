@@ -1,13 +1,13 @@
 ---
 doc_id: MEM-SDS
 title: 회원·인증 설계 명세서
-version: 1.4.0
+version: 1.4.1
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.5.0, MEM-SRS 1.2.0, MEM-QA 1.4.0, PRJ-CS 1.0.0]
+related: [PRJ-SDS 1.6.0, MEM-SRS 1.2.0, MEM-QA 1.4.0, PRJ-CS 1.1.0]
 ---
 
 # 회원·인증 설계 명세서
@@ -91,7 +91,7 @@ related: [PRJ-SDS 1.5.0, MEM-SRS 1.2.0, MEM-QA 1.4.0, PRJ-CS 1.0.0]
 
 [프로젝트 SDS §5](../../project/sds.md#5-데이터-관점)의 `member` 테이블을 사용한다. `subject`의 유니크 제약이 같은 사용자의 중복 생성을 최종적으로 막고, 동시 최초 로그인에서 중복을 판정하는 기준이 된다.
 
-## 6. 화면 설계 (`frontend/src/app/core/auth`)
+## 6. 화면 설계 (`services/web/src/app/core/auth`)
 
 | 요소 | 책임 |
 |---|---|
@@ -135,3 +135,4 @@ related: [PRJ-SDS 1.5.0, MEM-SRS 1.2.0, MEM-QA 1.4.0, PRJ-CS 1.0.0]
 | 1.2.0 | 2026-10-09 | 회원 저장을 `saveIfAbsent`로 바꿔 동시 최초 로그인을 처리하고, 긴 닉네임을 자르는 `Nickname.truncating` 추가 | HseongH |
 | 1.3.0 | 2026-10-09 | 세밀도 조정: 메서드 시그니처, 의사 코드, 응답 예시, 테스트 목록을 빼고 책임·흐름·결정 중심으로 재작성. 결함 수정(MEM-OPEN-02, 03)의 설계 결정을 §7에 추가 | HseongH |
 | 1.4.0 | 2026-10-09 | 로그인 흐름: 공백뿐인 사용자 이름·이메일도 대체값을 쓰도록 변경 (MEM-SRS 1.2.0) | HseongH |
+| 1.4.1 | 2026-10-09 | 화면 설계 절의 경로를 `services/web/`으로 정정 (모노레포 전환, ADR-0014). 의미 변경 없음 | HseongH |

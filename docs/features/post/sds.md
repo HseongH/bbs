@@ -1,13 +1,13 @@
 ---
 doc_id: PST-SDS
 title: 게시글 설계 명세서
-version: 1.3.0
+version: 1.3.1
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.5.0, PST-SRS 1.1.0, PST-QA 1.2.0, PRJ-CS 1.0.0]
+related: [PRJ-SDS 1.6.0, PST-SRS 1.1.0, PST-QA 1.2.0, PRJ-CS 1.1.0]
 ---
 
 # 게시글 설계 명세서
@@ -146,7 +146,7 @@ sequenceDiagram
 - `view_count`, `like_count`는 비정규화한 카운터다. 엔티티 저장에서 제외하고 원자적 UPDATE로만 바꾼다 ([ADR-0004](../../project/adr/0004-atomic-counter-update.md)).
 - `post_like`의 `(post_id, member_id)` 유니크 제약이 중복 좋아요를 최종 판정한다 ([ADR-0005](../../project/adr/0005-database-decides-duplicates.md)).
 
-## 6. 화면 설계 (`frontend/src/app/features/post`)
+## 6. 화면 설계 (`services/web/src/app/features/post`)
 
 [코딩 표준 CS-F01](../../project/coding-standards.md#5-프론트엔드-규칙)의 구조(API 서비스, 스토어, 페이지, 컴포넌트)를 따른다.
 
@@ -197,3 +197,4 @@ sequenceDiagram
 | 1.1.1 | 2026-10-09 | 조회수 키 저장소 표기를 Valkey로 정정 (ADR-0013) | HseongH |
 | 1.2.0 | 2026-10-09 | 세밀도 조정: 메서드 시그니처, 응답 필드 예시, SQL 원문, 테스트 목록을 빼고 책임·흐름·결정 중심으로 재작성. 설계 내용은 바뀌지 않음 | HseongH |
 | 1.3.0 | 2026-10-09 | 상세 조회: 조회수 반영이 롤백되면 중복 판정 기록을 지우는 보상 처리 추가 (PST-SRS 1.1.0). `PostQueryService`에 댓글 작성용 공유 잠금 확인 추가 (CMT-SDS 1.5.0) | HseongH |
+| 1.3.1 | 2026-10-09 | 화면 설계 절의 경로를 `services/web/`으로 정정 (모노레포 전환, ADR-0014). 의미 변경 없음 | HseongH |
