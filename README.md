@@ -22,11 +22,13 @@ Java 25 · Spring Boot 4.1.1 위에서 헥사고날 아키텍처로 구현한 RE
 ## 실행
 
 ```bash
-docker compose up -d
+docker compose -f deploy/compose.yaml up -d
 ./gradlew :services:board:bootRun
 ```
 
-`compose.yaml`이 PostgreSQL · Valkey · Keycloak을 띄우고, Keycloak realm은 `docker/keycloak/bbs-realm.json`에서 자동으로 구성된다. 별도 수작업 없이 바로 로그인을 시험할 수 있다.
+`deploy/compose.yaml`이 PostgreSQL · Valkey · Keycloak을 띄운다. `bootRun`은 컨테이너가 없으면 같은 파일로 직접 띄우므로 첫 줄을 생략해도 된다. Keycloak realm은 `deploy/keycloak/bbs-realm.json`(구조)과 `deploy/keycloak/dev/bbs-users-0.json`(개발용 시험 사용자)에서 자동으로 구성되므로, 별도 수작업 없이 바로 로그인을 시험할 수 있다.
+
+접속 정보는 환경 변수로 바꿀 수 있고, 주지 않으면 개발 기본값을 쓴다. 바꿀 값만 `deploy/.env.example`을 `deploy/.env`로 복사해서 적는다. 포트는 기본적으로 이 PC(`127.0.0.1`)에만 열린다.
 
 Valkey는 Redis 프로토콜과 호환되는 BSD 라이선스 포크다. 애플리케이션은 Spring Data Redis로 접속하므로 코드에서는 Redis라는 이름을 그대로 쓴다. Redis 8부터 바뀐 라이선스(RSALv2·SSPLv1·AGPLv3)를 따질 필요가 없도록 Valkey를 쓴다.
 
@@ -60,8 +62,9 @@ cd services/web && pnpm gen:api
 
 ```bash
 export BBS_HOST=<서버 주소>
+export BIND_ADDRESS=0.0.0.0   # 다른 기기에서 컨테이너 포트에 닿게 한다
 
-docker compose up -d
+docker compose -f deploy/compose.yaml up -d
 ./gradlew :services:board:bootRun
 cd services/web && pnpm dev
 ```
@@ -71,7 +74,7 @@ cd services/web && pnpm dev
 한 번에 하나의 주소만 쓸 수 있다. `BBS_HOST`를 바꾸면 Keycloak을 다시 만들어야 realm의 리다이렉트 URI가 갱신된다.
 
 ```bash
-docker compose rm -sf keycloak && docker compose up -d keycloak
+docker compose -f deploy/compose.yaml rm -sf keycloak && docker compose -f deploy/compose.yaml up -d keycloak
 ```
 
 ## 빌드와 검증
@@ -91,7 +94,7 @@ docker compose rm -sf keycloak && docker compose up -d keycloak
 | 아키텍처 규칙 | ArchUnit |
 | 커버리지 | JaCoCo (전체 80%, 도메인·애플리케이션 90%) |
 
-통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다. 이미지는 `compose.yaml`에서 읽으므로 개발 환경과 테스트가 같은 버전을 쓴다.
+통합 테스트는 Testcontainers로 실제 PostgreSQL과 Redis를 띄우므로 Docker가 필요하다. 이미지는 `deploy/compose.yaml`에서 읽으므로 개발 환경과 테스트가 같은 버전을 쓴다.
 
 GitHub Actions(`.github/workflows/backend.yml`)가 push와 PR마다 같은 `./gradlew check`를 실행한다.
 

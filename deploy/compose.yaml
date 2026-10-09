@@ -1,14 +1,20 @@
+# 개발용 외부 시스템. 접속 정보와 바인딩 주소는 환경 변수로 바꿀 수 있고(deploy/.env.example),
+# 값을 주지 않으면 개발 기본값을 쓴다. 포트는 기본적으로 이 PC(127.0.0.1)에만 연다.
+# 저장소 이름으로 고정한다. 정하지 않으면 디렉터리 이름(deploy)이 쓰인다.
+name: bbs
+
 services:
   postgres:
     image: postgres:18-alpine
     environment:
-      POSTGRES_DB: bbs
-      POSTGRES_USER: bbs
-      POSTGRES_PASSWORD: bbs
+      POSTGRES_DB: ${POSTGRES_DB:-bbs}
+      POSTGRES_USER: ${POSTGRES_USER:-bbs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bbs}
     ports:
-      - "5432:5432"
+      - "${BIND_ADDRESS:-127.0.0.1}:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bbs -d bbs"]
+      # $$는 compose가 아니라 컨테이너 셸이 변수를 해석하게 한다.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -20,13 +26,15 @@ services:
     labels:
       org.springframework.boot.service-connection: redis
     ports:
-      - "6379:6379"
+      - "${BIND_ADDRESS:-127.0.0.1}:6379:6379"
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
 
+  # realm 구조(bbs-realm.json)와 개발용 시험 사용자(dev/bbs-users-0.json)를 함께 가져온다.
+  # 다른 환경은 사용자 파일을 빼고 시작한다.
   keycloak:
     image: quay.io/keycloak/keycloak:26.8
     entrypoint: ["/bin/bash", "-c"]
@@ -36,13 +44,14 @@ services:
         sed "s|__BBS_HOST__|${BBS_HOST:-localhost}|g"
         /opt/keycloak/data/import-template/bbs-realm.json
         > /opt/keycloak/data/import/bbs-realm.json &&
+        cp /opt/keycloak/data/import-template/dev/bbs-users-0.json /opt/keycloak/data/import/ &&
         exec /opt/keycloak/bin/kc.sh start-dev --import-realm
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_HEALTH_ENABLED: "true"
       KC_HOSTNAME: http://${BBS_HOST:-localhost}:8081
     volumes:
       - ./keycloak:/opt/keycloak/data/import-template:ro
     ports:
-      - "8081:8080"
+      - "${BIND_ADDRESS:-127.0.0.1}:8081:8080"
