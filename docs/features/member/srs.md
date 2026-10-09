@@ -7,7 +7,7 @@ owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-10
-related: [PRJ-SRS 1.7.0, MEM-SDS 2.0.0, MEM-QA 1.5.0]
+related: [PRJ-SRS 1.7.0, MEM-SDS 2.0.0, MEM-QA 1.6.0]
 ---
 
 # 회원·인증 요구사항 명세서
