@@ -217,7 +217,8 @@ class PostControllerTest extends IntegrationTestBase {
     mockMvc
         .perform(get("/api/posts/{id}", 0))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+        .andExpect(jsonPath("$.errors.id").exists());
     mockMvc
         .perform(post("/api/posts/{id}/likes", -1).with(로그인(OTHER_SUBJECT)).with(csrf()))
         .andExpect(status().isBadRequest())

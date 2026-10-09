@@ -20,7 +20,7 @@ related: [PRJ-QA 1.2.0, MEM-SRS 1.2.0, MEM-SDS 1.4.0]
 |---|---|
 | 대상 커밋 | `fix/review-defects` 브랜치 끝, 이 문서를 고친 커밋과 같은 코드 (이전 수행: e96a878, f46a99c, 85cce67) |
 | 수행일 | 2026-10-09 |
-| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 135개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
+| 백엔드 자동 검증 | `./gradlew check` 성공 (테스트 139개, 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
 | E2E | 이번 수행에서는 실행하지 않음. E2E 근거 항목(TC-MEM-001, 039)의 판정은 이전 수행 결과다: `pnpm e2e` 성공 (Firefox, 4개 통과: 로그인 준비, 글·댓글·좋아요 흐름, 검색 URL 유지, 로그아웃). `main` 0b719d8에 Firefox 설정을 적용해 2026-10-09 수행 |
 | 수동 검증 | 실행하지 않음 (N/T) |
@@ -49,7 +49,7 @@ related: [PRJ-QA 1.2.0, MEM-SRS 1.2.0, MEM-SDS 1.4.0]
 | TC-MEM-016 | COM-NFR-021 | 일반 회원이 `/actuator/metrics` 조회 (회귀, OPEN-04) | `403` | `ActuatorAccessTest#지표는_일반_회원이_볼_수_없다` | Pass |
 | TC-MEM-017 | COM-NFR-021 | 관리자가 `/actuator/metrics` 조회 | `200` | `ActuatorAccessTest#지표는_관리자가_볼_수_있다` | Pass |
 | TC-MEM-018 | MEM-FR-002 | Keycloak 사용자 이름·이메일이 공백뿐인 사용자로 처음 로그인 (회귀) | 닉네임은 `sub`, 이메일은 `{sub}@unknown.local` | `BbsOidcUserServiceTest#사용자_이름이나_이메일이_공백뿐이면_subject로_대신한다`, `#사용자_이름이나_이메일이_없으면_subject로_대신한다` | Pass |
-| TC-MEM-019 | COM-NFR-002, COM-IF-003 | 미인증 API 요청, 경로에 따옴표가 있는 미인증 요청 (회귀) | `401`, ProblemDetail 필드가 모두 있고 올바른 JSON | `UnauthenticatedResponseTest` | Pass |
+| TC-MEM-019 | COM-NFR-002, COM-IF-003 | 미인증 API 요청, 경로에 따옴표가 있는 미인증 요청 (회귀) | `401`, ProblemDetail 필드가 모두 있고 올바른 JSON. `instance`는 허용되지 않는 문자만 인코딩 | `UnauthenticatedResponseTest`, `ProblemDetailsTest` | Pass |
 
 ### 2.2 회원 정보와 현재 회원
 

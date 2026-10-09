@@ -1,7 +1,8 @@
 package com.board.bbs.common.error;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -11,6 +12,8 @@ public final class ProblemDetails {
 
   /** 오류 코드를 담는 확장 필드 이름. */
   public static final String CODE_PROPERTY = "code";
+
+  private static final char[] HEX = "0123456789ABCDEF".toCharArray();
 
   private ProblemDetails() {}
 
@@ -43,16 +46,37 @@ public final class ProblemDetails {
     return of(errorCode, errorCode.getDefaultMessage(), requestUri);
   }
 
-  /** 요청 경로에 URI에서 허용되지 않는 문자가 있어도 오류 응답을 만드는 데 실패하지 않도록, 그런 문자는 인코딩한다. */
+  /**
+   * 요청 경로를 응답의 {@code instance}로 쓸 수 있는 URI로 바꾼다.
+   *
+   * <p>경로에서 허용되지 않는 바이트만 퍼센트 인코딩한다. 이미 인코딩된 {@code %XX}는 그대로 두어 이중으로 인코딩하지 않는다. 결과는 항상 올바른 URI이므로,
+   * 경로에 어떤 문자가 있어도 오류 응답을 만드는 데 실패하지 않는다.
+   */
   static URI instanceOf(String requestUri) {
-    try {
-      return new URI(requestUri);
-    } catch (URISyntaxException e) {
-      try {
-        return new URI(null, null, requestUri, null);
-      } catch (URISyntaxException unrecoverable) {
-        return URI.create("");
+    byte[] bytes = requestUri.getBytes(StandardCharsets.UTF_8);
+    StringBuilder encoded = new StringBuilder(bytes.length);
+    for (int i = 0; i < bytes.length; i++) {
+      int value = bytes[i] & 0xFF;
+      if (isPathCharacter(value) || (value == '%' && isEscapeAt(bytes, i))) {
+        encoded.append((char) value);
+      } else {
+        encoded.append('%').append(HEX[value >> 4]).append(HEX[value & 0x0F]);
       }
     }
+    return URI.create(encoded.toString());
+  }
+
+  /** RFC 3986의 경로 문자(pchar)와 구분자 {@code /}. */
+  private static boolean isPathCharacter(int value) {
+    return (value >= 'a' && value <= 'z')
+        || (value >= 'A' && value <= 'Z')
+        || (value >= '0' && value <= '9')
+        || "-._~!$&'()*+,;=:@/".indexOf(value) >= 0;
+  }
+
+  private static boolean isEscapeAt(byte[] bytes, int index) {
+    return index + 2 < bytes.length
+        && HexFormat.isHexDigit(bytes[index + 1])
+        && HexFormat.isHexDigit(bytes[index + 2]);
   }
 }

@@ -307,7 +307,8 @@ class CommentControllerTest extends IntegrationTestBase {
     mockMvc
         .perform(get("/api/posts/{postId}/comments", 0))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+        .andExpect(jsonPath("$.errors.postId").exists());
     mockMvc
         .perform(delete("/api/comments/{id}", 0).with(로그인(AUTHOR_SUBJECT)).with(csrf()))
         .andExpect(status().isBadRequest())
