@@ -47,7 +47,7 @@ tasks.test {
     systemProperty(
         "bbs.compose-file",
         rootProject.layout.projectDirectory
-            .file("compose.yaml")
+            .file("deploy/compose.yaml")
             .asFile.absolutePath,
     )
 }

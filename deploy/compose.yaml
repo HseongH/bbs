@@ -43,6 +43,6 @@ services:
       KC_HEALTH_ENABLED: "true"
       KC_HOSTNAME: http://${BBS_HOST:-localhost}:8081
     volumes:
-      - ./docker/keycloak:/opt/keycloak/data/import-template:ro
+      - ./keycloak:/opt/keycloak/data/import-template:ro
     ports:
       - "8081:8080"
