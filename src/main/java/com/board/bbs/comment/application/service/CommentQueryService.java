@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,8 +48,13 @@ public class CommentQueryService {
                 Collectors.groupingBy(
                     reply -> Objects.requireNonNull(reply.getParentId(), "대댓글은 부모를 가진다.")));
 
-    return roots.map(
-        root -> new CommentThread(root, repliesByRoot.getOrDefault(idOf(root), List.of())));
+    // 두 조회 사이에 마지막 대댓글이 삭제되면 삭제된 원댓글만 남는다. 그런 묶음은 내보내지 않는다.
+    List<CommentThread> threads =
+        roots.getContent().stream()
+            .map(root -> new CommentThread(root, repliesByRoot.getOrDefault(idOf(root), List.of())))
+            .filter(thread -> !thread.root().isDeleted() || !thread.replies().isEmpty())
+            .toList();
+    return new PageImpl<>(threads, roots.getPageable(), roots.getTotalElements());
   }
 
   private static CommentId idOf(Comment comment) {

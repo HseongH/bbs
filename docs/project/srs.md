@@ -1,7 +1,7 @@
 ---
 doc_id: PRJ-SRS
 title: 게시판(bbs) 프로젝트 요구사항 명세서
-version: 1.2.0
+version: 1.3.0
 status: In Review
 owner: HseongH
 reviewers: []
@@ -116,9 +116,9 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 |---|---|---|
 | COM-NFR-010 | 여러 요청이 동시에 같은 카운터(조회수, 좋아요 수)를 바꿔도 값을 잃지 않는다. | `PostLikeConcurrencyTest`, `PostCounterPreservationTest` ([ADR-0004](adr/0004-atomic-counter-update.md)) |
 | COM-NFR-011 | 중복이 허용되지 않는 데이터(같은 회원의 같은 글 좋아요)는 데이터베이스 제약으로 최종 판정한다. | `PostLikeConcurrencyTest#동시에_좋아요를_눌러도_한_번만_반영된다` ([ADR-0005](adr/0005-database-decides-duplicates.md)) |
-| COM-NFR-012 | 게시글과 댓글은 소프트 삭제한다. 삭제된 데이터는 조회·수정·삭제 대상이 되지 않으며 `404`로 응답한다. | `PostPersistenceAdapterTest#삭제된_게시글은_읽을_수_없다`, `CommentPersistenceAdapterTest#삭제된_댓글은_읽을_수_없다` |
+| COM-NFR-012 | 게시글과 댓글은 소프트 삭제한다. 삭제된 데이터는 조회·수정·삭제 대상이 되지 않으며 `404`로 응답한다. 예외: 살아 있는 대댓글이 있는 삭제된 원댓글은 댓글 목록에 자리만 남기고, 본문과 작성자는 응답에 담지 않는다 (CMT-FR-009). | `PostPersistenceAdapterTest#삭제된_게시글은_읽을_수_없다`, `CommentPersistenceAdapterTest#삭제된_댓글은_읽을_수_없다` |
 | COM-NFR-013 | 도메인 규칙 중 데이터 손상으로 이어지는 규칙은 데이터베이스 제약으로 한 번 더 막는다. (댓글 깊이 `CHECK`, 좋아요 `UNIQUE`, 회원 `subject` `UNIQUE`) | 마이그레이션 스크립트 검토 |
-| COM-NFR-014 | 목록 조회는 정렬 키에 식별자를 포함해서, 페이지를 넘길 때 행이 중복되거나 누락되지 않아야 한다. | `PostQueryRepositoryTest#페이지_크기를_넘으면_다음_페이지로_넘어간다`, `CommentPersistenceAdapterTest#댓글_목록은_작성_순서대로_반환된다` |
+| COM-NFR-014 | 목록 조회는 정렬 키에 식별자를 포함해서, 페이지를 넘길 때 행이 중복되거나 누락되지 않아야 한다. | `PostQueryRepositoryTest#페이지_크기를_넘으면_다음_페이지로_넘어간다`, `CommentPersistenceAdapterTest#원댓글_목록은_작성_순서이고_원댓글_수로_페이지를_나눈다` |
 
 ### 4.3 확장성과 운영
 
@@ -200,3 +200,4 @@ PostgreSQL            Valkey (Redis 호환: 세션, 조회수 중복 판정)
 | 1.0.0 | 2026-10-09 | 최초 작성 (구현 완료 시점 기준으로 역작성) | HseongH |
 | 1.1.0 | 2026-10-09 | OPEN-04 해결: 지표를 비롯한 나머지 액추에이터 경로를 관리자 전용으로 제한하고 COM-NFR-021 갱신 | HseongH |
 | 1.2.0 | 2026-10-09 | Valkey 전환 반영 (COM-CON-002, COM-NFR-020, PR #15) | HseongH |
+| 1.3.0 | 2026-10-09 | 원댓글 단위 댓글 목록 반영: COM-NFR-012에 삭제된 원댓글 자리 표시 예외(CMT-FR-009) 추가, COM-NFR-014의 검증 테스트를 원댓글 목록 테스트로 교체 | HseongH |
