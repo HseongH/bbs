@@ -282,6 +282,7 @@ services/web/src/app/
 | web | `cd services/web && pnpm dev` | `localhost:5173` |
 
 - **접속 정보와 포트.** compose 파일의 접속 정보와 바인딩 주소는 `${변수:-개발 기본값}` 형태다. `.env` 없이 바로 실행되고, 바꿀 값만 `deploy/.env`에 적는다(변수 목록은 `deploy/.env.example`). 포트는 기본적으로 `127.0.0.1`에만 열어 같은 네트워크의 다른 기기에 개발용 DB와 Keycloak이 노출되지 않게 한다. 다른 기기(휴대폰 등)에서 화면을 확인해야 할 때만 바인딩 주소와 호스트 이름을 바꾼다 (COM-NFR-006).
+- **준비 완료 판정.** 모든 컨테이너에 상태 검사를 둔다. Keycloak은 realm 가져오기가 끝나야 준비된 것으로 본다. 그래서 `up --wait`와 board의 compose 연동이 Keycloak이 실제로 응답할 때까지 기다리고, board가 시작하면서 Keycloak의 issuer 정보를 조회하다 실패하지 않는다 (COM-CON-004).
 - **Keycloak 가져오기.** realm 구조(클라이언트, 역할)는 `deploy/keycloak/bbs-realm.json`에, 개발용 시험 사용자는 `deploy/keycloak/dev/bbs-users-0.json`에 둔다. Keycloak은 가져오기 디렉터리의 `<realm>-users-<n>.json`을 같은 realm의 사용자로 가져온다. 개발 환경만 두 파일을 함께 넣으므로, 다른 환경은 사용자 파일을 빼는 것만으로 시험 계정 없이 시작한다 (COM-CON-006). 시험 계정은 `tester`(USER)와 `admin-user`(USER, ADMIN)이다.
 - **compose 파일을 찾는 방법.** board의 개발 실행은 서비스 디렉터리 기준 상대 경로로 compose 파일을 찾는다(Gradle `bootRun`과 IDE의 기본 작업 디렉터리가 모두 서비스 디렉터리다). 통합 테스트는 작업 디렉터리에 기대지 않도록 빌드가 넘겨주는 절대 경로로 같은 파일을 읽어 컨테이너 이미지를 정한다.
 
