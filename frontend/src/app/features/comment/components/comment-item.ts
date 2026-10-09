@@ -12,11 +12,13 @@ type ViewMode = "view" | "edit" | "reply";
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <li [class]="comment().depth > 0 ? 'border-l-2 border-slate-200 py-2 pl-6' : 'py-2'">
-      @if (mode() === "edit") {
+      @if (comment().deleted) {
+        <p class="text-sm text-slate-400">삭제된 댓글입니다</p>
+      } @else if (mode() === "edit") {
         <app-comment-form
           label="댓글 수정"
           submitLabel="수정"
-          [initial]="comment().body"
+          [initial]="comment().body ?? ''"
           (saved)="applyEdit($event)"
         />
       } @else {
@@ -49,13 +51,16 @@ export class CommentItemComponent {
 
   protected readonly mode = signal<ViewMode>("view");
 
-  protected readonly isMine = computed(
-    () => this.memberStore.member()?.id === this.comment().authorId,
-  );
+  /** 삭제된 댓글은 작성자를 받지 않으므로 누구의 댓글도 아니다. */
+  protected readonly isMine = computed(() => {
+    const authorId = this.comment().authorId;
+    return authorId !== undefined && this.memberStore.member()?.id === authorId;
+  });
 
   /** 답글의 답글은 서버가 400으로 거부한다. 버튼을 내보내지 않아 그 전에 막는다. */
   protected readonly canReply = computed(
-    () => this.memberStore.member() !== null && this.comment().depth === 0,
+    () =>
+      this.memberStore.member() !== null && this.comment().depth === 0 && !this.comment().deleted,
   );
 
   protected toggle(target: ViewMode): void {

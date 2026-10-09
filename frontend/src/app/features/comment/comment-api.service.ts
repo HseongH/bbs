@@ -4,7 +4,8 @@ import type { Observable } from "rxjs";
 import type { components } from "@/core/api/schema";
 
 export type Comment = components["schemas"]["CommentResponse"];
-export type CommentPage = components["schemas"]["PageResponseCommentResponse"];
+export type CommentThread = components["schemas"]["CommentThreadResponse"];
+export type CommentPage = components["schemas"]["PageResponseCommentThreadResponse"];
 
 @Injectable({ providedIn: "root" })
 export class CommentApiService {

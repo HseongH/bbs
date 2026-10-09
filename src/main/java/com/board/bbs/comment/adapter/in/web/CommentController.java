@@ -1,6 +1,6 @@
 package com.board.bbs.comment.adapter.in.web;
 
-import com.board.bbs.comment.adapter.in.web.dto.CommentResponse;
+import com.board.bbs.comment.adapter.in.web.dto.CommentThreadResponse;
 import com.board.bbs.comment.adapter.in.web.dto.UpdateCommentRequest;
 import com.board.bbs.comment.adapter.in.web.dto.WriteCommentRequest;
 import com.board.bbs.comment.application.service.CommentCommandService;
@@ -77,11 +77,11 @@ public class CommentController {
    */
   @Operation(summary = "댓글 목록 조회")
   @GetMapping("/posts/{postId}/comments")
-  public PageResponse<CommentResponse> list(
+  public PageResponse<CommentThreadResponse> list(
       @PathVariable Long postId, @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 
     return PageResponse.from(
-        commentQueryService.list(new PostId(postId), pageable).map(CommentResponse::from));
+        commentQueryService.list(new PostId(postId), pageable).map(CommentThreadResponse::from));
   }
 
   /**

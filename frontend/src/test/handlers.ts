@@ -4,8 +4,8 @@ import type { components } from "@/core/api/schema";
 type MemberResponse = components["schemas"]["MemberResponse"];
 type PostSummaryResponse = components["schemas"]["PostSummaryResponse"];
 type PageResponsePostSummaryResponse = components["schemas"]["PageResponsePostSummaryResponse"];
-type CommentResponse = components["schemas"]["CommentResponse"];
-type PageResponseCommentResponse = components["schemas"]["PageResponseCommentResponse"];
+type CommentThreadResponse = components["schemas"]["CommentThreadResponse"];
+type PageResponseCommentThreadResponse = components["schemas"]["PageResponseCommentThreadResponse"];
 
 export const 로그인회원: MemberResponse = {
   id: 1,
@@ -37,7 +37,7 @@ export function 게시글페이지(content: PostSummaryResponse[]): PageResponse
   };
 }
 
-export function 댓글페이지(content: CommentResponse[]): PageResponseCommentResponse {
+export function 댓글페이지(content: CommentThreadResponse[]): PageResponseCommentThreadResponse {
   return {
     content,
     page: 0,

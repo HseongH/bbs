@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-SDS
 title: 게시판(bbs) 프로젝트 설계 명세서
-version: 1.3.0
+version: 1.4.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.2.0, PRJ-QA 1.2.0, PRJ-CS 1.0.0]
+related: [PRJ-SRS 1.3.0, PRJ-QA 1.2.0, PRJ-CS 1.0.0]
 ---
 
 # 게시판(bbs) 프로젝트 설계 명세서
@@ -151,6 +151,7 @@ ERD의 컬럼은 이해를 돕기 위한 것이고, 정확한 정의는 마이�
 | `post_like (post_id, member_id)` | 유니크 | 중복 좋아요를 데이터베이스가 최종 판정 ([ADR-0005](adr/0005-database-decides-duplicates.md)) |
 | `comment.depth` | `CHECK (0~1)` | 답글 깊이 제한을 도메인과 별도로 한 번 더 보장 |
 | `post`, `comment` | `deleted_at IS NULL` 부분 인덱스 | 소프트 삭제된 행을 빼고 정렬 순서대로 읽기 |
+| `comment` | 원댓글(`depth = 0`) 부분 인덱스, 살아 있는 대댓글(부모 기준, `deleted_at IS NULL`) 부분 인덱스 | 원댓글 단위 목록: 삭제된 원댓글까지 포함한 원댓글 페이지와 그 대댓글을 각각 정렬 순서대로 읽기 ([CMT-SDS §5](../features/comment/sds.md#5-데이터-설계)) |
 | 모든 시각 | `TIMESTAMPTZ` | UTC 기준 저장 |
 
 ### 5.2 Valkey(Redis 호환) 키
@@ -288,3 +289,4 @@ Keycloak realm은 `docker/keycloak/bbs-realm.json`으로 자동 구성된다. �
 | 1.1.0 | 2026-10-09 | `main` f46a99c 기준으로 갱신: 인바운드 포트 제거와 저장소 포트 통합(PR #5), Lombok 제거(PR #6), 의존성 관리(PR #8) 반영. 컨텍스트·계층·기능 의존·ERD 다이어그램과 로그인 시퀀스 추가 | HseongH |
 | 1.2.0 | 2026-10-09 | `main` 85cce67 기준으로 갱신: Valkey 전환(PR #15, ADR-0013), 액추에이터 접근 규칙(PR #18)과 URL 규칙 순서표, 회원 생성의 `ON CONFLICT` 사용(PR #20) 반영. 다이어그램을 라이트 테마로 다시 내보냄 | HseongH |
 | 1.3.0 | 2026-10-09 | 세밀도 조정: 세부 버전, 테이블 컬럼 표, 품질 게이트 목록, ADR 목록 사본을 빼고 기준 문서를 가리키도록 변경. 설계상 의미 있는 제약만 남김. 컨텍스트 구성도의 버전 표기 제거. 설계 내용은 바뀌지 않음 | HseongH |
+| 1.4.0 | 2026-10-09 | 댓글 목록을 원댓글 단위로 조회하기 위한 부분 인덱스 두 개 반영 (CMT-SDS 1.4.0) | HseongH |

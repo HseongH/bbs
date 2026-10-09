@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -17,7 +18,7 @@ import { CommentItemComponent } from "./comment-item";
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="space-y-3 border-t border-slate-200 pt-4">
-      <h2 class="text-lg font-medium">댓글 {{ store.list.value()?.totalElements ?? 0 }}</h2>
+      <h2 class="text-lg font-medium">댓글 {{ visibleCount() }}</h2>
 
       @if (memberStore.member()) {
         <app-comment-form label="댓글" submitLabel="등록" (saved)="write($event)" />
@@ -32,8 +33,11 @@ import { CommentItemComponent } from "./comment-item";
       }
 
       <ul class="divide-y divide-slate-100">
-        @for (comment of store.list.value()?.content ?? []; track comment.id) {
-          <app-comment-item [comment]="comment" />
+        @for (thread of store.list.value()?.content ?? []; track thread.root.id) {
+          <app-comment-item [comment]="thread.root" />
+          @for (reply of thread.replies; track reply.id) {
+            <app-comment-item [comment]="reply" />
+          }
         }
       </ul>
     </section>
@@ -44,6 +48,14 @@ export class CommentSectionComponent {
 
   protected readonly store = inject(CommentStore);
   protected readonly memberStore = inject(CurrentMemberStore);
+
+  /** 서버의 전체 건수는 원댓글 수다. 화면에 보이는 댓글(삭제되지 않은 원댓글과 대댓글)을 센다. */
+  protected readonly visibleCount = computed(() =>
+    (this.store.list.value()?.content ?? []).reduce(
+      (count, thread) => count + (thread.root.deleted ? 0 : 1) + thread.replies.length,
+      0,
+    ),
+  );
 
   constructor() {
     effect(() => {

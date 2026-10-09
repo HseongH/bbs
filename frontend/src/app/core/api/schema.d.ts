@@ -164,8 +164,9 @@ export interface components {
       /** Format: int64 */
       postId: number;
       /** Format: int64 */
-      authorId: number;
-      body: string;
+      authorId?: number;
+      body?: string;
+      deleted: boolean;
       /** Format: int64 */
       parentCommentId?: number;
       /** Format: int32 */
@@ -173,8 +174,12 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
     };
-    PageResponseCommentResponse: {
-      content: components["schemas"]["CommentResponse"][];
+    CommentThreadResponse: {
+      root: components["schemas"]["CommentResponse"];
+      replies: components["schemas"]["CommentResponse"][];
+    };
+    PageResponseCommentThreadResponse: {
+      content: components["schemas"]["CommentThreadResponse"][];
       /** Format: int32 */
       page: number;
       /** Format: int32 */
@@ -289,7 +294,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "*/*": components["schemas"]["PageResponseCommentResponse"];
+          "*/*": components["schemas"]["PageResponseCommentThreadResponse"];
         };
       };
     };

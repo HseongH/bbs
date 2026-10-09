@@ -11,10 +11,12 @@ import com.board.bbs.member.domain.MemberId;
 import com.board.bbs.post.domain.PostId;
 import com.board.bbs.support.IntegrationTestBase;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,23 +89,95 @@ class CommentPersistenceAdapterTest extends IntegrationTestBase {
 
   @Test
   void 게시글의_댓글이_한꺼번에_삭제된다() {
-    adapter.save(Comment.write(post, author, new CommentBody("첫 댓글"), null));
-    adapter.save(Comment.write(post, author, new CommentBody("둘째 댓글"), null));
-    assertThat(adapter.listByPost(post, PageRequest.of(0, 10)).getTotalElements()).isEqualTo(2);
+    원댓글("첫 댓글");
+    원댓글("둘째 댓글");
+    assertThat(adapter.listRoots(post, PageRequest.of(0, 10)).getTotalElements()).isEqualTo(2);
 
     adapter.softDeleteAllByPost(post, Instant.now());
 
-    assertThat(adapter.listByPost(post, PageRequest.of(0, 10)).getTotalElements()).isZero();
+    assertThat(adapter.listRoots(post, PageRequest.of(0, 10)).getTotalElements()).isZero();
   }
 
   @Test
-  void 댓글_목록은_작성_순서대로_반환된다() {
-    adapter.save(Comment.write(post, author, new CommentBody("첫째"), null));
-    adapter.save(Comment.write(post, author, new CommentBody("둘째"), null));
-    adapter.save(Comment.write(post, author, new CommentBody("셋째"), null));
+  void 원댓글_목록에는_대댓글이_포함되지_않는다() {
+    Comment root = 원댓글("원댓글");
+    답글(root, "답글");
 
-    assertThat(adapter.listByPost(post, PageRequest.of(0, 10)).getContent())
-        .extracting(comment -> comment.getBody().value())
-        .containsExactly("첫째", "둘째", "셋째");
+    assertThat(본문들(adapter.listRoots(post, PageRequest.of(0, 10)).getContent()))
+        .containsExactly("원댓글");
+  }
+
+  @Test
+  void 삭제된_원댓글은_살아있는_대댓글이_있을_때만_포함된다() {
+    Comment withLiveReply = 원댓글("A");
+    답글(withLiveReply, "a1");
+    Comment withDeletedReply = 원댓글("B");
+    삭제한다(답글(withDeletedReply, "b1"));
+    Comment withoutReply = 원댓글("C");
+    삭제한다(withLiveReply);
+    삭제한다(withDeletedReply);
+    삭제한다(withoutReply);
+
+    List<Comment> roots = adapter.listRoots(post, PageRequest.of(0, 10)).getContent();
+
+    assertThat(roots).extracting(Comment::getId).containsExactly(withLiveReply.getId());
+    assertThat(roots.getFirst().isDeleted()).isTrue();
+  }
+
+  @Test
+  void 원댓글_목록은_작성_순서이고_원댓글_수로_페이지를_나눈다() {
+    Comment first = 원댓글("첫째");
+    원댓글("둘째");
+    원댓글("셋째");
+    답글(first, "답글1");
+    답글(first, "답글2");
+
+    Page<Comment> firstPage = adapter.listRoots(post, PageRequest.of(0, 2));
+    Page<Comment> secondPage = adapter.listRoots(post, PageRequest.of(1, 2));
+
+    assertThat(본문들(firstPage.getContent())).containsExactly("첫째", "둘째");
+    assertThat(firstPage.getTotalElements()).isEqualTo(3);
+    assertThat(본문들(secondPage.getContent())).containsExactly("셋째");
+  }
+
+  @Test
+  void 대댓글은_원댓글별로_작성_순서대로_반환되고_삭제된_대댓글은_빠진다() {
+    Comment a = 원댓글("A");
+    Comment b = 원댓글("B");
+    답글(a, "a1");
+    삭제한다(답글(a, "a2"));
+    답글(b, "b1");
+    답글(a, "a3");
+
+    List<Comment> replies = adapter.listRepliesOf(List.of(식별자(a), 식별자(b)));
+
+    assertThat(replies)
+        .extracting(reply -> reply.getBody().value() + "@" + reply.getParentId())
+        .containsExactlyInAnyOrder("a1@" + a.getId(), "a3@" + a.getId(), "b1@" + b.getId());
+    assertThat(본문들(replies.stream().filter(r -> 식별자(a).equals(r.getParentId())).toList()))
+        .containsExactly("a1", "a3");
+    assertThat(adapter.listRepliesOf(List.of())).isEmpty();
+  }
+
+  private Comment 원댓글(String body) {
+    return adapter.save(Comment.write(post, author, new CommentBody(body), null));
+  }
+
+  private Comment 답글(Comment parent, String body) {
+    return adapter.save(Comment.write(post, author, new CommentBody(body), parent));
+  }
+
+  /** 같은 트랜잭션의 영속성 컨텍스트와 어긋나지 않도록 도메인을 통해 삭제한다. */
+  private Comment 삭제한다(Comment comment) {
+    comment.deleteBy(author, false, Instant.now());
+    return adapter.save(comment);
+  }
+
+  private static CommentId 식별자(Comment comment) {
+    return Objects.requireNonNull(comment.getId());
+  }
+
+  private static List<String> 본문들(List<Comment> comments) {
+    return comments.stream().map(comment -> comment.getBody().value()).toList();
   }
 }
