@@ -33,7 +33,9 @@ class ForwardedRequestTest {
         "/api/posts/%00",
         "/api//posts",
         "api/posts",
-        "/api/posts/%E0%A4"
+        "/api/posts/%E0%A4",
+        "/api/posts%3B/1",
+        "/api/posts%3b/1"
       })
   void 모호한_경로는_거부한다(String uri) {
     assertThatThrownBy(() -> ForwardedRequest.from(전달("GET", uri)))
@@ -52,6 +54,14 @@ class ForwardedRequestTest {
 
     assertThat(request.method()).isEqualTo(HttpMethod.POST);
     assertThat(request.path()).isEqualTo(path);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"get", "Get", " GET", "FOO", "CONNECT"})
+  void 표준_대문자_메서드가_아니면_거부한다(String method) {
+    // board는 메서드를 받은 그대로 처리한다. auth가 대소문자를 고쳐서 판정하면 서로 다른 요청을 보게 된다.
+    assertThatThrownBy(() -> ForwardedRequest.from(전달(method, "/api/posts")))
+        .isInstanceOf(AmbiguousForwardedRequestException.class);
   }
 
   @Test

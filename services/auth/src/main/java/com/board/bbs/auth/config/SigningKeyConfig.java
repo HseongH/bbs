@@ -37,6 +37,8 @@ public class SigningKeyConfig {
 
   static final String LOCATION_PROPERTY = "bbs.auth.signing-key-location";
 
+  private static final int MIN_KEY_BITS = 2048;
+
   private static final Logger log = LoggerFactory.getLogger(SigningKeyConfig.class);
 
   /**
@@ -70,6 +72,10 @@ public class SigningKeyConfig {
 
   private static RSAKey load(Resource resource) throws IOException, GeneralSecurityException {
     String pem = resource.getContentAsString(StandardCharsets.US_ASCII);
+    if (!pem.contains("-----BEGIN PRIVATE KEY-----")) {
+      throw new IllegalStateException(
+          LOCATION_PROPERTY + "의 키는 PKCS#8 PEM(-----BEGIN PRIVATE KEY-----)이어야 합니다.");
+    }
     String body =
         pem.replace("-----BEGIN PRIVATE KEY-----", "")
             .replace("-----END PRIVATE KEY-----", "")
@@ -78,6 +84,10 @@ public class SigningKeyConfig {
     RSAPrivateCrtKey privateKey =
         (RSAPrivateCrtKey)
             factory.generatePrivate(new PKCS8EncodedKeySpec(Base64.getDecoder().decode(body)));
+    // 서명 라이브러리는 2048비트보다 짧은 키로 서명하지 않는다. 시작할 때 거부해야 요청마다 실패하지 않는다.
+    if (privateKey.getModulus().bitLength() < MIN_KEY_BITS) {
+      throw new IllegalStateException(LOCATION_PROPERTY + "의 키는 " + MIN_KEY_BITS + "비트 이상이어야 합니다.");
+    }
     RSAPublicKey publicKey =
         (RSAPublicKey)
             factory.generatePublic(

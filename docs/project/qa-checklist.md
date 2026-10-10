@@ -69,7 +69,7 @@ related: [PRJ-QA 1.4.0, PRJ-SRS 1.7.0, PRJ-SDS 1.8.0]
 
 | TC | 요구사항 | 시나리오 | 기대 결과 | 검증 수단 | 판정 |
 |---|---|---|---|---|---|
-| TC-COM-018 | COM-NFR-001 | board의 설정과 의존성 검토 | board에 Keycloak 주소, OAuth2 Client 의존성, 세션 의존성이 없음. Keycloak 주소는 auth 설정에만 있음 | 구성 검토: `services/board`에서 `grep -rniE "keycloak\|oauth2-client\| 구성 검토: `grep -rniE "keycloak\|oauth2-client\|oauth2\.client\|spring\.session\|session-data" services/board/build.gradle.kts services/board/src/main --exclude-dir=migration` 출력 없음. Keycloak 주소는 `services/auth/src/main/resources/application-local.yml`에만 있음. 이미 적용된 Flyway 마이그레이션의 열 주석은 체크섬 때문에 고치지 않음 | Pass |
+| TC-COM-018 | COM-NFR-001 | board의 설정과 의존성 검토 | board에 Keycloak 주소, OAuth2 Client 의존성, 세션 의존성이 없음. Keycloak 주소는 auth 설정에만 있음 | 구성 검토: `grep -rniE "keycloak\|oauth2-client\|oauth2\.client\|spring\.session\|session-data" services/board/build.gradle.kts services/board/src/main --exclude-dir=migration` 출력 없음. Keycloak 주소는 `services/auth/src/main/resources/application-local.yml`에만 있음. 이미 적용된 Flyway 마이그레이션의 열 주석은 체크섬 때문에 고치지 않음 | Pass |
 | TC-COM-019 | COM-NFR-007 | 진입점으로 공개 조회(`GET /api/posts`)를 보내면서 브라우저가 임의의 `Authorization: Bearer` 값을 붙임 | `200`. 헤더가 board에 도달했다면 board가 서명 검증에 실패해 `401`이 된다 | E2E `gateway.spec: 브라우저가 보낸 Authorization 헤더는 board에 닿지 않는다`. 대조군: board에 직접 위조 토큰을 보내면 401 (`InternalTokenValidationTest#공개_조회에_잘못된_토큰이_오면_401이다`) | Pass |
 | TC-COM-020 | COM-NFR-021 | 진입점으로 `/actuator/health`, `/actuator/metrics`, `/.well-known/jwks.json` 요청 | auth와 board의 응답이 아니라 화면(`index.html`) | E2E `gateway.spec: 액추에이터와 공개키는 진입점으로 열리지 않는다` (응답에 액추에이터·JWKS 본문이 없음) | Pass |
 | TC-COM-021 | COM-IF-008 | 진입점으로 화면 경로(`/posts/1`)에 직접 접속 | 화면(`index.html`) | E2E `gateway.spec: 화면 경로로 직접 들어오면 화면을 돌려준다` | Pass |
@@ -96,7 +96,7 @@ related: [PRJ-QA 1.4.0, PRJ-SRS 1.7.0, PRJ-SDS 1.8.0]
 ## 4. 결과 요약과 후속 조치
 
 - 집계: 전체 25건 중 Pass 23, Fail 0, N/T 2. N/T 2건(TC-COM-016, 023)은 PR의 CI 실행 기록으로 판정하므로 push 후 채운다.
-- auth 분리 항목의 근거 실행: 루트 `./gradlew test --rerun check`(라이브러리 6개, auth 45개, board 140개), `pnpm verify`, 진입점 경유 `pnpm e2e` 9개 (2026-10-10).
+- auth 분리 항목의 근거 실행: 루트 `./gradlew test --rerun check`(최종 리뷰 반영 후 라이브러리 8개, auth 54개, board 140개), `pnpm verify`, 진입점 경유 `pnpm e2e` 9개 (2026-10-10).
 - TC-COM-005, 006은 두 서비스를 함께 바꾼 PR #28에서 판정했다. 한 서비스만 바꾼 PR에서 다른 워크플로가 실행되지 않는 것은 실행 조건 검토(TC-COM-007)로만 확인했으므로, 다음 단일 서비스 PR에서 실행 목록을 한 번 확인한다.
 - 수행 중 발견한 결함: Keycloak에 상태 검사가 없어 `up --wait`와 board의 compose 연동이 Keycloak 준비 전에 넘어갔다. 컨테이너가 없는 상태에서 `bootRun`하면 issuer 조회에 실패해 COM-CON-004를 어겼다. 상태 검사를 추가해 고쳤고(TC-COM-009, 013의 근거 실행은 수정 후), 수정 전 재현(`--wait` 직후 조회 실패)과 수정 후 성공을 모두 확인했다.
 - 자동 테스트 추가 후보: TC-COM-001, 002의 위반 코드 검사는 매번 수동이다. 빌드 규칙을 검사하는 Gradle TestKit 테스트로 바꿀 수 있다.

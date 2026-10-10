@@ -6,8 +6,8 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
-import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpMethod;
 
@@ -26,7 +26,11 @@ public record ForwardedRequest(HttpMethod method, String path) {
   static final String URI_HEADER = "X-Forwarded-Uri";
 
   private static final Pattern FORBIDDEN_ENCODINGS =
-      Pattern.compile("%(2f|5c|25|00)", Pattern.CASE_INSENSITIVE);
+      Pattern.compile("%(2f|5c|25|00|3b)", Pattern.CASE_INSENSITIVE);
+
+  /** 표준 메서드만 받는다. 게시판 서비스는 메서드를 받은 그대로 처리하므로 대소문자나 공백을 고쳐서 판정하지 않는다. */
+  private static final Set<String> METHODS =
+      Set.of("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE");
 
   /**
    * 요청 헤더에서 원래 요청을 복원한다.
@@ -38,11 +42,13 @@ public record ForwardedRequest(HttpMethod method, String path) {
   public static ForwardedRequest from(HttpServletRequest request) {
     String method = request.getHeader(METHOD_HEADER);
     String uri = request.getHeader(URI_HEADER);
-    if (method == null || method.isBlank() || uri == null) {
+    if (method == null || uri == null) {
       throw new AmbiguousForwardedRequestException("원래 요청의 메서드나 경로가 없습니다.");
     }
-    return new ForwardedRequest(
-        HttpMethod.valueOf(method.trim().toUpperCase(Locale.ROOT)), decodedPath(rawPath(uri)));
+    if (!METHODS.contains(method)) {
+      throw new AmbiguousForwardedRequestException("표준 메서드가 아닙니다.");
+    }
+    return new ForwardedRequest(HttpMethod.valueOf(method), decodedPath(rawPath(uri)));
   }
 
   /**

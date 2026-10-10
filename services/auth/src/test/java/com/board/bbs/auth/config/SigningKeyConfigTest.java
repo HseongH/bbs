@@ -69,4 +69,46 @@ class SigningKeyConfigTest {
         });
     assertThat(kids[0]).isNotBlank().isEqualTo(kids[1]);
   }
+
+  @Test
+  void 키가_2048비트보다_짧으면_시작하지_않는다(@TempDir Path dir) throws Exception {
+    KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+    generator.initialize(1024);
+    Path pem = dir.resolve("short.pem");
+    Files.writeString(
+        pem,
+        "-----BEGIN PRIVATE KEY-----\n"
+            + Base64.getMimeEncoder(64, "\n".getBytes())
+                .encodeToString(generator.generateKeyPair().getPrivate().getEncoded())
+            + "\n-----END PRIVATE KEY-----\n");
+
+    runner
+        .withPropertyValues(
+            "spring.profiles.active=prod", "bbs.auth.signing-key-location=file:" + pem)
+        .run(
+            context ->
+                assertThat(context)
+                    .hasFailed()
+                    .getFailure()
+                    .rootCause()
+                    .hasMessageContaining("2048"));
+  }
+
+  @Test
+  void PKCS8_형식이_아니면_이유를_알려_주고_시작하지_않는다(@TempDir Path dir) throws Exception {
+    Path pem = dir.resolve("pkcs1.pem");
+    Files.writeString(
+        pem, "-----BEGIN RSA PRIVATE KEY-----\nAAAA\n-----END RSA PRIVATE KEY-----\n");
+
+    runner
+        .withPropertyValues(
+            "spring.profiles.active=prod", "bbs.auth.signing-key-location=file:" + pem)
+        .run(
+            context ->
+                assertThat(context)
+                    .hasFailed()
+                    .getFailure()
+                    .rootCause()
+                    .hasMessageContaining("PKCS#8"));
+  }
 }

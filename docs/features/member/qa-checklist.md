@@ -20,7 +20,7 @@ related: [PRJ-QA 1.4.0, MEM-SRS 1.3.0, MEM-SDS 2.0.0]
 |---|---|
 | 대상 커밋 | `feature/auth-service` 브랜치의 7ad3046 (이전 수행: `fix/review-defects`, e96a878, f46a99c, 85cce67) |
 | 수행일 | 2026-10-10 |
-| 백엔드 자동 검증 | 루트에서 `./gradlew test --rerun check` 성공 (라이브러리 6개, auth 45개, board 140개. 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
+| 백엔드 자동 검증 | 루트에서 `./gradlew test --rerun check` 성공 (최종 리뷰 반영 후 라이브러리 8개, auth 54개, board 140개. 실패 0, 오류 0, 건너뜀 0. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
 | 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). board 실행 중 `pnpm gen:api` 후 생성 타입 변화 없음 |
 | E2E | `pnpm e2e` 성공 (Chromium, 9개 통과: 로그인 준비, 글·댓글·좋아요, 검색 URL 유지, 진입점 5개, 로그아웃). `deploy/compose.yaml`의 컨테이너(진입점 포함)와 auth·board의 `bootRun`을 띄우고 진입점 `localhost:8000`으로 2026-10-10 수행 |
 | 수동 검증 | 실행하지 않음 (N/T) |
@@ -68,12 +68,12 @@ related: [PRJ-QA 1.4.0, MEM-SRS 1.3.0, MEM-SDS 2.0.0]
 | TC-MEM-040 | COM-NFR-002 | 비로그인 상태의 인증 필요 요청을 ForwardAuth로 판정, 원래 경로에 따옴표 포함 | `401 UNAUTHENTICATED` ProblemDetail. `instance`는 원래 요청의 경로 | auth `ForwardAuthTest#비로그인_쓰기는_401_ProblemDetail이다` | Pass |
 | TC-MEM-041 | COM-NFR-002 | CSRF 실패로 거부된 요청의 응답 | `403 ACCESS_DENIED` ProblemDetail, board와 같은 필드 | auth `ForwardAuthTest#로그인했어도_CSRF_토큰_없는_쓰기는_403이다`, `LogoutTest#토큰_없는_로그아웃은_403_ProblemDetail이다` | Pass |
 | TC-MEM-042 | COM-NFR-007 | 다른 키로 서명한 토큰으로 board API 요청 | `401 UNAUTHENTICATED` | board `InternalTokenValidationTest#다른_키로_서명한_토큰은_401이다`, 라이브러리 `InternalTokenContractTest#다른_키로_서명한_토큰은_거부한다` | Pass |
-| TC-MEM-043 | COM-NFR-007 | 만료된 토큰으로 board API 요청 | `401 UNAUTHENTICATED` | board `InternalTokenValidationTest#만료된_토큰은_401이다`, 라이브러리 `InternalTokenContractTest#만료된_토큰은_거부한다` | Pass |
+| TC-MEM-043 | COM-NFR-007 | 만료된 토큰으로 board API 요청 | `401 UNAUTHENTICATED` | board `InternalTokenValidationTest#만료된_토큰은_401이다`, 라이브러리 `InternalTokenContractTest#만료된_토큰은_거부한다`, `#만료된_지_얼마_안_된_토큰도_거부한다`, `#만료_시각이_없는_토큰은_거부한다` | Pass |
 | TC-MEM-044 | COM-NFR-007 | 발급자나 대상(`aud`)이 다른 토큰으로 board API 요청 | `401 UNAUTHENTICATED` | board `InternalTokenValidationTest#발급자나_대상이_다른_토큰은_401이다`, 라이브러리 `InternalTokenContractTest#발급자가_다른_토큰은_거부한다`, `#대상이_다른_토큰은_거부한다` | Pass |
 | TC-MEM-045 | COM-NFR-008 | 로그인 상태의 요청을 ForwardAuth로 판정 | `200`과 `Authorization: Bearer`. 토큰의 클레임은 발급자, 대상 `bbs`, `sub`, `nickname`, `email`, `roles`이고 만료는 발급 후 60초 | auth `ForwardAuthTest#로그인한_공개_조회는_내부_토큰을_붙여_통과한다`, 라이브러리 `InternalTokenContractTest#발급한_토큰을_검증하면_같은_사용자가_나온다` | Pass |
 | TC-MEM-046 | COM-NFR-008, MEM-FR-003 | realm 역할이 `USER`, `ADMIN`, `offline_access`, `default-roles-bbs`인 사용자로 로그인 | 세션과 내부 토큰의 역할은 `USER`, `ADMIN`뿐 | auth `BbsOidcUserServiceTest#realm_역할_중_bbs가_정의한_역할만_권한이_된다`, `LoginUsersTest#역할_권한만_역할로_옮긴다` | Pass |
-| TC-MEM-047 | COM-NFR-008 | 서명 키 설정 없이 `local`이 아닌 프로필로 auth 시작 | 시작 실패. `local` 프로필에서는 임시 키로 시작하고 경고 기록 | auth `SigningKeyConfigTest`(3개) | Pass |
-| TC-MEM-048 | COM-NFR-009 | 원래 경로가 `/api/posts/%2e%2e/members/me`, `/api/posts%2F1`, `/api/posts;x=1`, `/api/posts/..%5C` 같은 모호한 값 | `400 INVALID_REQUEST`, 판정하지 않음 | auth `ForwardedRequestTest#모호한_경로는_거부한다`(12가지), `ForwardAuthTest#모호한_원래_경로는_400이다`, `#전달_헤더_없이_직접_호출하면_400이다` | Pass |
+| TC-MEM-047 | COM-NFR-008 | 서명 키 설정 없이 `local`이 아닌 프로필로 auth 시작 | 시작 실패. `local` 프로필에서는 임시 키로 시작하고 경고 기록 | auth `SigningKeyConfigTest`(5개: 키 없음, local 임시 키, PEM 로드, 2048비트 미만 거부, PKCS#8이 아닌 형식 거부) | Pass |
+| TC-MEM-048 | COM-NFR-009 | 원래 경로가 `/api/posts/%2e%2e/members/me`, `/api/posts%2F1`, `/api/posts;x=1`, `/api/posts/..%5C` 같은 모호한 값 | `400 INVALID_REQUEST`, 판정하지 않음 | auth `ForwardedRequestTest#모호한_경로는_거부한다`(14가지, 인코딩된 세미콜론 포함), `#표준_대문자_메서드가_아니면_거부한다`, `ForwardAuthTest#모호한_원래_경로는_400이다`, `#전달_헤더_없이_직접_호출하면_400이다` | Pass |
 | TC-MEM-049 | COM-NFR-021 | auth에 비로그인으로 `/actuator/health`, `/actuator/metrics` 조회 | health는 `200`, metrics는 `401` | auth `ActuatorAccessTest`(4개) | Pass |
 | TC-MEM-050 | MEM-FR-001, COM-NFR-007 | 비로그인 상태의 공개 조회(`GET /api/posts`)와 로그인 상태의 공개 조회를 ForwardAuth로 판정 | 둘 다 `200`. 비로그인은 `Authorization` 없음, 로그인은 내부 토큰 있음 | auth `ForwardAuthTest#비로그인_공개_조회는_토큰_없이_통과한다`, `#로그인한_공개_조회는_내부_토큰을_붙여_통과한다`, `#세션이_없어진_브라우저의_공개_조회는_200이다` | Pass |
 | TC-MEM-051 | COM-NFR-007 | auth가 발급한 토큰을 board의 검증 설정으로 검증 (서비스 간 계약) | 검증 성공, board가 같은 사용자 식별자·닉네임·이메일·권한을 읽음 | 라이브러리 `InternalTokenContractTest#발급한_토큰을_검증하면_같은_사용자가_나온다`(board가 쓰는 검증기로 검증), board `InternalTokenAuthenticationConverterTest`(권한 변환). 실제 연동은 E2E 9개 | Pass |

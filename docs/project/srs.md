@@ -117,8 +117,8 @@ board ─▶ PostgreSQL, Valkey (조회수 중복 판정)
 | COM-NFR-005 | 소유권(작성자 여부) 검사는 도메인 객체 안에서 수행해서, 어떤 호출 경로로도 우회할 수 없어야 한다. | `PostTest`, `CommentTest`의 권한 테스트 ([ADR-0003](adr/0003-authorization-in-domain.md)) |
 | COM-NFR-006 | 개발 환경의 컨테이너 포트는 기본적으로 루프백 주소(`127.0.0.1`)에만 열린다. 접속 정보와 바인딩 주소는 저장소의 파일을 고치지 않고 환경 변수로 바꿀 수 있다. | [프로젝트 QA](qa-checklist.md) TC-COM-010, 011 |
 | COM-NFR-007 | 업무 서비스(board)는 auth가 서명한 내부 토큰으로만 사용자를 식별한다. 서명이 틀렸거나 만료되었거나 대상이 다른 토큰은 `401`로 거부한다. 브라우저가 보낸 `Authorization` 헤더는 업무 서비스에 도달하지 않는다. | [회원 QA](../features/member/qa-checklist.md) TC-MEM-042~044, [프로젝트 QA](qa-checklist.md) TC-COM-019 |
-| COM-NFR-008 | 내부 토큰은 요청마다 새로 발급하고 60초 동안만 유효하다. 역할은 bbs가 정의한 것(`USER`, `ADMIN`)만 담는다. 서명 키 설정이 없으면 개발 프로필(`local`)이 아닌 환경에서 auth가 시작하지 않는다. | [회원 QA](../features/member/qa-checklist.md) TC-MEM-045~047 |
-| COM-NFR-009 | auth는 진입점이 전달한 원래 경로가 모호하면(인코딩된 슬래시·역슬래시, 상대 경로 조각 `..`, 세미콜론 등) 판정하지 않고 `400`으로 거부한다. auth가 판정한 경로와 업무 서비스가 처리하는 경로가 달라지지 않게 하기 위해서다. | [회원 QA](../features/member/qa-checklist.md) TC-MEM-048 |
+| COM-NFR-008 | 내부 토큰은 요청마다 새로 발급하고 60초 동안만 유효하다(만료 시각이 없는 토큰은 거부하고, 시계 오차는 5초만 허용한다). 역할은 bbs가 정의한 것(`USER`, `ADMIN`)만 담는다. 서명 키 설정이 없으면 개발 프로필(`local`)이 아닌 환경에서 auth가 시작하지 않는다. | [회원 QA](../features/member/qa-checklist.md) TC-MEM-045~047 |
+| COM-NFR-009 | auth는 진입점이 전달한 원래 요청이 모호하면(경로의 인코딩된 슬래시·역슬래시·세미콜론, 상대 경로 조각 `..`, 표준 대문자가 아닌 메서드 등) 판정하지 않고 `400`으로 거부한다. auth가 판정한 요청과 업무 서비스가 처리하는 요청이 달라지지 않게 하기 위해서다. | [회원 QA](../features/member/qa-checklist.md) TC-MEM-048 |
 
 ### 4.2 데이터 무결성과 동시성
 
@@ -169,7 +169,7 @@ board ─▶ PostgreSQL, Valkey (조회수 중복 판정)
 | COM-IF-005 | 목록 API는 오프셋 페이징을 사용한다. 요청은 `page`(0부터), `size`(기본 20) 쿼리 파라미터이고, 응답은 `{content, page, size, totalElements, totalPages, last}`이다. | `OpenApiDocumentTest#페이지_정보는_개별_파라미터로_평탄화된다` |
 | COM-IF-006 | OpenAPI 문서(`/v3/api-docs`, `/swagger-ui.html`)를 제공한다. 응답 필드 중 null이 될 수 없는 필드는 `required`로 표시하고, 서버가 채우는 인자(현재 회원 등)는 문서에 노출하지 않는다. | `OpenApiDocumentTest` |
 | COM-IF-007 | 로그인은 `/oauth2/authorization/keycloak`에서 시작하고, 로그아웃은 `POST /logout`(CSRF 토큰 필요)이며 `204`를 반환한다. 두 경로 모두 진입점을 거쳐 auth가 처리한다. | [회원 QA](../features/member/qa-checklist.md) TC-MEM-001, 009 |
-| COM-IF-008 | 진입점은 `/api`, `/oauth2`, `/login`, `/logout`이 아닌 요청을 화면(web)으로 보내고, 화면은 자기 경로가 아닌 주소에도 SPA 진입점(`index.html`)을 반환한다. `/api` 아래의 존재하지 않는 경로는 화면이 아니라 `404` ProblemDetail을 반환한다. | [프로젝트 QA](qa-checklist.md) TC-COM-021, 022 |
+| COM-IF-008 | 진입점은 `/api`, `/oauth2`, `/login`, `/logout`이 아닌 요청을 화면(web)으로 보내고, 화면은 자기 경로가 아닌 주소에도 SPA 진입점(`index.html`)을 반환한다. `/api` 아래의 존재하지 않는 경로는 화면이 아니라 ProblemDetail을 반환한다: 로그인했으면 board의 `404`, 비로그인이면 auth의 `401`(공개 조회 경로가 아니므로). | [프로젝트 QA](qa-checklist.md) TC-COM-021, 022 |
 
 ### 5.1 오류 코드 목록
 

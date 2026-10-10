@@ -83,6 +83,28 @@ class InternalTokenContractTest {
   }
 
   @Test
+  void 만료된_지_얼마_안_된_토큰도_거부한다() {
+    // 수명은 60초다. 시각 오차 허용 때문에 만료 뒤에도 오래 받아들이면 안 된다.
+    String token = issuerAt(key, Instant.now().minus(Duration.ofSeconds(90))).issue(USER);
+
+    assertThatThrownBy(() -> decoder.decode(token)).isInstanceOf(JwtException.class);
+  }
+
+  @Test
+  void 만료_시각이_없는_토큰은_거부한다() {
+    Instant now = Instant.now();
+    JwtClaimsSet claims =
+        JwtClaimsSet.builder()
+            .issuer("urn:bbs:auth")
+            .audience(List.of("bbs"))
+            .subject("sub-1")
+            .issuedAt(now)
+            .build();
+
+    assertThatThrownBy(() -> decoder.decode(sign(claims))).isInstanceOf(JwtException.class);
+  }
+
+  @Test
   void 발급자가_다른_토큰은_거부한다() {
     String token = sign(claims().issuer("urn:other").audience(List.of("bbs")).build());
 
