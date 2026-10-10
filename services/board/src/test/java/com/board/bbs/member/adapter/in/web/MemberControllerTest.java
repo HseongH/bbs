@@ -1,11 +1,14 @@
 package com.board.bbs.member.adapter.in.web;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.board.bbs.support.IntegrationTestBase;
+import com.board.bbs.support.TestInternalTokens;
+import com.board.bbs.token.InternalUser;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +39,7 @@ class MemberControllerTest extends IntegrationTestBase {
   @Test
   void 로그인한_회원의_정보를_반환한다() throws Exception {
     mockMvc
-        .perform(get("/api/members/me").with(oidcLogin().idToken(token -> token.subject(SUBJECT))))
+        .perform(get("/api/members/me").with(TestInternalTokens.bearer(SUBJECT)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.nickname").value("나자신"))
         .andExpect(jsonPath("$.email").value("me@example.com"));
@@ -48,5 +51,23 @@ class MemberControllerTest extends IntegrationTestBase {
         .perform(get("/api/members/me"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+  }
+
+  @Test
+  void 처음_보는_사용자는_첫_요청에서_회원이_생긴다() throws Exception {
+    String token =
+        TestInternalTokens.issue(
+            new InternalUser("sub-new", "새회원", "new@example.com", Set.of("USER")));
+
+    mockMvc
+        .perform(get("/api/members/me").with(TestInternalTokens.withToken(token)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.nickname").value("새회원"))
+        .andExpect(jsonPath("$.email").value("new@example.com"));
+
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM member WHERE subject = 'sub-new'", Integer.class))
+        .isEqualTo(1);
   }
 }

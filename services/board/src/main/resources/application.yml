@@ -26,11 +26,13 @@ spring:
     redis:
       host: localhost
       port: 6379
-  session:
-    store-type: redis
-    timeout: 30m
 server:
   shutdown: graceful
+
+bbs:
+  internal-token:
+    # 내부 토큰을 검증할 auth의 공개키. board가 연결하는 인증 관련 주소는 이것뿐이다 (ADR-0016).
+    jwk-set-uri: http://localhost:8082/.well-known/jwks.json
 
 management:
   endpoints:

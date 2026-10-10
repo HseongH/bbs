@@ -5,19 +5,19 @@ import com.board.bbs.common.error.ErrorCode;
 import com.board.bbs.common.security.CurrentMember;
 import com.board.bbs.member.application.service.MemberService;
 import com.board.bbs.member.domain.MemberId;
-import java.util.Objects;
+import com.board.bbs.token.InternalUser;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-/** {@link CurrentMember}가 붙은 파라미터를 현재 로그인 회원의 식별자로 채운다. */
+/** {@link CurrentMember}가 붙은 파라미터를 내부 토큰이 가리키는 회원의 식별자로 채운다. 회원이 없으면 만든다. */
 @Component
 public class CurrentMemberArgumentResolver implements HandlerMethodArgumentResolver {
 
@@ -47,9 +47,10 @@ public class CurrentMemberArgumentResolver implements HandlerMethodArgumentResol
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     Object principal = authentication == null ? null : authentication.getPrincipal();
 
-    if (principal instanceof OidcUser oidcUser) {
-      String subject = Objects.requireNonNull(oidcUser.getSubject(), "OIDC 토큰에는 sub가 반드시 있다.");
-      return memberService.getIdBySubject(subject);
+    // 처음 보는 사용자면 토큰의 클레임으로 회원을 만든다 (MEM-FR-002). 이미 있으면 조회만 한다.
+    if (principal instanceof Jwt jwt) {
+      InternalUser user = InternalUser.from(jwt);
+      return memberService.provision(user.subject(), user.nickname(), user.email());
     }
 
     if (required) {

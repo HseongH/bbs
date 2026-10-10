@@ -19,7 +19,7 @@ class MemberServiceTest {
   private final MemberService service = new MemberService(store);
 
   @Test
-  void 처음_로그인하면_회원이_생성된다() {
+  void 처음_보는_사용자는_회원이_생성된다() {
     MemberId id = service.provision("sub-1", "테스터", "tester@example.com");
 
     assertThat(id).isNotNull();
@@ -36,7 +36,7 @@ class MemberServiceTest {
   }
 
   @Test
-  void 닉네임이_50자를_넘어도_로그인할_수_있다() {
+  void 닉네임이_50자를_넘어도_회원을_만들_수_있다() {
     MemberId id = service.provision("sub-long", "가".repeat(60), "long@example.com");
 
     assertThat(service.getById(id).getNickname().value()).hasSize(50);

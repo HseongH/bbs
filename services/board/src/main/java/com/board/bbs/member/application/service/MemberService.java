@@ -1,7 +1,5 @@
 package com.board.bbs.member.application.service;
 
-import com.board.bbs.common.error.BusinessException;
-import com.board.bbs.common.error.ErrorCode;
 import com.board.bbs.member.application.port.out.MemberRepository;
 import com.board.bbs.member.domain.Member;
 import com.board.bbs.member.domain.MemberId;
@@ -23,7 +21,7 @@ public class MemberService {
   /**
    * 회원이 없으면 만들고, 있으면 기존 회원을 그대로 쓴다.
    *
-   * @param subject Keycloak 사용자 식별자
+   * @param subject 외부 사용자 식별자
    * @param nickname 닉네임
    * @param email 이메일
    * @return 회원 식별자
@@ -38,21 +36,6 @@ public class MemberService {
                     memberRepository.saveIfAbsent(
                         Member.provision(subject, Nickname.truncating(nickname), email)));
     return Objects.requireNonNull(member.getId(), "저장된 회원은 식별자를 가진다.");
-  }
-
-  /**
-   * Keycloak 사용자 식별자로 회원 식별자를 찾는다.
-   *
-   * @param subject Keycloak 사용자 식별자
-   * @return 회원 식별자
-   * @throws BusinessException 회원이 없으면 MEMBER_NOT_FOUND
-   */
-  @Transactional(readOnly = true)
-  public MemberId getIdBySubject(String subject) {
-    return memberRepository
-        .findBySubject(subject)
-        .map(Member::getId)
-        .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
   }
 
   /**

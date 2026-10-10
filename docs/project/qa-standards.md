@@ -7,7 +7,7 @@ owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SRS 1.6.0, PRJ-SDS 1.8.0, PRJ-QC 1.4.0]
+related: [PRJ-SRS 1.7.0, PRJ-SDS 1.9.0, PRJ-QC 1.6.0]
 ---
 
 # 게시판(bbs) 공통 QA 기준

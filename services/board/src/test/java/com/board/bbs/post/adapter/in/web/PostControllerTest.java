@@ -1,27 +1,29 @@
 package com.board.bbs.post.adapter.in.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.board.bbs.support.IntegrationTestBase;
+import com.board.bbs.support.TestInternalTokens;
+import jakarta.servlet.http.Cookie;
 import java.util.Objects;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.OidcLoginRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @AutoConfigureMockMvc
 class PostControllerTest extends IntegrationTestBase {
@@ -57,13 +59,8 @@ class PostControllerTest extends IntegrationTestBase {
             "SELECT id FROM member WHERE subject = ?", Long.class, subject));
   }
 
-  private OidcLoginRequestPostProcessor 로그인(String subject, String... roles) {
-    OidcLoginRequestPostProcessor login =
-        oidcLogin().idToken(token -> token.subject(subject).claim("preferred_username", subject));
-    for (String role : roles) {
-      login = login.authorities(new SimpleGrantedAuthority(role));
-    }
-    return login;
+  private static RequestPostProcessor 로그인(String subject, String... roles) {
+    return TestInternalTokens.bearer(subject, roles);
   }
 
   private Long 게시글을_만든다(String title) throws Exception {
@@ -72,7 +69,6 @@ class PostControllerTest extends IntegrationTestBase {
             .perform(
                 post("/api/posts")
                     .with(로그인(AUTHOR_SUBJECT))
-                    .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{\"title\":\"%s\",\"content\":\"본문입니다.\"}".formatted(title)))
             .andExpect(status().isCreated())
@@ -89,7 +85,6 @@ class PostControllerTest extends IntegrationTestBase {
         .perform(
             post("/api/posts")
                 .with(로그인(AUTHOR_SUBJECT))
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"제목\",\"content\":\"본문\"}"))
         .andExpect(status().isCreated())
@@ -101,7 +96,6 @@ class PostControllerTest extends IntegrationTestBase {
     mockMvc
         .perform(
             post("/api/posts")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"제목\",\"content\":\"본문\"}"))
         .andExpect(status().isUnauthorized())
@@ -114,7 +108,6 @@ class PostControllerTest extends IntegrationTestBase {
         .perform(
             post("/api/posts")
                 .with(로그인(AUTHOR_SUBJECT))
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"\",\"content\":\"본문\"}"))
         .andExpect(status().isBadRequest())
@@ -127,7 +120,7 @@ class PostControllerTest extends IntegrationTestBase {
     Long id = 게시글을_만든다("조회수 확인");
 
     mockMvc
-        .perform(get("/api/posts/{id}", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
+        .perform(get("/api/posts/{id}", id).with(로그인(OTHER_SUBJECT)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("조회수 확인"))
         .andExpect(jsonPath("$.authorId").value(authorId));
@@ -135,6 +128,60 @@ class PostControllerTest extends IntegrationTestBase {
     Long viewCount =
         jdbcTemplate.queryForObject("SELECT view_count FROM post WHERE id = ?", Long.class, id);
     assertThat(viewCount).isEqualTo(1);
+  }
+
+  @Test
+  void 비회원에게는_세션_대신_조회자_쿠키를_발급한다() throws Exception {
+    Long id = 게시글을_만든다("비회원 조회");
+
+    MvcResult result =
+        mockMvc
+            .perform(get("/api/posts/{id}", id))
+            .andExpect(status().isOk())
+            .andExpect(cookie().httpOnly("BBS_VIEWER", true))
+            .andExpect(cookie().path("BBS_VIEWER", "/"))
+            .andReturn();
+
+    // board는 세션을 쓰지 않는다 (COM-NFR-020).
+    assertThat(result.getRequest().getSession(false)).isNull();
+    assertThat(result.getResponse().getCookie("JSESSIONID")).isNull();
+    assertThat(UUID.fromString(result.getResponse().getCookie("BBS_VIEWER").getValue()))
+        .isNotNull();
+  }
+
+  @Test
+  void 비회원이_같은_조회자_쿠키로_다시_조회하면_조회수가_오르지_않는다() throws Exception {
+    Long id = 게시글을_만든다("비회원 중복 조회");
+    Cookie viewer =
+        mockMvc
+            .perform(get("/api/posts/{id}", id))
+            .andReturn()
+            .getResponse()
+            .getCookie("BBS_VIEWER");
+
+    mockMvc
+        .perform(get("/api/posts/{id}", id).cookie(viewer))
+        .andExpect(status().isOk())
+        .andExpect(cookie().doesNotExist("BBS_VIEWER"));
+    mockMvc.perform(get("/api/posts/{id}", id)).andExpect(status().isOk());
+
+    Long viewCount =
+        jdbcTemplate.queryForObject("SELECT view_count FROM post WHERE id = ?", Long.class, id);
+    assertThat(viewCount).isEqualTo(2);
+  }
+
+  @Test
+  void 형식이_틀린_조회자_쿠키는_새로_발급한다() throws Exception {
+    Long id = 게시글을_만든다("잘못된 쿠키");
+
+    MvcResult result =
+        mockMvc
+            .perform(get("/api/posts/{id}", id).cookie(new Cookie("BBS_VIEWER", "x".repeat(500))))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertThat(UUID.fromString(result.getResponse().getCookie("BBS_VIEWER").getValue()))
+        .isNotNull();
   }
 
   @Test
@@ -165,7 +212,6 @@ class PostControllerTest extends IntegrationTestBase {
         .perform(
             patch("/api/posts/{id}", id)
                 .with(로그인(AUTHOR_SUBJECT))
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"바뀐 제목\",\"content\":\"바뀐 본문\"}"))
         .andExpect(status().isNoContent());
@@ -174,7 +220,6 @@ class PostControllerTest extends IntegrationTestBase {
         .perform(
             patch("/api/posts/{id}", id)
                 .with(로그인(OTHER_SUBJECT))
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"탈취\",\"content\":\"탈취\"}"))
         .andExpect(status().isForbidden())
@@ -186,7 +231,7 @@ class PostControllerTest extends IntegrationTestBase {
     Long id = 게시글을_만든다("관리자 삭제 대상");
 
     mockMvc
-        .perform(delete("/api/posts/{id}", id).with(로그인(OTHER_SUBJECT, "ROLE_ADMIN")).with(csrf()))
+        .perform(delete("/api/posts/{id}", id).with(로그인(OTHER_SUBJECT, "ADMIN")))
         .andExpect(status().isNoContent());
 
     mockMvc.perform(get("/api/posts/{id}", id)).andExpect(status().isNotFound());
@@ -197,17 +242,17 @@ class PostControllerTest extends IntegrationTestBase {
     Long id = 게시글을_만든다("좋아요 대상");
 
     mockMvc
-        .perform(post("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
+        .perform(post("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)))
         .andExpect(status().isNoContent());
     mockMvc
-        .perform(post("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
+        .perform(post("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("ALREADY_LIKED"));
     mockMvc
-        .perform(delete("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
+        .perform(delete("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)))
         .andExpect(status().isNoContent());
     mockMvc
-        .perform(delete("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)).with(csrf()))
+        .perform(delete("/api/posts/{id}/likes", id).with(로그인(OTHER_SUBJECT)))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("NOT_LIKED"));
   }
@@ -220,7 +265,7 @@ class PostControllerTest extends IntegrationTestBase {
         .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
         .andExpect(jsonPath("$.errors.id").exists());
     mockMvc
-        .perform(post("/api/posts/{id}/likes", -1).with(로그인(OTHER_SUBJECT)).with(csrf()))
+        .perform(post("/api/posts/{id}/likes", -1).with(로그인(OTHER_SUBJECT)))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
   }

@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: auth
+  profiles:
+    default: local
+  threads:
+    virtual:
+      enabled: true
+  docker:
+    compose:
+      # 서비스 디렉터리 기준 경로. Gradle bootRun과 IDE의 기본 작업 디렉터리가 모두 서비스 디렉터리다.
+      file: ../../deploy/compose.yaml
+      lifecycle-management: start_only
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  session:
+    timeout: 30m
+server:
+  port: 8082
+  # 진입점(Traefik) 뒤에 있으므로 진입점이 붙인 X-Forwarded-* 헤더로 자기 주소를 계산한다.
+  forward-headers-strategy: framework
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name},%X{traceId:-},%X{spanId:-}] "

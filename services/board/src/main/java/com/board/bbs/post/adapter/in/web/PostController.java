@@ -15,6 +15,7 @@ import com.board.bbs.post.domain.PostId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.net.URI;
@@ -78,7 +79,8 @@ public class PostController {
    *
    * @param id 게시글 식별자
    * @param viewer 현재 로그인 회원 식별자. 비로그인이면 null
-   * @param request 세션 식별을 위한 요청
+   * @param request 비회원 조회자 쿠키를 읽을 요청
+   * @param response 비회원 조회자 쿠키를 실을 응답
    * @return 게시글 상세
    */
   @Operation(summary = "게시글 단건 조회")
@@ -86,9 +88,11 @@ public class PostController {
   public PostResponse get(
       @PathVariable @Positive Long id,
       @CurrentMember(required = false) @Nullable MemberId viewer,
-      HttpServletRequest request) {
+      HttpServletRequest request,
+      HttpServletResponse response) {
 
-    String viewerKey = viewer != null ? "m" + viewer.value() : "s" + request.getSession().getId();
+    String viewerKey =
+        viewer != null ? "m" + viewer.value() : "v" + ViewerCookie.resolve(request, response);
     return PostResponse.from(postQueryService.getAndCountView(new PostId(id), viewerKey));
   }
 

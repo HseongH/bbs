@@ -1,12 +1,13 @@
 name: board
 
-# 포함 목록으로 실행 조건을 건다. board 디렉터리에 더해, 모든 Java 서비스의 빌드 결과를 바꿀 수 있는
-# 공통 빌드 파일과 통합 테스트가 이미지를 읽는 compose 파일이 바뀌어도 실행한다 (COM-NFR-033).
+# 포함 목록으로 실행 조건을 건다. board 디렉터리에 더해, board가 쓰는 공유 라이브러리(libs/), 모든 Java 서비스의
+# 빌드 결과를 바꿀 수 있는 공통 빌드 파일, 통합 테스트가 이미지를 읽는 compose 파일이 바뀌어도 실행한다 (COM-NFR-033).
 on:
   push:
     branches: [main]
     paths: &board-paths
       - "services/board/**"
+      - "libs/**"
       - "build-logic/**"
       - "gradle/**"
       - "config/**"
@@ -40,12 +41,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       # 포맷, Checkstyle, Error Prone·NullAway 컴파일, ArchUnit을 포함한 전체 테스트, 커버리지 기준
-      # board의 전체 검증에 더해, 루트가 맡는 Gradle 스크립트(build-logic 포함) 포맷 검사를 함께 실행한다.
-      - run: ./gradlew :services:board:check :spotlessCheck
+      # board의 전체 검증에 더해, board가 쓰는 공유 라이브러리의 계약 테스트와 루트가 맡는 Gradle 스크립트(build-logic 포함)
+      # 포맷 검사를 함께 실행한다. board의 check는 라이브러리를 컴파일만 하고 그 테스트는 실행하지 않는다.
+      - run: ./gradlew :libs:internal-token:check :services:board:check :spotlessCheck
 
       - if: failure()
         uses: actions/upload-artifact@v6
         with:
           name: reports
-          path: services/board/build/reports/
+          path: |
+            services/board/build/reports/
+            libs/internal-token/build/reports/
           retention-days: 7

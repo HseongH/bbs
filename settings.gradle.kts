@@ -11,4 +11,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "bbs"
 
+include(":libs:internal-token")
+include(":services:auth")
 include(":services:board")

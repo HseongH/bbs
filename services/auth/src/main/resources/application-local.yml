@@ -11,4 +11,5 @@ spring:
         provider:
           keycloak:
             issuer-uri: http://${BBS_HOST:localhost}:8081/realms/bbs
-            user-name-attribute: preferred_username
+            # 사용자 이름(preferred_username)은 IdP에서 비울 수 있으므로 항상 있는 sub를 쓴다.
+            user-name-attribute: sub

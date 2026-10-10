@@ -29,15 +29,13 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://__BBS_HOST__:8080/*",
-        "http://__BBS_HOST__:5173/*"
+        "http://__BBS_HOST__:8000/*"
       ],
       "webOrigins": [
-        "http://__BBS_HOST__:8080",
-        "http://__BBS_HOST__:5173"
+        "http://__BBS_HOST__:8000"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "http://__BBS_HOST__:8080/*##http://__BBS_HOST__:5173/*"
+        "post.logout.redirect.uris": "http://__BBS_HOST__:8000/*"
       },
       "protocolMappers": [
         {

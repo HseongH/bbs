@@ -34,7 +34,7 @@ class MemberProvisioningConcurrencyTest extends IntegrationTestBase {
   }
 
   @Test
-  void 같은_사용자가_동시에_처음_로그인해도_모두_성공하고_회원은_하나다() throws Exception {
+  void 같은_사용자의_첫_요청이_동시에_와도_모두_성공하고_회원은_하나다() throws Exception {
     Set<MemberId> ids = new HashSet<>();
     try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
       List<Callable<MemberId>> logins =

@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.board.bbs.support.IntegrationTestBase;
+import com.board.bbs.support.TestInternalTokens;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -36,15 +37,18 @@ class UnauthenticatedResponseTest extends IntegrationTestBase {
     String path = "/api/members/\"quoted\"";
     String encodedPath = "/api/members/%22quoted%22";
 
+    // 보안 필터의 진입점이 응답을 쓰는 경로(잘못된 토큰)로 확인한다.
     mockMvc
         .perform(
             get("/api/members/x")
+                .with(TestInternalTokens.withToken("not-a-token"))
                 .with(
                     request -> {
                       request.setRequestURI(path);
                       return request;
                     }))
         .andExpect(status().isUnauthorized())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.instance").value(encodedPath))
         .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
   }
