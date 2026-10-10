@@ -50,4 +50,16 @@ describe("PostListPage", () => {
 
     expect(await screen.findByText(/게시글이 없습니다/)).toBeInTheDocument();
   });
+
+  it("목록을 불러오지 못하면 안내를 보여준다", async () => {
+    server.use(
+      http.get("/api/posts", () =>
+        HttpResponse.json({ status: 500, code: "INTERNAL_ERROR" }, { status: 500 }),
+      ),
+    );
+
+    await 화면을_그린다();
+
+    expect(await screen.findByText("목록을 불러오지 못했습니다.")).toBeInTheDocument();
+  });
 });

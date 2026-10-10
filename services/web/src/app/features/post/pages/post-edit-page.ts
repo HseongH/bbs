@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, signal } from "@angular/core";
+import { Component, effect, inject, input, numberAttribute, signal } from "@angular/core";
 import { Router } from "@angular/router";
 import { fieldErrors, toProblem } from "@/core/api/problem";
 import { PostFormComponent } from "../components/post-form";
@@ -28,7 +28,7 @@ export class PostEditPage {
   protected readonly store = inject(PostStore);
   private readonly router = inject(Router);
 
-  readonly postId = input.required<string>();
+  readonly postId = input.required({ transform: numberAttribute });
 
   protected readonly submitting = signal(false);
   protected readonly errors = signal<Record<string, string>>({});
@@ -36,7 +36,7 @@ export class PostEditPage {
 
   constructor() {
     effect(() => {
-      this.store.select(Number(this.postId()));
+      this.store.select(this.postId());
     });
   }
 
@@ -45,12 +45,11 @@ export class PostEditPage {
     this.errors.set({});
     this.message.set(null);
     try {
-      await this.store.update(Number(this.postId()), input);
+      await this.store.update(this.postId(), input);
       await this.router.navigate(["/posts", this.postId()]);
     } catch (error) {
-      const body = (error as { error?: unknown }).error ?? error;
-      this.errors.set(fieldErrors(body));
-      this.message.set(toProblem(body)?.detail ?? "저장하지 못했습니다.");
+      this.errors.set(fieldErrors(error));
+      this.message.set(toProblem(error)?.detail ?? "저장하지 못했습니다.");
     } finally {
       this.submitting.set(false);
     }

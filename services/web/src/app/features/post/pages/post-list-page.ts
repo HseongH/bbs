@@ -1,4 +1,4 @@
-import { Component, effect, inject, input } from "@angular/core";
+import { Component, computed, effect, inject, input } from "@angular/core";
 import { Router, RouterLink } from "@angular/router";
 import { PaginationComponent } from "../components/pagination";
 import { PostListComponent } from "../components/post-list";
@@ -22,13 +22,13 @@ function 정수로(value: string | undefined, 기본값: number, 최댓값: numb
       </div>
       <app-search-form [keyword]="keyword() ?? ''" (searched)="onSearch($event)" />
       <app-post-list
-        [page]="store.list.value()"
+        [page]="result()"
         [isLoading]="store.list.isLoading()"
         [hasError]="store.list.error() !== undefined"
       />
       <app-pagination
-        [page]="currentPage()"
-        [totalPages]="store.list.value()?.totalPages ?? 0"
+        [page]="search().page"
+        [totalPages]="result()?.totalPages ?? 0"
         (changed)="onPage($event)"
       />
     </div>
@@ -42,20 +42,26 @@ export class PostListPage {
   readonly size = input<string>();
   readonly keyword = input<string>();
 
-  constructor() {
-    // URL이 상태의 출처다. 값이 바뀌면 스토어에 반영하고 스토어가 다시 불러온다.
-    effect(() => {
-      const keyword = this.keyword()?.trim();
-      this.store.setSearch({
-        page: 정수로(this.page(), 0, 10000),
-        size: 정수로(this.size(), 20, 100) || 20,
-        ...(keyword ? { keyword } : {}),
-      });
-    });
-  }
+  /** URL이 상태의 출처다. 범위를 벗어난 값은 기본값으로 바꾼다. */
+  protected readonly search = computed(() => {
+    const keyword = this.keyword()?.trim();
+    return {
+      page: 정수로(this.page(), 0, 10000),
+      size: 정수로(this.size(), 20, 100) || 20,
+      ...(keyword ? { keyword } : {}),
+    };
+  });
 
-  protected currentPage(): number {
-    return 정수로(this.page(), 0, 10000);
+  /** 오류 상태에서 value()를 읽으면 예외가 나서 오류 안내까지 그리지 못한다. */
+  protected readonly result = computed(() =>
+    this.store.list.hasValue() ? this.store.list.value() : undefined,
+  );
+
+  constructor() {
+    // 값이 바뀌면 스토어에 반영하고 스토어가 다시 불러온다.
+    effect(() => {
+      this.store.setSearch(this.search());
+    });
   }
 
   protected onSearch(keyword: string): void {

@@ -2,7 +2,7 @@
 
 - 상태: Proposed
 - 일자: 2026-10-10
-- 관련: COM-NFR-001~003, COM-NFR-007~009, COM-NFR-020, 021, 036, COM-IF-007, 008, COM-CON-003, 004 (PRJ-SRS 1.7.0), PRJ-SDS 1.8.0 §7·§9·§10, MEM-SRS 1.3.0, MEM-SDS 2.0.0, [ADR-0008](0008-oidc-bff-and-redis-session.md), [ADR-0014](0014-monorepo-with-gradle-convention-plugins.md)
+- 관련: COM-NFR-001~003, COM-NFR-007~009, COM-NFR-020, 021, 036, COM-IF-007, 008, COM-CON-003, 004 (PRJ-SRS 1.7.0), PRJ-SDS 1.9.0 §7·§9·§10, MEM-SRS 1.3.0, MEM-SDS 2.0.0, [ADR-0008](0008-oidc-bff-and-redis-session.md), [ADR-0014](0014-monorepo-with-gradle-convention-plugins.md)
 
 ## 맥락
 

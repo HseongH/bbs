@@ -7,7 +7,7 @@ owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-10
-related: [PRJ-SDS 1.8.0, PST-SRS 1.2.0, PST-QA 1.3.0, PRJ-CS 1.1.0]
+related: [PRJ-SDS 1.9.0, PST-SRS 1.4.0, PST-QA 1.5.0, PRJ-CS 1.5.0]
 ---
 
 # 게시글 설계 명세서
@@ -198,4 +198,4 @@ sequenceDiagram
 | 1.2.0 | 2026-10-09 | 세밀도 조정: 메서드 시그니처, 응답 필드 예시, SQL 원문, 테스트 목록을 빼고 책임·흐름·결정 중심으로 재작성. 설계 내용은 바뀌지 않음 | HseongH |
 | 1.3.0 | 2026-10-09 | 상세 조회: 조회수 반영이 롤백되면 중복 판정 기록을 지우는 보상 처리 추가 (PST-SRS 1.1.0). `PostQueryService`에 댓글 작성용 공유 잠금 확인 추가 (CMT-SDS 1.5.0) | HseongH |
 | 1.3.1 | 2026-10-09 | 화면 설계 절의 경로를 `services/web/`으로 정정 (모노레포 전환, ADR-0014). 의미 변경 없음 | HseongH |
-| 1.4.0 | 2026-10-10 | 비회원 조회자 키를 세션 ID에서 board가 발급하는 조회자 쿠키로 변경 (PST-SRS 1.2.0, ADR-0016) | HseongH |
+| 1.4.0 | 2026-10-10 | 비회원 조회자 키를 세션 ID에서 board가 발급하는 조회자 쿠키로 변경 (PST-SRS 1.4.0, ADR-0016) | HseongH |

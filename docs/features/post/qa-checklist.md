@@ -1,13 +1,13 @@
 ---
 doc_id: PST-QA
 title: 게시글 QA 체크리스트
-version: 1.3.0
+version: 1.5.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.4.0]
+related: [PRJ-QA 1.4.0, PST-SRS 1.4.0, PST-SDS 1.4.0]
 ---
 
 # 게시글 QA 체크리스트
@@ -21,7 +21,7 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.4.0]
 | 대상 커밋 | `feature/auth-service` 브랜치의 7ad3046 (이전 수행: `fix/review-defects`, e96a878, f46a99c, 85cce67) |
 | 수행일 | 2026-10-10 |
 | 백엔드 자동 검증 | 루트에서 `./gradlew test --rerun check` 성공 (board 테스트 140개, 실패 0, 오류 0, 건너뜀 0. 컨트롤러 테스트는 내부 토큰으로 인증한다. 이 문서가 인용한 테스트가 모두 이번 실행 결과에 Pass로 있는 것을 대조함) |
-| 화면 자동 검증 | `pnpm verify` 성공 (린트, 타입 검사 통과, 테스트 파일 12개·테스트 42개 통과). `pnpm gen:api` 후 생성 타입 변화 없음 |
+| 화면 자동 검증 | `main`의 `feat/web-route-titles`에서 `pnpm verify` 성공 (린트, 타입 검사, 빌드 통과, 테스트 파일 13개·테스트 56개 통과). 화면만 바뀌어 백엔드는 다시 실행하지 않았다. 이전 수행의 `pnpm gen:api` 후 생성 타입 변화 없음 |
 | E2E | `pnpm e2e` 성공 (Chromium, 9개 통과). `deploy/compose.yaml`의 컨테이너(진입점 포함), auth와 board의 `bootRun`을 띄우고 진입점 `localhost:8000`으로 2026-10-10 수행 |
 | 수동 검증 | 실행하지 않음 (N/T) |
 
@@ -42,9 +42,9 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.4.0]
 | TC-PST-009 | PST-FR-003 | 게시글을 조회한 뒤 다시 조회 | 두 번째 응답의 조회수가 1 올라 있음 | `PostControllerTest#게시글을_조회하면_조회수가_올라간다` | Pass |
 | TC-PST-010 | PST-FR-003 | 같은 회원이 24시간 안에 다시 조회 | 조회수가 더 오르지 않음 | `PostViewCountRollbackTest#같은_조회자의_두_번째_조회는_세지_않는다` (24시간 만료 자체는 Valkey TTL 설정 검토) | Pass |
 | TC-PST-052 | PST-FR-003 | 조회수 반영이 실패해 롤백된 뒤 같은 회원이 다시 조회 (회귀) | 다시 조회할 때 조회수가 1 오름 | `PostViewCountRollbackTest#조회수_증가가_실패해서_롤백되면_다음_조회에서_다시_센다` | Pass |
-| TC-PST-054 | PST-FR-003, COM-NFR-020 | 비회원이 처음 상세 조회 | HttpOnly 조회자 쿠키(`BBS_VIEWER`, UUID) 발급. 세션은 만들지 않음 | `PostControllerTest#비회원에게는_세션_대신_조회자_쿠키를_발급한다` | Pass |
-| TC-PST-055 | PST-FR-003 | 비회원이 같은 조회자 쿠키로 다시 조회, 쿠키 없이 한 번 더 조회 | 같은 쿠키의 두 번째 조회는 세지 않음, 쿠키가 없는 조회는 셈 (조회수 2) | `PostControllerTest#비회원이_같은_조회자_쿠키로_다시_조회하면_조회수가_오르지_않는다` | Pass |
-| TC-PST-056 | PST-FR-003 | 형식이 틀린 조회자 쿠키(500자)로 조회 | 새 UUID 쿠키 발급 | `PostControllerTest#형식이_틀린_조회자_쿠키는_새로_발급한다` | Pass |
+| TC-PST-057 | PST-FR-003, COM-NFR-020 | 비회원이 처음 상세 조회 | HttpOnly 조회자 쿠키(`BBS_VIEWER`, UUID) 발급. 세션은 만들지 않음 | `PostControllerTest#비회원에게는_세션_대신_조회자_쿠키를_발급한다` | Pass |
+| TC-PST-058 | PST-FR-003 | 비회원이 같은 조회자 쿠키로 다시 조회, 쿠키 없이 한 번 더 조회 | 같은 쿠키의 두 번째 조회는 세지 않음, 쿠키가 없는 조회는 셈 (조회수 2) | `PostControllerTest#비회원이_같은_조회자_쿠키로_다시_조회하면_조회수가_오르지_않는다` | Pass |
+| TC-PST-059 | PST-FR-003 | 형식이 틀린 조회자 쿠키(500자)로 조회 | 새 UUID 쿠키 발급 | `PostControllerTest#형식이_틀린_조회자_쿠키는_새로_발급한다` | Pass |
 | TC-PST-053 | COM-IF-004 | 식별자가 0인 게시글 조회, 음수 식별자로 좋아요 (회귀) | `400 INVALID_REQUEST` | `PostControllerTest#식별자가_1보다_작으면_400이다` | Pass |
 
 ### 2.2 목록과 검색
@@ -99,11 +99,13 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.4.0]
 | TC-PST-044 | PST-FR-020 | 공백뿐인 키워드로 검색 | 키워드 없이 요청 | `post.store.spec: 공백뿐인 키워드는 조건에서 빠진다` | Pass |
 | TC-PST-045 | PST-FR-021 | 본인 글과 남의 글 상세 | 본인 글에만 수정·삭제 버튼 | `post-detail-page.spec: 작성자 본인에게만…`, `…다른 사람 글에는…` | Pass |
 | TC-PST-046 | PST-FR-021 | 없는 글 상세 | 안내 문구 | `post-detail-page.spec: 없는 글이면 안내를 보여준다` | Pass |
+| TC-PST-054 | PST-FR-020 | 목록 API가 오류를 응답 (회귀) | 안내 문구, 화면이 깨지지 않음 | `post-list-page.spec: 목록을 불러오지 못하면 안내를 보여준다` | Pass |
 | TC-PST-047 | PST-FR-022 | 비로그인으로 작성 화면 진입 | 로그인으로 이동 | `auth.guard.spec: 미인증이면 막고 로그인으로 보낸다` | Pass |
 | TC-PST-048 | PST-FR-022 | 수정 화면 진입 | 기존 값이 채워짐 | `post-form.spec: 수정 모드에서는 기존 값이 채워진다` | Pass |
-| TC-PST-049 | PST-FR-023 | 서버 검증 오류 | 필드 아래 메시지, 전체 메시지 중복 없음 | `post-form.spec: 서버 검증 오류를…`, `…겹쳐 보여주지 않는다` | Pass |
+| TC-PST-049 | PST-FR-023 | 서버 검증 오류 | 필드 아래 메시지, 전체 메시지 중복 없음 | `post-form.spec: 서버 검증 오류를…`, `…겹쳐 보여주지 않는다`, `post-edit-page.spec: 저장이 검증 오류로 실패하면 입력란 아래에 서버 메시지를 보여준다` | Pass |
 | TC-PST-050 | PST-FR-024 | 좋아요 버튼 클릭 | 숫자 증가, 중복이면 안내 | `like-button.spec` 2건 | Pass |
 | TC-PST-051 | PST-FR-001, 021, 024 | 글 작성 → 상세 → 좋아요 | 전체 흐름 성공 | E2E `board.spec: 글을 쓰고 댓글과 좋아요를 남긴다` | Pass |
+| TC-PST-055 | PST-FR-025 | 목록·작성·상세·수정·없는 경로로 이동 | 화면마다 `<화면 이름> \| 게시판` 형식의 제목 | `app.spec: / 화면의 브라우저 제목은 게시글 목록 \| 게시판이다` 외 4건 (경로별) | Pass |
 
 ## 3. 추적 요약
 
@@ -111,7 +113,7 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.4.0]
 |---|---|---|
 | PST-FR-001 | 001~006 | 완전 |
 | PST-FR-002 | 007, 008 | 완전 |
-| PST-FR-003 | 009, 010, 052, 054~056 | 완전 (24시간 만료는 설정 검토) |
+| PST-FR-003 | 009, 010, 052, 057~059 | 완전 (24시간 만료는 설정 검토) |
 | PST-FR-004 | 011~014 | 완전 |
 | PST-FR-005 | 020~023 | 부분 (관리자 수정 불가는 구조로 보장, 테스트 없음) |
 | PST-FR-006 | 024~028 | 완전 |
@@ -120,15 +122,15 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.4.0]
 | PST-FR-009 | 015~017, 019 | 부분 (대소문자 무시 미검증) |
 | PST-FR-010 | 018 | 완전 |
 | PST-FR-011 | 029, 030 | 완전 |
-| PST-FR-020~024 | 040~051 | 화면 단위 테스트 완전, E2E 2건 |
+| PST-FR-020~025 | 040~051, 054, 055 | 화면 단위 테스트 완전, E2E 2건 |
 | PST-NFR-001 | 033, 034 | 완전 |
 | PST-NFR-002 | - | 설계 검토로만 확인. 쿼리 횟수 테스트 없음 |
 
 ## 4. 결과 요약과 후속 조치
 
-- 판정 근거: 2026-10-10에 `feature/auth-service`에서 `./gradlew test --rerun check`, `pnpm verify`, `pnpm e2e`를 실행한 결과 (§1).
-- 집계: 전체 53건 중 Pass 49, Fail 0, N/T 4 (자동 테스트 없음 4).
-- TC-PST-054~056은 비회원 조회자 구분을 세션에서 조회자 쿠키로 바꾸면서(PST-SRS 1.2.0) 추가한 항목이다.
+- 판정 근거: 2026-10-10에 `feature/auth-service`에서 `./gradlew test --rerun check`, `pnpm e2e`를 실행한 결과와, `main`의 화면 PR에서 실행한 `pnpm verify` 결과 (§1).
+- 집계: 전체 55건 중 Pass 51, Fail 0, N/T 4 (자동 테스트 없음 4).
+- TC-PST-057~059는 비회원 조회자 구분을 세션에서 조회자 쿠키로 바꾸면서(PST-SRS 1.4.0) 추가한 항목이다.
 - E2E 2건(TC-PST-043, 051)은 1.0.x까지 N/T였다. E2E 브라우저를 Firefox로 바꾸고 실행해 Pass로 판정했다.
 - **자동 테스트가 없는 항목**(TC-PST-019, 022, 035, 036)은 테스트를 추가할 후보다. 특히 TC-PST-022는 "관리자도 수정할 수 없다"는 규칙을 명시적으로 고정하는 회귀 테스트로 가치가 크다.
 - PST-NFR-002(목록 쿼리 횟수)는 쿼리 횟수를 세는 테스트를 추가하면 자동 검증으로 바꿀 수 있다.
@@ -143,4 +145,8 @@ related: [PRJ-QA 1.4.0, PST-SRS 1.2.0, PST-SDS 1.4.0]
 | 1.1.0 | 2026-10-09 | E2E를 Firefox로 실행해 TC-PST-043, 051을 N/T → Pass로 판정 | HseongH |
 | 1.2.0 | 2026-10-09 | `fix/review-defects`에서 수행. 회귀 항목 TC-PST-052(조회수 롤백), 053(1보다 작은 식별자) 추가, TC-PST-010 N/T → Pass | HseongH |
 | 1.2.1 | 2026-10-09 | E2E 브라우저를 Chromium으로 바꾸고 재수행. TC-PST-043, 051 판정 변화 없음 (Pass) | HseongH |
-| 1.3.0 | 2026-10-10 | `feature/auth-service`에서 수행. 비회원 조회자 쿠키 항목 TC-PST-054~056 추가 (PST-SRS 1.2.0). 진입점 경유 E2E로 재수행, 판정 변화 없음 | HseongH |
+| 1.3.0 | 2026-10-10 | 회귀 항목 TC-PST-054(목록 조회 오류 시 화면이 깨지던 결함) 추가 (PST-SRS 1.2.0) | HseongH |
+| 1.3.1 | 2026-10-10 | 오류 해석을 `problem.ts`로 모은 리팩터링 후 재수행. TC-PST-049에 화면 수준 근거(수정 화면의 저장 실패) 추가. 판정 변화 없음 | HseongH |
+| 1.3.2 | 2026-10-10 | 폼을 Signal Forms로 옮긴 뒤 재수행. 검색 폼 단위 테스트(`search-form.spec`) 추가. 판정 변화 없음 | HseongH |
+| 1.4.0 | 2026-10-10 | TC-PST-055(화면별 브라우저 제목) 추가 (PST-SRS 1.3.0) | HseongH |
+| 1.5.0 | 2026-10-10 | `feature/auth-service`에서 수행. 비회원 조회자 쿠키 항목 TC-PST-057~059 추가 (PST-SRS 1.4.0). 진입점 경유 E2E로 재수행, 판정 변화 없음 | HseongH |

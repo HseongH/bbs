@@ -1,17 +1,17 @@
-import { Component, computed, effect, inject, input, output } from "@angular/core";
-import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
+import { Component, computed, input, linkedSignal, output } from "@angular/core";
+import { form, FormField, FormRoot } from "@angular/forms/signals";
 import { ButtonComponent } from "@/shared/ui/button";
 
 @Component({
   selector: "app-post-form",
-  imports: [ReactiveFormsModule, ButtonComponent],
+  imports: [FormRoot, FormField, ButtonComponent],
   template: `
-    <form [formGroup]="form" class="space-y-4" (ngSubmit)="submit()">
+    <form [formRoot]="form" class="space-y-4">
       <div class="space-y-1">
         <label for="title" class="block text-sm font-medium">제목</label>
         <input
           id="title"
-          formControlName="title"
+          [formField]="form.title"
           class="w-full rounded border border-slate-300 px-3 py-2"
         />
         @if (fieldErrors()["title"]; as message) {
@@ -23,7 +23,7 @@ import { ButtonComponent } from "@/shared/ui/button";
         <label for="content" class="block text-sm font-medium">본문</label>
         <textarea
           id="content"
-          formControlName="content"
+          [formField]="form.content"
           rows="12"
           class="w-full rounded border border-slate-300 px-3 py-2"
         ></textarea>
@@ -41,8 +41,6 @@ import { ButtonComponent } from "@/shared/ui/button";
   `,
 })
 export class PostFormComponent {
-  private readonly formBuilder = inject(FormBuilder);
-
   readonly initial = input.required<{ title: string; content: string }>();
   readonly submitting = input(false);
   readonly fieldErrors = input<Record<string, string>>({});
@@ -54,18 +52,15 @@ export class PostFormComponent {
     Object.keys(this.fieldErrors()).length === 0 ? this.message() : null,
   );
 
-  protected readonly form = this.formBuilder.nonNullable.group({
-    title: "",
-    content: "",
+  /** 기존 값(수정 화면)이 바뀌면 입력값도 그 값으로 다시 맞춘다. */
+  private readonly model = linkedSignal(() => this.initial());
+
+  /** 검증은 서버가 하고 결과는 fieldErrors로 받는다. 저장은 부모가 맡는다. */
+  protected readonly form = form(this.model, {
+    submission: {
+      action: async () => {
+        this.saved.emit(this.model());
+      },
+    },
   });
-
-  constructor() {
-    effect(() => {
-      this.form.setValue(this.initial());
-    });
-  }
-
-  protected submit(): void {
-    this.saved.emit(this.form.getRawValue());
-  }
 }

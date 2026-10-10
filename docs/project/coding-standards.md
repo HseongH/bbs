@@ -1,13 +1,13 @@
 ---
 doc_id: PRJ-CS
 title: 게시판(bbs) 코딩 표준
-version: 1.3.0
+version: 1.5.0
 status: In Review
 owner: HseongH
 reviewers: []
 approved_date:
 last_updated: 2026-10-09
-related: [PRJ-SDS 1.6.0, PRJ-QA 1.3.0]
+related: [PRJ-SDS 1.9.0, PRJ-QA 1.4.0]
 ---
 
 # 게시판(bbs) 코딩 표준
@@ -176,13 +176,13 @@ post.updateBy(requester, new Title(title), new Content(content));
 | CS-F01 | 기능은 `features/<기능>/` 아래에 `*-api.service.ts`(HTTP 호출만), `*.store.ts`(상태와 재조회 범위), `pages/`, `components/`로 나눈다. 컴포넌트는 스토어만 주입받고 API 서비스를 직접 쓰지 않는다. | 재조회 범위를 스토어 한 곳이 소유해야 화면 사이의 상태가 어긋나지 않는다 |
 | CS-F02 | API 요청·응답 타입은 `core/api/schema.d.ts`(생성 파일)에서만 가져온다. 직접 타입을 정의하지 않고, 생성 파일을 손으로 고치지 않는다. 백엔드 API가 바뀌면 `pnpm gen:api`를 실행한다. | 백엔드와 계약이 어긋나면 컴파일이 실패해야 한다 |
 | CS-F03 | 의존성은 `inject()`로 받고, 주입하는 필드는 클래스 맨 위에 둔다. 생성자는 `effect` 등록처럼 주입 외의 초기화에만 쓴다. 앱 전체에서 하나인 서비스는 `@Service()`로 선언한다 (`@Injectable({ providedIn: "root" })`를 쓰지 않는다). 린트: `prefer-inject`, `inject-at-top`, `prefer-service-decorator` | 주입 방식을 하나로 통일한다. 필드는 적힌 순서대로 초기화되므로, 주입이 위에 있어야 다른 필드가 안전하게 쓸 수 있다 |
-| CS-F04 | 변경 감지는 Angular 22의 기본값(`OnPush`)을 쓰고, `changeDetection`을 적지 않는다. 기본값을 끄는 설정(`Eager`)은 쓰지 않는다. 상태는 signal로 두고, 서버 상태는 스토어의 `httpResource`로 읽는다. 린트: `prefer-on-push-component-change-detection`, `no-uncalled-signals`, `computed-must-return`, `reactive-context-must-read-signal` | 변경 감지 범위를 좁히고, 상태가 어디서 바뀌는지 추적할 수 있게 한다. 기본값을 다시 적으면 AI가 만든 코드와 사람이 쓴 코드가 섞여 보인다 |
+| CS-F04 | 변경 감지는 Angular 22의 기본값(`OnPush`)을 쓰고, `changeDetection`을 적지 않는다. 기본값을 끄는 설정(`Eager`)은 쓰지 않는다. 상태는 signal로 두고, 서버 상태는 스토어의 `httpResource`로 읽는다. 리소스의 `value()`는 `hasValue()`로 확인한 뒤에 읽는다 (오류 상태에서 읽으면 예외가 난다). 린트: `prefer-on-push-component-change-detection`, `no-uncalled-signals`, `computed-must-return`, `reactive-context-must-read-signal` | 변경 감지 범위를 좁히고, 상태가 어디서 바뀌는지 추적할 수 있게 한다. 기본값을 다시 적으면 AI가 만든 코드와 사람이 쓴 코드가 섞여 보인다 |
 | CS-F05 | 새로고침과 링크 공유에서 유지되어야 하는 상태(검색어, 페이지)는 URL 쿼리에 두고, 라우터 입력 바인딩으로 컴포넌트 입력에 받는다. | 상태를 잃지 않는다 (PST-FR-020) |
 | CS-F06 | 서버 오류는 `core/api/problem.ts`로 ProblemDetail을 해석해서 다룬다. 응답 본문의 형태를 컴포넌트마다 직접 검사하지 않는다. | 오류 규약(COM-IF-003)의 해석을 한 곳에 모은다 |
 | CS-F07 | 단위 테스트의 API 목은 MSW로 만들고, 응답 데이터에는 생성된 API 타입을 붙인다. | 백엔드 계약이 바뀌면 목도 컴파일 오류가 나야 한다 |
 | CS-F08 | 사용자에게 보이는 문구와 테스트 이름은 한국어로 쓴다. | 화면 언어와 테스트 언어를 맞춘다 |
 | CS-F09 | 컴포넌트의 입력·출력은 `input()`, `output()`, `model()` 함수로, 호스트 바인딩은 데코레이터의 `host` 객체로 선언한다. 템플릿은 내장 제어 흐름(`@if`, `@for`, `@switch`)과 `class`·`style` 바인딩을 쓴다 (`*ngIf`, `ngClass`, `ngStyle`을 쓰지 않는다). 린트: `prefer-signals`, `prefer-output-emitter-ref`, `prefer-host-metadata-property`, `template/prefer-control-flow`, `template/prefer-class-binding`, `template/prefer-style-binding` | Angular 22의 현재 방식으로 통일한다. 예전 방식은 AI가 자주 생성하므로 리뷰가 아니라 린트에서 막는다 |
-| CS-F10 | 새 폼은 Signal Forms(`@angular/forms/signals`)로 만든다. 기존 Reactive Forms는 그 폼의 동작을 바꿀 때 함께 옮긴다. | Angular 22부터 Signal Forms가 안정 API이고, 상태를 signal로 둔다는 CS-F04와 맞는다. 옮기기만 하는 변경은 검증 비용에 비해 얻는 것이 없다 |
+| CS-F10 | 폼은 Signal Forms(`@angular/forms/signals`)로 만든다. 입력값은 모델 signal에 두고(부모가 준 초기값을 따라가야 하면 `linkedSignal`), 제출은 `[formRoot]`와 `submission`으로 받는다. 입력값을 DOM에서 직접 읽지 않는다(`FormData`, `ElementRef`). 린트: `no-restricted-imports`(`@angular/forms` 금지) | Angular 22부터 Signal Forms가 안정 API이고, 상태를 signal로 둔다는 CS-F04와 맞는다. DOM에서 읽으면 화면의 값과 상태가 어긋난다 |
 | CS-F11 | 안정 API만 쓴다. 실험(`@experimental`)·개발자 미리보기(`@developerPreview`) API를 쓰지 않는다. 린트: `no-experimental`, `no-developer-preview` | 메이저 업그레이드(`ng update`) 때 깨질 수 있는 코드를 들이지 않는다 ([ADR-0015](adr/0015-keep-angular-for-frontend.md)) |
 
 ## 6. 버전 관리 규칙
@@ -207,3 +207,5 @@ post.updateBy(requester, new Title(title), new Content(content));
 | 1.1.0 | 2026-10-09 | 모노레포 전환 반영 ([ADR-0014](adr/0014-monorepo-with-gradle-convention-plugins.md)): Java 품질 도구의 설정 위치를 `build-logic`의 컨벤션 플러그인으로, 프론트엔드 설정 위치를 `services/web/`으로 변경 | HseongH |
 | 1.2.0 | 2026-10-09 | 프론트엔드 품질 게이트에 `ng build`의 템플릿 검사와 번들 예산 추가 (`pnpm verify`에 포함) | HseongH |
 | 1.3.0 | 2026-10-09 | Angular 22 기준으로 프론트엔드 규칙 개정 ([ADR-0015](adr/0015-keep-angular-for-frontend.md)): CS-F03에 `@Service()`와 주입 위치 추가, CS-F04를 기본 `OnPush` 기준으로 변경, CS-F09(컴포넌트 API와 템플릿 문법)·CS-F10(Signal Forms)·CS-F11(안정 API) 추가. 규칙마다 강제하는 린트 규칙을 표시하고 타입 정보 린트를 켬 | HseongH |
+| 1.4.0 | 2026-10-10 | CS-F04에 리소스 `value()`를 `hasValue()`로 확인한 뒤 읽는 규칙 추가 (오류 상태에서 화면이 깨지던 결함, TC-PST-054·TC-CMT-046) | HseongH |
+| 1.5.0 | 2026-10-10 | CS-F10 개정: 모든 폼을 Signal Forms로 옮겨 경과 규정(기존 Reactive Forms 유지)을 지우고, 모델·제출 방식과 `@angular/forms` import 금지 린트 추가 | HseongH |
