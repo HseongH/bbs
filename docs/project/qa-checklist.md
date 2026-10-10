@@ -1,7 +1,7 @@
 ---
 doc_id: PRJ-QC
 title: 게시판(bbs) 프로젝트 QA 체크리스트
-version: 1.6.0
+version: 1.7.0
 status: In Review
 owner: HseongH
 reviewers: []
@@ -41,9 +41,9 @@ related: [PRJ-QA 1.4.0, PRJ-SRS 1.7.0, PRJ-SDS 1.9.0]
 |---|---|---|---|---|---|
 | TC-COM-005 | COM-NFR-033 | board 파일을 바꾼 PR | `board` 워크플로가 실행되어 통과 | PR의 CI 실행 기록: PR #28(커밋 431fd7b)에서 `board` 워크플로 실행, `./gradlew :services:board:check :spotlessCheck` 작업 22개 성공 ([실행 기록](https://github.com/HseongH/bbs/actions/runs/37935282153)) | Pass |
 | TC-COM-006 | COM-NFR-033 | web 파일을 바꾼 PR | `web` 워크플로가 실행되어 통과 | PR의 CI 실행 기록: PR #28(커밋 431fd7b)에서 `web` 워크플로 실행, `pnpm verify` 테스트 파일 12개·테스트 42개 통과 ([실행 기록](https://github.com/HseongH/bbs/actions/runs/37935282134)) | Pass |
-| TC-COM-016 | COM-NFR-036 | auth와 진입점을 추가한 PR | `e2e` 워크플로가 진입점, auth, board를 띄우고 진입점 주소로 E2E를 실행해 모두 통과 | PR의 CI 실행 기록 (push 후 판정. 같은 구성의 로컬 실행: compose 기동, auth·board `bootRun` 후 진입점으로 `pnpm e2e` 9개 통과. 이전 판정: PR #39에서 board만 띄운 구성으로 4개 통과) | N/T |
+| TC-COM-016 | COM-NFR-036 | auth와 진입점을 추가한 PR | `e2e` 워크플로가 진입점, auth, board를 띄우고 진입점 주소로 E2E를 실행해 모두 통과 | PR의 CI 실행 기록: PR #46(커밋 64eff36)에서 `e2e` 워크플로 실행. compose로 진입점 포함 컨테이너 4개 healthy, auth·board `bootRun` 후 진입점 `localhost:8000`으로 Chromium E2E 9개 통과 ([실행 기록](https://github.com/HseongH/bbs/actions/runs/38041712435)) | Pass |
 | TC-COM-017 | COM-NFR-036 | `e2e` 워크플로의 실행 조건 검토 | auth·board·web·`deploy/`와 Java 서비스의 실행 결과를 바꾸는 공통 빌드 파일이 조건에 있음 | 구성 검토: `e2e`의 `paths`에 `services/auth/**`, `services/board/**`, `libs/**`, `services/web/**`, `deploy/**`, `build-logic/**`, `gradle/**`, 루트 Gradle 파일, 자기 파일 포함. auth를 board보다 먼저 띄우는 단계 추가 | Pass |
-| TC-COM-023 | COM-NFR-033 | `auth` 워크플로의 실행 조건 검토와 auth를 추가한 PR | `auth`의 조건에 auth 디렉터리, Java 공통 빌드 파일, `deploy/compose.yaml`이 있음. PR에서 `auth` 워크플로가 실행되어 통과 | 구성 검토: `auth`의 `paths`에 `services/auth/**`, `libs/**`, `build-logic/**`, `gradle/**`, `config/**`, 루트 Gradle 파일, `gradlew`, `deploy/compose.yaml`, 자기 파일 포함. 명령은 `./gradlew :libs:internal-token:check :services:auth:check :spotlessCheck`. PR의 CI 실행 기록은 push 후 판정 | N/T |
+| TC-COM-023 | COM-NFR-033 | `auth` 워크플로의 실행 조건 검토와 auth를 추가한 PR | `auth`의 조건에 auth 디렉터리, Java 공통 빌드 파일, `deploy/compose.yaml`이 있음. PR에서 `auth` 워크플로가 실행되어 통과 | 구성 검토: `auth`의 `paths`에 `services/auth/**`, `libs/**`, `build-logic/**`, `gradle/**`, `config/**`, 루트 Gradle 파일, `gradlew`, `deploy/compose.yaml`, 자기 파일 포함. PR의 CI 실행 기록: PR #46(커밋 64eff36)에서 `auth` 워크플로 실행, `./gradlew :libs:internal-token:check :services:auth:check :spotlessCheck` 작업 32개 성공 ([실행 기록](https://github.com/HseongH/bbs/actions/runs/38041712470)) | Pass |
 | TC-COM-007 | COM-NFR-033 | 워크플로의 실행 조건 검토 | `board`의 조건에 Java 공통 빌드 파일과 `deploy/compose.yaml`이 있고, `web`의 조건에 board 경로가 없음 | 구성 검토: `board`의 `paths`에 `build-logic/**`, `gradle/**`, `config/**`, 루트 Gradle 파일, `gradlew`, `deploy/compose.yaml` 포함. `web`의 `paths`는 `services/web/**`와 자기 파일뿐 | Pass |
 
 ### 2.3 의존성 갱신
@@ -95,7 +95,8 @@ related: [PRJ-QA 1.4.0, PRJ-SRS 1.7.0, PRJ-SDS 1.9.0]
 
 ## 4. 결과 요약과 후속 조치
 
-- 집계: 전체 25건 중 Pass 23, Fail 0, N/T 2. N/T 2건(TC-COM-016, 023)은 PR의 CI 실행 기록으로 판정하므로 push 후 채운다.
+- 집계: 전체 25건 중 Pass 25, Fail 0, N/T 0.
+- TC-COM-016, 023은 PR #46의 CI 실행 기록으로 판정했다. 같은 PR에서 `board`, `web`, `line-endings` 워크플로도 모두 성공했다.
 - auth 분리 항목의 근거 실행: 루트 `./gradlew test --rerun check`(최종 리뷰 반영 후 라이브러리 8개, auth 54개, board 140개), `pnpm verify`, 진입점 경유 `pnpm e2e` 9개 (2026-10-10).
 - TC-COM-005, 006은 두 서비스를 함께 바꾼 PR #28에서 판정했다. 한 서비스만 바꾼 PR에서 다른 워크플로가 실행되지 않는 것은 실행 조건 검토(TC-COM-007)로만 확인했으므로, 다음 단일 서비스 PR에서 실행 목록을 한 번 확인한다.
 - 수행 중 발견한 결함: Keycloak에 상태 검사가 없어 `up --wait`와 board의 compose 연동이 Keycloak 준비 전에 넘어갔다. 컨테이너가 없는 상태에서 `bootRun`하면 issuer 조회에 실패해 COM-CON-004를 어겼다. 상태 검사를 추가해 고쳤고(TC-COM-009, 013의 근거 실행은 수정 후), 수정 전 재현(`--wait` 직후 조회 실패)과 수정 후 성공을 모두 확인했다.
@@ -112,3 +113,4 @@ related: [PRJ-QA 1.4.0, PRJ-SRS 1.7.0, PRJ-SDS 1.9.0]
 | 1.4.0 | 2026-10-10 | PR #39의 CI 실행 기록으로 TC-COM-016 판정 (Pass 17) | HseongH |
 | 1.5.0 | 2026-10-10 | auth 서비스와 진입점 항목 추가 (PRJ-SRS 1.7.0, ADR-0016): TC-COM-018~025. 구성이 바뀌는 TC-COM-016, 017은 다시 판정하도록 N/T로 되돌림. 판정은 구현 후 채운다 | HseongH |
 | 1.6.0 | 2026-10-10 | `feature/auth-service`에서 TC-COM-017~022, 024, 025 판정 (Pass 23). TC-COM-016, 023은 CI 실행 후 판정 | HseongH |
+| 1.7.0 | 2026-10-10 | PR #46의 CI 실행 기록으로 TC-COM-016, 023 판정 (Pass 25) | HseongH |

@@ -29,6 +29,6 @@
 | [0013](0013-valkey-instead-of-redis.md) | 세션과 조회수 키 저장소로 Redis 대신 Valkey를 쓴다 | Accepted | 2026-10-09 |
 | [0014](0014-monorepo-with-gradle-convention-plugins.md) | 저장소를 배포 단위별 모노레포로 나누고 Java 빌드 규칙은 컨벤션 플러그인으로 공유한다 | Accepted | 2026-10-09 |
 | [0015](0015-keep-angular-for-frontend.md) | 화면은 Angular로 유지한다 | Accepted | 2026-10-09 |
-| [0016](0016-auth-service-with-internal-token.md) | 인증은 auth 서비스가 맡고, 다른 서비스에는 auth가 서명한 내부 토큰으로 사용자를 전달한다 | Proposed | 2026-10-10 |
+| [0016](0016-auth-service-with-internal-token.md) | 인증은 auth 서비스가 맡고, 다른 서비스에는 auth가 서명한 내부 토큰으로 사용자를 전달한다 | Accepted | 2026-10-10 |
 
 일자는 결정이 코드에 반영된 날이다. 이 기록들은 2026-10-09에 기존 설계 문서, README, PR 설명을 근거로 역작성했다.
