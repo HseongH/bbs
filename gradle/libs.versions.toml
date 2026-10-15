@@ -4,7 +4,7 @@
 [versions]
 spring-boot = "4.1.1"
 spring-dependency-management = "1.1.7"
-spotless = "8.10.3"
+spotless = "8.10.4"
 errorprone-plugin = "5.1.1"
 errorprone = "2.50.0"
 nullaway = "0.14.2"
