@@ -40,11 +40,11 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           package_json_file: services/web/package.json
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: pnpm
@@ -79,7 +79,7 @@ jobs:
         run: docker compose -f deploy/compose.yaml logs --no-color > compose.log
 
       - if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-logs
           path: |
